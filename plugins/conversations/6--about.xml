@@ -15,8 +15,8 @@
 	</query>
 
 	<query match="\b(m[áa][šs]|tv[ůu]j)\b.*\b(zdroj[áa]k|zdrojov[ýy] k[oó]d)\b.*\?">
-		<reply text="To bys chtěl vědět, co? Tak já ti to teda řeknu... http://keelsbot.googlecode.com/"/>
-		<reply weight="2" text="Mrkni na http://keelsbot.googlecode.com/" />
+		<reply text="To bys chtěl vědět, co? Tak já ti to teda řeknu... http://github.com/xificurk/KeelsBot/"/>
+		<reply weight="2" text="Mrkni na http://github.com/xificurk/KeelsBot/" />
 	</query>
 
 	<query match="\b(ro)?bot(, [žz]e( (jo|ano))?)?\?">
