@@ -40,8 +40,8 @@ cd $KEELSDIR
 while true; do
 	date >> $LOGFILE
 	if [ -x `which svn` ] ; then
-		echo "Updating bot from SVN..." >> $LOGFILE
-		svn up 1>> $LOGFILE 2>> $LOGFILE
+		echo "Updating bot from master git repository..." >> $LOGFILE
+		git pull 1>> $LOGFILE 2>> $LOGFILE
 	fi
 	python $KEELSDIR/keelsbot.py -c "$CONFIGFILE" 1>> $LOGFILE 2>> $LOGFILE
 	sleep 10
