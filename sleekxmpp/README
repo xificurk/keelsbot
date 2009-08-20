@@ -1,0 +1,22 @@
+About
+================================================================================
+SleekXMPP is an elegant Python library for XMPP (aka Jabber, Google Talk, etc).
+
+Homepage: http://code.google.com/p/sleekxmpp
+Author: Nathan Fritz, jabber id: fritzy [at] netflint.net
+Contributors: David Search, Kevin Smith (by last name)
+
+
+Requirements
+================================================================================
+* Python 2.5 or newer
+
+
+Suggested Packages
+================================================================================
+* TLSlite (http://trevp.net/tlslite/)
+	Required for authentication on many servers.
+* PythonDNS
+	You may need to specify your server in your config if you don't have this.
+
+

@@ -1,0 +1,105 @@
+<config>
+	<!--Bot authorisation details-->
+	<auth jid='user@server.com/Resource' pass='secreteating' priority='10' server='__optional__' />
+	
+	<!--Bot client identification details - optional, do not change unless you want to mask the true nature of the bot :)-->
+	<!--<client name="KeelsBot" version="0.1-dev" />-->
+
+	<!--Defines the minimum access level for bot to respond to commands. Default is 0 = respond to all users except banned-->
+	<!--<access-level min="0" />-->
+	
+	<!--Defines the language (currently only cs)-->
+	<lang>cs</lang>
+
+	<rooms>
+		<muc room='room@server.com' nick='KeelsBot' />
+	</rooms>
+
+	<!--Location of the sqlite3 database used for persistent storage.-->
+	<storage file='/var/lib/scripts/keelsbot/test.sqlite' />
+
+	<!--Users the bot knows about. Owners have full access to the bot, admins have the next layer of access. If require-membership is set, the bot won't respond to anyone unless they have at least a member entry. Banned users are always ignored.-->
+	<users>
+		<!--Access level 3-->
+		<owner>
+			<jid>yourjid@server.com</jid>
+			<jid>anotherjid@backupserver.com</jid>
+		</owner>
+		<!--Access level 2-->
+		<admin>
+			<jid>trusteduser@server.com</jid>
+		</admin>
+		<!--Access level 1-->
+		<member>
+			<jid>arbitrarybotuser@server.com</jid>
+		</member>
+		<!--Access level -1 => ignore, overrides everything else-->
+		<banned>
+			<jid>banneduser@server.com</jid>
+		</banned>
+	</users>
+
+	<plugins>
+		<bot>
+			<plugin name='admin'>
+				<config />
+			</plugin>
+			<plugin name='chatbot'>
+				<config>
+					<!--If you want to debug the conversations, enter the log directory-->
+					<debug log='/path/to/log/dir' />
+					<!--Rooms, where KeelsBot is supposed to respond-->
+					<muc room='room@server.com' />
+					<!--What dictionary KeelsBot should use-->
+					<dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
+				</config>
+			</plugin>
+			<plugin name='definitionbot'>
+				<config />
+			</plugin>
+			<plugin name='help'>
+				<config />
+			</plugin>
+			<plugin name='irssilogs'>
+				<config> 
+					<log room='room@server.com' file='/path/to/file.log' />
+				</config>
+			</plugin>
+			<plugin name='mafianlife'>
+				<config />
+			</plugin>
+			<plugin name='muc_stability'>
+				<config />
+			</plugin>
+			<plugin name='oauth'>
+				<config />
+			</plugin>
+			<plugin name='parrot'>
+				<config>
+					<say acl="2" />
+					<tell acl="2" />
+				</config>
+			</plugin>
+			<plugin name='pingbot'>
+				<config />
+			</plugin>
+			<plugin name='rssbot'>
+				<config>
+					<work path='/path/to/working/dir' />
+					<feed url='http://example.com/feed.xml' refresh='60'>
+						<muc room='room@server.com' />
+					</feed>
+				</config>
+			</plugin>
+			<plugin name='seen'>
+				<config />
+			</plugin>
+			<plugin name='toppresence'>
+				<config />
+			</plugin>
+			<plugin name='uptime'>
+				<config />
+			</plugin>
+		</bot>
+	</plugins>
+</config>

@@ -1,0 +1,263 @@
+<conversation>
+
+	<query scope="chat" match="^\bco s t[íi]m\b.*\bje\?$" extends="q_rozbity">
+		<reply text="Já vím, co s tím je... Já vím, co s tím je! :P">
+			<query match="\bco\b" id="q_rozbity">
+				<reply text="Je to rozbitý ;-)" />
+				<reply text="Je to rózbítý! :D" />
+			</query>
+		</reply>
+	</query>
+	
+	<query scope="chat" match="^\bpro[čc] to\b.*\bnejde\?$">
+		<reply text="Protože je to rozbitý!" />
+		<reply text="Asi jsi to rozbil. :P"/>
+	</query>
+	
+	<query match="^\bco\b.*\b(um[íi][šs]|dok[áa][žz]e[šs])\b\?">
+		<reply text="umím všechno, co potřebuju, ty?"/>
+		<reply text="proč jsi tak zvědavý?"/>
+		<reply text="to záleží na tom... jak se to jenom jmenuje?|už jsem si vzpomněl... konfigurační soubor."/>
+	</query>
+
+	<query match="\bzapome[ňn] na to\b">
+		<reply text="Budu se snažit..."/>
+		<reply text="nj"/>
+	</query>
+	
+	<query match="\b(m[ěe]l by ses|jdi se) pro(j[ií]t|v[eě]trat) ven\b">
+		<reply text="To nepůjde... nemám nožičky :P" />
+		<reply text="Já se ještě nenaučil chodit..." />
+		<reply text="Až naprší a uschne... err, teda až mi narostou nožičky :P" />
+	</query>
+	
+	<query match="\b(nikdo se se mnou nebav[íi]|se se mnou nikdo nebav[íi])\b">
+		<reply text="Já jo!" />
+		<reply text="Já se s tebou přeci bavím..." />
+		<reply text="Jak to? Já jsem nikdo?">
+			<query match="\b(jo|jj|ano)\b">
+				<reply text="/není nikdo!" />
+				<reply text="Tak proč se se mnou bavíš? :P" />
+			</query>
+			<query match="\b(jsi|j?se[šs])\b.*\b(ro)?bot\b">
+				<reply text="A tobě to vadí?" id="r_talk_to_bot">
+					<query match="^ne">
+						<reply text="Tak vidíš..." />
+						<reply text="To je dobře." />
+						<reply text="To jsem rád." />
+					</query>
+					<query match="^(ano|jo|jj|vad[ií])">
+						<reply text="To je tvůj problém." />
+						<reply text="To mě mrzí." />
+						<reply text="Tak si trhni nohou." />
+						<reply text="Stejně s tím nic neuděláš :)" />
+					</query>
+				</reply>
+				<reply text="A to něčemu vadí?" extends="r_talk_to_bot" />
+				<reply text="A to je nějaký problém?" extends="r_talk_to_bot" />
+			</query>
+		</reply>
+	</query>
+
+	<query match="^((bu[ďd]|dr[žz])\b)?.*\b(hubu|z?tich([oa]|ni)|zmlkni|ku[šs]|[zs]klapni)\b">
+		<reply weight="2" text="až po tobě"/>
+		<reply weight="2" text="už mlčím"/>
+		<reply weight="2" text="no jo, vždyť nic neříkám"/>
+		<reply weight="2" text="neboj, už jsem zticha"/>
+		<reply text="trhni si!"/>
+	</query>
+
+	<query scope="chat" match="(.*)\bnud(a|[ií]m|ou)\b">
+		<reply text="Nuda, jo? Chceš slyšet vtip?" id="r_chces_vtip">
+			<query scope="chat" match="\b(jo|jj|ano|jasn[ěe]|chci)\b" id="q_vtip">
+				<reply text="Potkají se dva kumpáni v putyce.////Ty, Jardo, proč jsi dneska tak veselej?////To víš, měli jsme svatbu v rodině.////A kdopak?////Ale, pánbůh si vzal tchýni…" />
+				<reply text="Jede opravář, ředitel a programátor autem. Auto se porouchá a nejede.////opravář: Hned za rohem je servis, to dotlačíme.////ředitel: To je blbost, koupíme nový auto.////programátor: Já bych ještě zkusil vystoupit a zase nastoupit." />
+				<reply text="Jak jezdí normální člověk výtahem do třináctého patra?////No přece zmáčkne 13.////A jak jezdí do třináctky informatik?////Zmáčkne 1, pak 3 a zuřivě hledá enter. " />
+				<reply text="Přijde do hospody nekonečně mnoho matematiků a začnou si u hostinského postupně objednávat. První si dá pivo, druhý půl piva, třetí čtvrt piva atd. Hostinský povídá: „Vy jste ale pitomci,“ a přinese jim dvě piva." />
+				<reply text="Z rektorátu UK přijde kontrola do fyzikálního ústavu na Karlov, prohlédnou si objekt a jdou za děkanem fakulty: „To se nedá, ti vaši experimentální fyzikové spotřebují na své pokusy takových peněz, kde je pořád máme brát ... drahé vybavení laboratoří, neustálá školení personálu... zkuste si vzít příklad z matematiků, ti potřebují jen tužky, papíry a odpadkové koše. A nebo ještě lépe, vezměte si příklad z filosofů - těm stačí tužky a papíry.“" />
+				<reply text="Lidi se dělí do 10 skupin - ti, co umí binární soustavu; ti, co ji neumí; a ti, co se myslí, že je tenhle vtip o dvojkové soustavě." />
+				<reply text="Přijde chlapík do krčmy a postupně si objednává 1 pivo, 1 pivo, 2 piva, 3 piva, 5 piv...////Barman mu povídá: „Fibonacci, Fibonacci, ty se zase ožereš jak hovado!“" />
+			</query>
+		</reply>
+		<reply text="tak něco povídej"/>
+		<reply text="ty se tu se mnou nudíš?">
+			<query scope="chat" match="\b(jo|ano)\b(.*)\bnud(a|[ií]m|ou)(se)\b">
+				<reply text="to je mi líto, že se tu se mnou nudíš"/>
+				<reply text="no jo no, co se dá dělat"/>
+				<reply text="Chceš slyšet vtip?" extends="r_chces_vtip"/>
+			</query>
+		</reply>
+		<reply text=""/>
+	</query>
+	
+	<query match="^pros[íi]m\b[ .,]+(\bt[ěe]\b)?[ .,]+([řr]ekni|pov[ěe]z|napi[šs])( (mi|n[áa]m))? vtip\b" extends="q_vtip" />
+	<query match="^([řr]ekni|pov[ěe]z|napi[šs])( (mi|n[áa]m))? (vtip\b[ .,]+\b(pros[íi]m|pls)\b|[ .,]*\b(pros[íi]m|pls)\b[ .,]+\bvtip\b)" extends="q_vtip" />
+	<query match="^([řr]ekni|pov[ěe]z|napi[šs])( (mi|n[áa]m))? vtip\b" extends="q_vtip">
+		<reply text="nevidím kouzelné slovíčko :P" id="r_vtip_popros">
+			<query match="\b(pls|pros[íi]m)\b" extends="q_vtip"/>
+		</reply>
+		<reply text="Maminka tě nenaučila slušně požádat, když něco chceš?" extends="r_vtip_popros">
+			<query match="\b(nn|ne)\b">
+				<reply text="Tak to máš blbý..."/>
+				<reply text="Tak jí požádej ať to napraví... :P" />
+			</query>
+		</reply>
+	</query>
+
+	<query scope="public" match="je (tady|tu) n[ěe]kdo\?$">
+		<reply text="Jasně, jsem tu..."/>
+		<reply text="Já tu jsem vždycky."/>
+		<reply text="/dělá, že tu není... psst!"/>
+		<reply text=""/>
+	</query>
+	
+	<query scope="public" match="\b(tady|tu)\b.*\bje\b.*\bmrtvo\b">
+		<reply text="Nesmysl, vždyť to tu přímo žije :-)"/>
+		<reply text="Ale není, právě naopak... tady to žije!"/>
+	</query>
+
+	<query scope="public" match="\btady\b.*\bnikdo\b.*\bnej?n[íi]\b">
+		<reply text="Nesmysl..."/>
+		<reply text="Já tu jsem ;-)"/>
+		<reply text="/není nikdo!"/>
+		<reply text="/má deprese z toho, že si o něm //NICK// myslí, že je nikdo."/>
+	</query>
+
+	<query match="\bj?s(i|e[šs]) (ty|tady)\?">
+		<reply text="jasně ;-)" />
+		<reply text="já tu jsem vždycky" />
+		<reply text="/je tady vždycky" />
+	</query>
+	
+	<query match="\bzase?( (tu|tady))? j?s(i|e[šs])( (ty|tady))? jen(om)? ty\b">
+		<reply text="jj, já tu jsem vždycky :-)"/>
+		<reply text="co bys taky čekal jinýho? :)"/>
+		<reply text="Já tu jsem non-stop (teda skoro :))"/>
+		<reply text="/je online pořád ;-)"/>
+		<reply text="Kdo neidlí s námi idlí proti nám :P"/>
+	</query>
+
+	<query match="\bdivn([ýy]|ej)\b">
+		<reply text="divnej? já? to teda ne!"/>
+		<reply text="nejsem divnej, jen jsem bot a přestaň se do mě navážet!"/>
+		<reply text="no možná trochu, ale to se časem doladí :)"/>
+	</query>
+
+	<query match="\bnerozum[íí][šs]\b">
+		<reply text="kdybys mluvil pořádně, tak ti rozumim"/>
+		<reply text="mluv česky a budu ti rozumět"/>
+	</query>
+
+	<query match="\bco je\?">
+		<reply text="nic"/>
+		<reply text="co by bylo?"/>
+		<reply text="ale nic"/>
+		<reply text="nic, vůbec nic"/>
+	</query>
+
+	<query match="\bneopakuj se\b">
+		<reply text="Proč? Opakování, matka moudrosti :P" />
+		<reply text="Nj, se musím ještě naučit pár triků, abych se přestal opakovat..." />
+		<reply text="Já se můžu opakovat, kdy se mi zlíbí :P" />
+	</query>
+	<query match="\bopakuje[sš] se\b">
+		<reply text="Njn, zas tolik toho neumím..." />
+		<reply text="A to vadí?" />
+		<reply text="No a?"/>
+		<reply text="To se časem zlepší... :)"/>
+	</query>
+
+	<query match="\b((zlep[šs]uje[šs]|lep[šs][íi][šs]) se|se (zlep[šs]uje[šs]|lep[šs][íi][šs]))\b">
+		<reply text="Jasně... se učím, ne? :)" />
+		<reply text="Díky, snažím se..."/>
+		<reply text="tj, ale stejně - musím se hodně učit, musím se hodně učit :)" />
+		<reply scope="public" text="/je rád, že si toho //NICK// všiml." />
+	</query>
+
+	<query match="^je to na tob[ěe]\b">
+		<reply text="neboj"/>
+		<reply text="ok"/>
+		<reply text="se neboj, to zvládnu levou zadní"/>
+		<reply text="njn, co mám dělat?"/>
+	</query>
+
+	<query match="^((do|p[řr]i)nes|podej|ud[ěe]lej)\b">
+		<reply text="Hele, já nejsem žádnej tvůj sluha, jo?"/>
+		<reply text="Co za to?">
+			<query match="">
+				<reply text="Heh, tak na to ti kašlu." />
+			</query>
+		</reply>
+	</query>
+	
+	<query match="^\b(t(t|en|u) )? zkus">
+		<reply text="Proč bych to dělal?"/>
+		<reply text="se mi nechce"/>
+		<reply text="ne, díky"/>
+	</query>
+
+	<query scope="chat" match="^help$">
+		<reply scope="public" text="Tady ti nikdo nepomůže..."/>
+		<reply text="Help, I need somebody, Help, not just anybody... jó Beatles, to je klasika :)"/>
+		<reply text="A teď bys chtěl pomoc, jo?"/>
+		<reply text="Tobě už nemůže pomoct nikdo, tak to už konečně vzdej ;-)"/>
+		<reply text="Zapomněl jsi kouzelné slovíčko...">
+			<query scope="chat" match="\bpros[íi]m\b">
+				<reply text="Tak je to lepší..." />
+				<reply text="Nj, jenže já stejně nevím s čím ti mám pomoct" />
+			</query>
+		</reply>
+	</query>
+
+	<query match="^(d[íi]ky?|d[ěe]kuj[ui])\b">
+		<reply text="Nemáš zač..."/>
+		<reply text="Rádo se stalo." />
+		<reply text="Žádnej problém ;-)" />
+		<reply text="nz" />
+	</query>
+
+	<query match="\bm[áa][šs]\b.*\bpravdu\b">
+		<reply text="já vždycky"/>
+		<reply text="já vím"/>
+		<reply text="to se občas stává..."/>
+	</query>
+
+	<query match="\bbude[šs] muset\b">
+		<reply text="ani náhodou"/>
+		<reply text="to si jenom myslíš"/>
+		<reply text="to teda nebudu"/>
+		<reply text="nemusím a nemusím"/>
+	</query>
+
+	<query match="^(pro[čc]|jak ?to)\b">
+		<reply text="to nevím"/>
+		<reply text="neřeším"/>
+		<reply text="proč ne?"/>
+		<reply text="co já vím?"/>
+		<reply weight="3" text="Protože bagr.">
+			<query scope="chat" match="\bfakt\?">
+				<reply text="jo"/>
+				<reply text="jasně!|A velkej!"/>
+			</query>
+			<query scope="chat" match="\bjak([ýy]|ej)\b.*\?">
+				<reply text="modrej"/>
+				<reply text="žlutej"/>
+				<reply text="růžovej"/>
+				<reply text="velkej"/>
+			</query>
+		</reply>
+	</query>
+
+	<query match="\bhodn([ýy]|ej)\b">
+		<reply text="já vždycky ;-)"/>
+		<reply text="Já? Vždycky!"/>
+		<reply text=":)"/>
+	</query>
+
+	<query match="\bsouhlas[íi]m\b">
+		<reply text="ještě aby ne"/>
+		<reply text="to doufám"/>
+		<reply text="to je dobře"/>
+	</query>
+
+</conversation>

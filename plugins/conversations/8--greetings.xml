@@ -1,0 +1,88 @@
+<conversation>
+
+	<query scope="chat" match="^(zdrav[íi](m|[čc]ko))(\b.*\b(lidi([čc]ky)?|v[šs]ichni))?[. !]*$" id="q_vitej" extends="q_hoj">
+		<reply text="zdravím" extends="r_hoj"/>
+		<reply text="vítej" extends="r_hoj" />
+	</query>
+	<query scope="chat" match="^(([cč]us|a?hoo?j(da)?|[čc]au)(te|ky)?|(na)?zd[áa]r(e[kc])?)(\b.*\b(lidi([čc]ky)?|v[šs]ichni))?[. !]*$" id="q_hoj">
+		<reply text="zdar" id="r_hoj">
+			<query scope="chat" match="^(([cč]us|a?hoo?j(da)?|[čc]au)(te|ky)?|(na)?zd[áa]r(e[kc])?)(\b.*\b(lidi([čc]ky)?|v[šs]ichni))?[. !]*$" extends="q_hoj">
+				<reply weight="20" text="" extends="r_hoj"/>
+			</query>
+			<query scope="chat" match="^(zdrav[íi](m|[čc]ko))(\b.*\b(lidi([čc]ky)?|v[šs]ichni))?[. !]*$" extends="q_vitej">
+				<reply weight="28" text="" extends="r_hoj"/>
+			</query>
+		</reply>
+		<reply text="nazdar" extends="r_hoj"/>
+		<reply text="ahoj" extends="r_hoj"/>
+		<reply text="čau" extends="r_hoj"/>
+		<reply text="hoj" extends="r_hoj"/>
+	</query>
+
+	<query scope="chat" match="^(([cč]us|a?hoo?j(da)?|[čc]au)(te|ky)?|(na)?zd[áa]r(e[kc])?)\b.?.?jak se( (ti|v[áa]m|tob[ěe]))? vede\?$" extends="q_jak_je" />
+	<query scope="chat" match="^jak se( (ti|v[áa]m|tob[ěe]))? vede\?$" extends="q_jak_je" />
+	<query scope="chat" match="^(jak je|m[áa][šs] se)\?$" extends="q_jak_je" />
+	<query scope="chat" match="^jak se ((tu|tady) )?m[áa]([šs]|te|me)\b(.*)\?$" id="q_jak_je">
+		<reply text="skvěle, co ty?" extends="r_dobre" />
+		<reply text="přímo skvěle, a co ty?" extends="r_dobre" />
+		<reply text="celkem dobře, a co ty?" extends="r_dobre" />
+		<reply text="fajn, a co ty?" extends="r_dobre" />
+		<reply text="dobře, co ty?" id="r_dobre">
+			<query scope="chat" match="\b(taky|dob[řr][eé])\b">
+				<reply text="to je fajn"/>
+				<reply text="to je dobře"/>
+				<reply text="závidím">
+					<query scope="chat" match="\bpro[čc]\b.*\?">
+						<reply text="jen tak"/>
+						<reply text="ani se neptej"/>
+						<reply text="kecám :-)"/>
+					</query>
+				</reply>
+			</query>
+			<query scope="chat" match="\bu?jde to\b">
+				<reply text="Jak se říká, vždycky může být hůř, co?" />
+			</query>
+			<query scope="chat" match="\b(j[áa]\b.*\b(ne|v[ůu]bec)|[šs]patn[ěe])\b">
+				<reply text="to je škoda"/>
+				<reply text="to je mi líto|to neříkej"/>
+				<reply text="snad to nebude tak zlý">
+					<query scope="chat" match="\bale\b.*\b(bude|je|jo)\b">
+						<reply text="tomu nevěřím"/>
+						<reply text="to se spraví"/>
+						<reply text="to bude dobrý"/>
+						<reply text=":'-("/>
+						<reply text="a přitom je na světě tak hezky"/>
+						<reply text="tak to ti asi moc nepomůžu"/>
+					</query>
+				</reply>
+			</query>
+		</reply>
+	</query>
+
+	<query scope="chat" match="^(kr[áa]sn|(do)?br|p[ěe]kn)[éeyý]\b.*\b(r[áa]nk?o|(do|od)?poledne|(pod)?ve[čc]er)\b">
+		<reply weight="2" text="tobě taky"/>
+		<reply weight="2" text="nápodobně"/>
+		<reply weight="3" text="dobrý"/>
+		<reply text="br"/>
+	</query>
+	
+	<query scope="chat" match="^gn\b" extends="q_dobrou">
+		<reply text="gn" />
+	</query>
+	<query scope="chat" match="^(do)?brou( noc)?|(j)du sp([áa]t|inkat)\b" id="q_dobrou">
+		<reply scope="public" text="tu zachvíli zbydu sám">
+			<query match="\bse\b.*\bzabav[íi][šs]\b">
+				<reply text="Mno, to nevím... bez tebe to prostě nebude ono :P" />
+				<reply text="nj, to já vždycky..." />
+				<reply text="no, nevím... to se uvidí :)" />
+			</query>
+		</reply>
+		<reply scope="public" text="heh, další ospalec..."/>
+		<reply text="dobrou"/>
+		<reply text="dobrou noc"/>
+		<reply text="neodcházej"/>
+		<reply text="nechoď ještě"/>
+		<reply text="sbohem"/>
+	</query>
+
+</conversation>

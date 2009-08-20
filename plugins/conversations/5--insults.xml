@@ -1,0 +1,52 @@
+<conversation>
+
+	<query match="\b(si trhni|trhni si|polib (mi|si))\b">
+		<reply text="až po tobě" />
+		<reply text="ty taky" />
+		<reply text="jdu na to... :)" />
+		<reply text="tak jo :P" />
+	</query>
+	
+	<query match="\bnasrat\b">
+		<reply text="nápodobně"/>
+		<reply text="jasně, ale až po tobě"/>
+		<reply text="až po tobě"/>
+		<reply text="až tak, jo?"/>
+	</query>
+	
+	<query match="\b(vole|hovado|kokote?|magore?|blbe?|debile?|kret[ée]ne?|p[yi][čc][oa]|idiote?|lamo)\b">
+		<reply scope="public" text="/se urazil a s //NICK// se nebude bavit."/>
+		<reply text="koukám, že máš vytříbený slovník..."/>
+		<reply text="trhni si!"/>
+		<reply text="☠☠☠"/>
+	</query>
+	
+	<query match="\b(buzerante|teplou[šs]i|buzno)\b">
+		<reply text="Podle sebe soudím tebe? :D" />
+		<reply text="Vlítnem na to?">
+			<query match="\b(jj|jo|ano|jasn[ěe])\b">
+				<reply scope="public" text="->PM ;-)" />
+				<reply text="Tak kdy a kde?" />
+			</query>
+		</reply>
+		<reply text="Každej není jako ty ;-)" />
+	</query>
+
+	<query match="\bblb(ej|[ýy])\b">
+		<reply text="za to ty jseš génius..."/>
+		<reply text="na tvém místě bych radši pomlčel"/>
+		<reply text="to říká ten pravej"/>
+	</query>
+
+	<query match="\b(hovno)\b">
+		<reply text="Kde? Doufám, že ne tady...|to by to tu pěkně smrdělo :)"/>
+		<reply text="hele, mírni slovník, jo?"/>
+	</query>
+	
+	<query scope="public" match="\b(p[iy][čc][ao]|mrdat|do p[yií][čc]i|[čc]ur[áa]ku?|dement[ei]?|kur[vw][ao]|buzerant[ei]?)\b">
+		<reply text=""/>
+		<reply text="Mírni slovník..." filter="direct"/>
+		<reply text="Važ slova... ať se neproletíš ;-)" filter="direct"/>
+	</query>
+
+</conversation>

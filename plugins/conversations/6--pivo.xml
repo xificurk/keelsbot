@@ -1,0 +1,59 @@
+<conversation>
+	
+	<query scope="chat" match="(\bj?de(me?)?\b.*na p[íi]vk?o\b.*\?|poj?[ďd](te)?.*na p[íi]vk?o\b)" extends="q_hospa">
+		<reply text="/by šel, ale nemůže..." extends="r_nejde_to"/>
+		<reply id="r_nejde_to" text="Já bych šel, ale nejde to...">
+			<query scope="chat" match="\b(proč(pak)?|jak to\b)\?">
+				<reply text="/pivo nemůže... leda tak virtuální"/>
+				<reply weight="2" text="Protože, boti pivo nepijou :)"/>
+			</query>
+		</reply>
+
+	</query>
+	
+	<query scope="chat" match="(\bj?de(me?)?\b.*do (hosp(od)y|knajpy)\b.*\?|poj?[ďd](te)?.*do (hosp(od)y|knajpy)\b)" id="q_hospa">
+		<reply text="tak jo, a kam?">
+			<query scope="chat" match="\bnev[ií]m\b">
+				<reply text="Já taky ne, tak to se asi nikam nejde..."/>
+			</query>
+			<query scope="chat" match="">
+				<reply text="Hm, tam to neznám..."/>
+				<reply text="To je strašně daleko."/>
+			</query>
+		</reply>
+	</query>
+	
+	<query match="^((do|p[řr]i)nes|podej) p[ií]vk?o\b">
+		<reply text="Naval prachy! :P" />
+		<reply text="nn, už se ti pletou písmenka... máš dost :P" />
+		<reply text="sry, žádný nemám :(" />
+		<reply text="Hele, já nejsem žádnej tvůj sluha, jo?"/>
+		<reply text="Co za to?">
+			<query match="">
+				<reply text="Heh, tak na to ti kašlu." />
+			</query>
+		</reply>
+	</query>
+
+	<query scope="chat" match="\bp[ií]vk?o\b">
+		<reply scope="global" weight="2" text=""/>
+		<reply scope="public" text="Tady je to samej alkoholik...|/sem dobře zapadá :)"/>
+		<reply text="/by si pivo dal, ale došlo... :("/>
+		<reply text="Ha, pivo? Jo, dal bych si..."/>
+		<reply text="Někdo tu povídal pivo? Jdem... teď, hned... :)">
+			<query scope="chat" match="\bjdeme?\b" extends="q_hospa">
+			</query>
+		</reply>
+	</query>
+	
+	
+	<query match="\bsex\b" id="q_sex">
+		<reply text="Sex je pro děcka, dospělí chlastaj :P"/>
+		<reply scope="public" text="Hele, bylo už po desáté? :)"/>
+	</query>
+	
+	<query scope="chat" match="\bsex\b" extends="q_sex">
+		<reply scope="global" weight="5" text=""/>
+	</query>
+	
+</conversation>

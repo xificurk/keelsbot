@@ -1,0 +1,40 @@
+<conversation>
+	
+	<query scope="chat" match="^(hi|hello)$">
+		<reply weight="2" scope="global" text="" />
+		<reply scope="public" text="lamo, tohle je česká místnost ;-)"/>
+		<reply text="mluv česky, prosím"/>
+		<reply text="asi si moc nepokecáme, jestli neumíš česky..." />
+	</query>
+	
+	<query scope="chat" match="([a-z])\1{4,}">
+		<reply scope="global" weight="4" text="" />
+		<reply text="Usnul jsi na klávesnici? :-)"/>
+		<reply text="To ti spadla hlava na klávesnici? :-)"/>
+		<reply weight="2" text="Používáš klávesnici místo polštáře? :P"/>
+	</query>
+	
+	<query scope="chat" match="\b(jaxe|vyd[ií](me?|te|[šs])?|vyd[ěe](t|l[iya]?))\b">
+		<reply scope="global" weight="4" text="" />
+		<reply text="Nauč se česky, trubko!"/>
+		<reply text="Á koukám, tebe hodiny češtiny moc nepoznamenaly, co? :)"/>
+		<reply text="Ty bít dobrý Češtyn! :-)"/>
+	</query>
+
+	<query match="\bdo you speak english\b">
+		<reply text="No, sorry, Czech only." />
+		<reply scope="public" text="This is Czech room ;-)" />
+		<reply text="Sorry, Czech only..." />
+	</query>
+	
+	<query match="hablas espa[nñ]ol">
+		<reply text="No, lo siento, hablo sólo checo." />
+		<reply scope="public" text="Esta es una sala checa ;-)" />
+	</query>
+	
+	<query match="\bsprechen sie deutsch\b">
+		<reply text="Nein, nur Tsechisch." />
+		<reply scope="public" text="Dies ist eine tschechische Raum ;-)" />
+	</query>
+
+</conversation>

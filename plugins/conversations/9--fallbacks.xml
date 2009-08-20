@@ -1,0 +1,168 @@
+<conversation>
+
+	<query scope="public" match="!!!+">
+		<reply text="Ten vykřičník by stačil jeden ;-)" filter="direct" />
+		<reply text="My bysme to pochopili i jen s jedním vykřičníkem :P" filter="direct" />
+	</query>
+	
+	<query match="\b(ano|jo)\b">
+		<reply text="taky si myslím" />
+		<reply text="to není možné!"/>
+		<reply text="nevěřím"/>
+		<reply text="dokaž to">
+			<query scope="chat" match="(opravdu|v[áa][žz]n[ěe]|fakt|nekec[áa]m|ne)\b">
+				<reply text="když to řikáš, tak teda asi jo"/>
+				<reply text="tak já ti budu věřit"/>
+				<reply text="stejně ti nevěřím"/>
+			</query>
+			<query scope="chat" match="\b(ne|kecal jsem|m[ěe]l jsi pravdu)\b">
+				<reply text="já ti to říkal"/>
+				<reply text="jsem to věděl"/>
+				<reply text="to jsem si myslel"/>
+			</query>
+		</reply>
+	</query>
+
+	<query match="\bne\b">
+		<reply text="tak ne, no"/>
+		<reply text="fakt ne?"/>
+		<reply text="tak dobře"/>
+		<reply text="nevěřim"/>
+	</query>
+
+	<query match="^(ne)?chce[šs]\b.*\?$">
+		<reply text="nechci, proč se ptáš?"/>
+		<reply text="ani ne"/>
+		<reply text="nechci"/>
+		<reply text="nn" />
+	</query>
+
+	<query match="\?$">
+		<reply text="nevím" extends="r_prozrazen"/>
+		<reply text="nemám tušení" extends="r_prozrazen"/>
+		<reply text="to nevím" extends="r_prozrazen"/>
+		<reply text="proč se ptáš?" extends="r_prozrazen"/>
+		<reply text="proč to chceš vědět?" extends="r_prozrazen"/>
+	</query>
+
+	<query match="^[!.](help|commands|pomoc|prikazy)$">
+		<reply text="To se jako snažíš zjistit, co umím, jo?"/>
+		<reply text="S tímhle na mě nechoď ;-)"/>
+		<reply text="Nepovím a nepovím :P"/>
+		<reply text="To platí na taxatora... :)"/>
+		<reply text="Nejsem žádná tvoje Botička, jasný? :)"/>
+	</query>
+
+	<query match="\b(um[rř]i|zdechni|chc[ií]pni)\b" extends="q_die"/>
+	<query match="^[!.](die|kill|terminate|close|quit|chc[íi]pni|um[řr]i|zdechni)$" id="q_die">
+		<reply text="až po tobě"/>
+		<reply text="si o sobě trochu moc myslíš, ne?"/>
+		<reply text="zalez!"/>
+		<reply text="já ti ukážu... až budu vědět, co! :)"/>
+		<reply text="trhni si!"/>
+	</query>
+
+	<query match="^[!.][a-z]">
+		<reply text="a ty mi chceš dávat příkazy, jo?"/>
+		<reply text="vůbec nevíš, co chceš"/>
+		<reply text="To si jako myslíš, že mi můžeš poroučet, jo?" />
+		<reply text="Trošku arogantní, takhle mi dávat příkazy, nemyslíš?"/>
+		<reply text="Zeptej se taxatora :P"/>
+	</query>
+
+	<query match="^:-?(\)|D)">
+		<reply text="Zas tak vtipný to není..." />
+		<reply text=":-)" />
+		<reply text=":D" />
+		<reply text="☺" />
+		<reply text="Jsem rád, že se bavíš ;-)" />
+	</query>
+	
+	<query scope="chat" match="^[0-9:=+/*) (-]*([0-9][0-9:+/*) (-]*[+/*) (-]|[+/*) (-][0-9:+/*) (-]*[0-9])[0-9:+/*) (-]*$">
+		<reply weight="3" scope="global" text="" />
+		<reply text="Odpověď je 42 ;-)" />
+		<reply text="Nejsem žádná kalkulačka..." />
+		<reply text="Napiš si ježíškovi o kalkulačku :P" />
+	</query>
+	
+	<query scope="chat" match="^bflmpsvz$">
+		<reply scope="global" text="" />
+		<reply text="A tady se někdo dostal už do třetí třídy...|...nebo kde se to učej vyjmenovaný slova :)" />
+		<reply text="Já mám radši hchkrdtn." />
+	</query>
+
+	<query scope="global" match="//BOTNICK//">
+		<reply text="" />
+		<reply text="Že vás to baví, pořád mluvit o mně.."/>
+		<reply text="Všechno vidím!"/>
+		<reply text="Nepomlouvejte mě tu pořád! ;-)">
+			<query scope="chat" match="\b(nepomlouv[áa]me?|ne(jsou|n[íi]) pomluv[ay])\b" >
+				<reply text="To záleží na úhlu pohledu..." />
+				<reply text="Ani se mi nezdá..." />
+				<reply text="Moc to tak nevypadá" />
+				<reply text="oukej, když to říkáš" />
+			</query>
+		</reply>
+	</query>
+
+	<query match="^test$">
+		<reply text="ok"/>
+	</query>
+	
+	<query scope="chat" match="^ping$">
+		<reply weight="2" text="pong" />
+		<reply text="pong ;-)" />
+	</query>
+	
+	<query match="">
+		<reply text="co jsi to říkal?" id="r_prozrazen">
+			<query scope="public" match="\b(divn([yý]|ej))\b.*\b(ro)?bot\b">
+				<reply text="no možná trochu, ale to se časem doladí :)"/>
+				<reply text="divnej? já? vždycky :P" />
+			</query>
+			<query scope="public" match="\bje (blb(ej|[ýy])?|debil|lama)\b">
+				<reply text="no, sice nejsem nejchytřejší, ale není třeba hned urážet, ne?" />
+				<reply text="to říká ten pravej" />
+				<reply text="já se polepším" />
+				<reply text="ale jenom trochu :)" />
+			</query>
+			<query scope="public" match="\b[čc][ií] je (to|ten)\b.+\b(ro)?bot\b.*\?">
+				<reply text="Nebuď zvědavej, budeš brzo starej :P" />
+				<reply text="Damn it... busted :D" />
+				<reply text="Co mě prozradilo?" />
+				<reply text="To bys chtěl vědět, co?" />
+			</query>
+		</reply>
+		<reply text="hmm, co tím myslíš?" extends="r_prozrazen"/>
+		<reply text="a co já s tím?" extends="r_prozrazen"/>
+		<reply text="?" extends="r_prozrazen"/>
+		<reply text="cože?" extends="r_prozrazen"/>
+		<reply text="nechápu..." extends="r_prozrazen" />
+		<reply text="coto?" extends="r_prozrazen" />
+		<reply text="eh?" extends="r_prozrazen" />
+		<reply text="cos to říkal?" extends="r_prozrazen" />
+		<reply text="co potřebuješ?" extends="r_prozrazen"/>
+		<reply text="ne že bych věděl, o čem to tu mluvíš, ale asi máš pravdu..." extends="r_prozrazen" />
+
+		<reply text="chceš něco?" extends="r_chces_neco"/>
+		<reply text="potřebuješ něco?" id="r_chces_neco" extends="r_prozrazen">
+			<query scope="chat" match="\b(jj|chci|jo|ano)\b">
+				<reply text="nevím, jestli ti pomůžu, ale můžeš to zkusit" extends="r_prozrazen"/>
+				<reply text="asi ti nepomůžu, ale povídej" extends="r_prozrazen"/>
+				<reply text="jsem si to myslel" extends="r_prozrazen"/>
+				<reply weight="2" text="já bych taky něco potřeboval" extends="r_prozrazen">
+					<query scope="chat" match="\b(co|jo|fakt|v[aá][žz]n[ěe])\?">
+						<reply text="a víš, že ani nevim" extends="r_prozrazen"/>
+						<reply text="zrovna jsem to zapoměl" extends="r_prozrazen"/>
+						<reply weight="2" text="aspoň chvíli klidu :)" extends="r_prozrazen"/>
+					</query>
+				</reply>
+			</query>
+			<query scope="chat" match="\b(ne|nic)\b">
+				<reply text="To jsem si mohl myslet..." extends="r_prozrazen"/>
+				<reply text="Tak buď zticha :D" extends="r_prozrazen"/>
+			</query>
+		</reply>
+	</query>
+
+</conversation>

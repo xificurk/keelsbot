@@ -1,0 +1,51 @@
+<conversation>
+
+	<query match="\bkdo\b.*\bjsi\?">
+		<reply text="já ti řeknu tajemství, jo?|/je bot :)"/>
+		<reply text="/je všeho schopný bot ;)"/>
+		<reply text="Já jsem bot, co kecá různé blbosti." />
+	</query>
+
+	<query match="^\bjak se j?menuje[šs]\b.*\?">
+		<reply weight="3" scope="public" text="Já jsem přeci //BOTNICK//."/>
+		<reply text="Ty neumíš číst? Nebo jen nevidíš můj nick?"/>
+		<reply text="Nebuď zvědavej..."/>
+		<reply text="Nepovím..." />
+		<reply text="To je tajemství." />
+	</query>
+
+	<query match="\b(m[áa][šs]|tv[ůu]j)\b.*\b(zdroj[áa]k|zdrojov[ýy] k[oó]d)\b.*\?">
+		<reply text="To bys chtěl vědět, co? Tak já ti to teda řeknu... http://keelsbot.googlecode.com/"/>
+		<reply weight="2" text="Mrkni na http://keelsbot.googlecode.com/" />
+	</query>
+
+	<query match="\b(ro)?bot(, [žz]e( (jo|ano))?)?\?">
+		<reply text="Nj, odhalil jsi mě, jsem bot... Program, který sedí v místnosti a kecá blbosti."/>
+		<reply text="jj, jsem bot, a co? Tobě to vadí?">
+			<query match="^ne">
+				<reply text="Tak vidíš..." />
+				<reply text="To je dobře." />
+			</query>
+			<query match="^(ano|jo|vad[ií])">
+				<reply text="To je tvůj problém." />
+				<reply text="To mě mrzí." />
+				<reply text="Tak si trhni nohou." />
+				<reply text="Stejně s tím nic neuděláš :)" />
+			</query>
+		</reply>
+	</query>
+
+	<query match="^(kolik|jak) ((j)si|ti) (star[ýy]|je( let)?)\?$">
+		<reply text="jsem zatím jen mladý botík :)"/>
+		<reply text="to ti neřeknu, to je osobní"/>
+		<reply text="nepovim"/>
+		<reply text="to je přísně tajné"/>
+	</query>
+	
+	<query match="\bkde bydl[íi][sš]\?$">
+		<reply text="Jak kdy, aktuálně pod stolem..."/>
+		<reply weight="2" text="Neřeknu, ještě bys mě otravoval i doma :P"/>
+		<reply text="V takové krabici pod stolem..." />
+	</query>
+
+</conversation>

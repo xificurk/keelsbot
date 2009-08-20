@@ -1,0 +1,74 @@
+<conversation>
+
+	<query scope="global" match="^[.!]roulette$">
+		<reply text="">
+			<query scope="global" match="^You can't pull trigger twice in a row$" id="q_roulette_my_turn">
+				<reply text=".roulette" />
+				<reply weight="3" text=""/>
+			</query>
+			<query scope="global" match=": chamber #1 of 6 => \+click\+$" id="q_roulette_my_turn_1" extends="q_roulette_my_turn_2">
+				<reply text=".roulette" />
+			</query>
+			<query scope="global" match=": chamber #2 of 6 => \+click\+$" id="q_roulette_my_turn_2" extends="q_roulette_my_turn_3">
+				<reply text=".roulette" />
+			</query>
+			<query scope="global" match=": chamber #3 of 6 => \+click\+$" id="q_roulette_my_turn_3" extends="q_roulette_my_turn_4">
+				<reply text=".roulette" />
+			</query>
+			<query scope="global" match=": chamber #4 of 6 => \+click\+$" id="q_roulette_my_turn_4" extends="q_roulette_my_turn_5">
+				<reply text=".roulette" />
+			</query>
+			<query scope="global" match=": chamber #5 of 6 => \+click\+$" id="q_roulette_my_turn_5" extends="q_roulette_my_turn">
+				<reply text=""/>
+			</query>
+			<query scope="global" match=": chamber #1 of 6 => \*BANG\*$" extends="q_bang">
+				<reply text="ty máš ale kliku :)" />
+				<reply text="smůla :)" />
+				<reply text="koukám, že se ti dneska daří :)" />
+			</query>
+			<query scope="global" match=": chamber #[23456] of 6 => \*BANG\*$" id="q_bang">
+				<reply text="hehe :P" />
+				<reply text=":P" />
+				<reply text="máš rád olovo? :)" />
+				<reply text=":-)" />
+				<reply text="smolař..." />
+				<reply text=":D" />
+				<reply text="hehe :P|.roulette" />
+				<reply text=".roulette" />
+				<reply weight="16" text="" />
+			</query>
+			<query scope="global" match=": chamber #6 of 6 => \+click\+ \.\.\. wtf\?!$">
+				<reply text="lol" />
+				<reply text="klikař" />
+				<reply text="wtf? :)" />
+				<reply text="to snad není možný..." />
+				<reply weight="2" text="" />
+			</query>
+		</reply>
+	</query>
+	
+	<query match="^chamber #[12345] of 6 => \+click\+$">
+		<reply text="" />
+	</query>
+	<query scope="global" match="^You can't pull trigger twice in a row$">
+		<reply text="hrajte někdo ;)" filter="no-direct" />
+		<reply weight="3" text="" />
+	</query>
+	<query match="^chamber #6 of 6 => \+click\+ \.\.\. wtf\?!$">
+		<reply text="Jóó!! :)" filter="no-direct" />
+		<reply text=":)" filter="no-direct" />
+		<reply text=":P" filter="no-direct" />
+		<reply text="hehe :P" filter="no-direct" />
+		<reply text="" />
+	</query>
+	<query match="^chamber #[123456] of 6 => \*BANG\*$">
+		<reply text="Hm, tak nic no..." filter="no-direct" />
+		<reply text="kruci" filter="no-direct" />
+		<reply text="sakra" filter="no-direct" />
+		<reply text="/ je kaput :(" filter="no-direct" />
+		<reply text="/ si jde vykopat hrob :)" filter="no-direct" />
+		<reply text="a je ze mě mrtvola..." filter="no-direct" />
+		<reply weight="6" text="" />
+	</query>
+
+</conversation>
