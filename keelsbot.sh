@@ -39,7 +39,7 @@ cleanup()
 cd $KEELSDIR
 while true; do
 	date >> $LOGFILE
-	if [ -x `which svn` ] ; then
+	if [ -x `which git` ] ; then
 		echo "Updating bot from master git repository..." >> $LOGFILE
 		git pull 1>> $LOGFILE 2>> $LOGFILE
 	fi
