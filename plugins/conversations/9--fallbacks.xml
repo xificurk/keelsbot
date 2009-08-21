@@ -41,8 +41,23 @@
 		<reply text="nevím" extends="r_prozrazen"/>
 		<reply text="nemám tušení" extends="r_prozrazen"/>
 		<reply text="to nevím" extends="r_prozrazen"/>
-		<reply text="proč se ptáš?" extends="r_prozrazen"/>
-		<reply text="proč to chceš vědět?" extends="r_prozrazen"/>
+		<reply text="proč se ptáš?" extends="r_proc-prozrazen"/>
+		<reply text="proč to chceš vědět?" id="r_proc-prozrazen" extends="r_prozrazen">
+			<query scope="chat" match="^proto$" id="q_proto">
+				<reply text="proč?|/vydrží odpovídat hodně dlouho :)" extends="r_proc_proto" filter="direct"/>
+				<reply weight="5" text="proč?" id="r_proc_proto" filter="direct">
+					<query scope="chat" match="^proto$" extends="q_proto"/>
+				</reply>
+			</query>
+			<query scope="chat" match="\b(zaj[íi]m[áa] m[ěe] to|m[ěe] to zaj[íi]m[áa])\b">
+				<reply text="Zkus Google, tam se prej dá zjistit všechno." />
+				<reply text="To máš blbý, já ti to stejně nepovím :P" />
+			</query>
+			<query scope="chat" match="\b(jsem zv[ěe]dav([ýáya]|ej))\b">
+				<reply text="Nebuď zvědavej, budeš brzo starej!" filter="direct" />
+				<reply text="Tak to ti to naschvál neřeknu :P" />
+			</query>
+		</reply>
 	</query>
 
 	<query match="^[!.](help|commands|pomoc|prikazy)$">
