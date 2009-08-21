@@ -138,6 +138,9 @@ class Conversations(object):
         sum = 0
         for item in replies:
             sum = sum + item['weight']
+
+        logging.debug('Random choice from sum %i' % sum)
+
         select = random.randint(1,sum)
         sum = 0
         for item in replies:
