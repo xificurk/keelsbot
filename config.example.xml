@@ -50,6 +50,7 @@
 					<debug log='/path/to/log/dir' />
 					<!--Rooms, where KeelsBot is supposed to respond-->
 					<muc room='room@server.com' />
+					<muc room='room2@server2.com' disabled="disabled" />
 					<!--What dictionary KeelsBot should use-->
 					<dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
 				</config>

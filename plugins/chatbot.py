@@ -159,9 +159,13 @@ class chatbot(object):
         self.filters = Filters(self)
         rooms = self.config.findall('muc')
         for room in rooms:
-            logging.debug('Starting to chat in room %s' % room.get('room'))
             self.states_mucs[room.get('room')] = {}
-            self.rooms[room.get('room')] = {'chatty':True, 'msgcounter':0}
+            if room.get('disabled', None) == None:
+                logging.debug('Starting to chat in room %s' % room.get('room'))
+                self.rooms[room.get('room')] = {'chatty':True, 'msgcounter':0}
+            else:
+                logging.debug('NOT Starting to chat in room %s' % room.get('room'))
+                self.rooms[room.get('room')] = {'chatty':False, 'msgcounter':0}
         self.dicts = []
         dicts = self.config.findall('dict')
         for dict in dicts:
