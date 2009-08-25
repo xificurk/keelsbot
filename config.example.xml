@@ -86,8 +86,8 @@
 			</plugin>
 			<plugin name='parrot'>
 				<acl>
-					<say level="2" />
-					<tell level="2" />
+					<say level="200" />
+					<tell level="200" />
 				</acl>
 				<config />
 			</plugin>
