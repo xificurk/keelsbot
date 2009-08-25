@@ -31,19 +31,19 @@ class basebot(object):
 
     def getAccessLevel(self, event):
         """ Returns access level of the sender of the event (negative value means bot should ignore this).
-            Overload this if you want ACLs of some description.
+            Override this to get better access control.
         """
         if event['type'] == 'groupchat':
-            if event['name'] == "":
-                #system message
-                return -10
+            if event['name'] == "" or event['room'] not in self.rooms or self.rooms[event['room']] == event['name']:
+                #system, error, or own message
+                return -666
         return 0
 
     def handle_message_event(self, msg):
         print msg.keys()
         level = self.getAccessLevel(msg)
         logging.debug("Event lvl: %d, MinAclLevel: %d" % (level, self.minAccessLevel))
-        if level < self.minAccessLevel:
+        if level < self.minAccessLevel or level < 0:
             return
         command = msg.get('message', '').split(' ', 1)[0]
         if ' ' in msg.get('message', ''):
@@ -65,10 +65,16 @@ class basebot(object):
             return
         self.help[topic] = (title, body, usage)
 
-    def addCommand(self, command, pointer, helpTitle = None, helpBody = None, helpUsage = None, level = 0):
+    def addCommand(self, command, pointer, helpTitle = None, helpBody = None, helpUsage = None):
         self.addHelp(command, helpTitle, helpBody, helpUsage)
-        level = int(level)
+        level = self.getCommandAccessLevel(command)
         self.commands[command] = {"pointer":pointer,"level":level}
+
+    def getCommandAccessLevel(self, command):
+        """ Determine required access level for the command.
+            Override this to get better access control.
+        """
+        return 0
 
     def addIMCommand(self, command, pointer):
         """ Compatibility with SleekBot plugins.

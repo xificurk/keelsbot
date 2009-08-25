@@ -32,6 +32,8 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
             lang = lang.text
         if lang in ['cs']:
             self.lang = lang
+
+        self.parseUserGroups()
         self.rooms = {}
         self.botPlugin = {}
         self.pluginConfig = {}
@@ -45,6 +47,25 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
         self.translations["plugins"] = {"cs":"Pluginy"}
         self.translations["commands"] = {"cs":u"Příkazy"}
         self.translations["about_plugin"] = {"cs":"O pluginu"}
+
+    def parseUserGroups(self):
+        """ Parse user groups for ACLs.
+        """
+        self.acl = {}
+        groups = self.botconfig.findall('users/group')
+        if groups:
+            for group in groups:
+                level = int(group.get('level', 0))
+                name = group.get('name', "group-%s" % level)
+                if name not in self.acl:
+                    self.acl[name] = {'level':level,'users':[]}
+                userJids = group.findall('jid')
+                if userJids:
+                    for jid in userJids:
+                        logging.debug("appending %s to %s list" % (jid.text, name))
+                        self.acl[name]['users'].append(jid.text)
+        logging.debug(self.acl)
+
 
     def loadConfig(self, configFile):
         """ Load the specified config. Does not attempt to make changes based upon config.
@@ -133,40 +154,6 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
 		self.pluginConfig[pluginname] = config
 		return True
         
-    def getOwners(self):
-        """ Returns a list of all the jids belonging to bot owners
-        """
-        return self.getMemberClassJids('owner')
-        
-    def getAdmins(self):
-        """ Returns a list of all the jids belonging to bot admins
-        """
-        return self.getMemberClassJids('admin')
-
-    def getMembers(self):
-        """ Returns a list of all the jids belonging to bot members
-        """
-        return self.getMemberClassJids('member')
-
-    def getBannedUsers(self):
-        """ Returns a list of all the jids belonging to banned users
-        """
-        return self.getMemberClassJids('banned')
-
-    def getMemberClassJids(self, userClass):
-        """ Returns a list of all jids belonging to users of a given class
-        """
-        jids = []
-        users = self.botconfig.findall('users/' + userClass)
-        if users:
-            for user in users:
-                userJids = user.findall('jid')
-                if userJids:
-                    for jid in userJids:
-                        logging.debug("appending %s to %s list" % (jid.text, userClass))
-                        jids.append(jid.text)
-        return jids
-
     def getRealJid(self, jid):
         """ Returns the 'real' jid.
             If the jid isn't in a muc, it is returned.
@@ -184,33 +171,14 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
                 return None
         return jid
 
-    def getRealJidFromMessage(self, msg):
-        jid = None
-        if msg['type'] == 'groupchat':
-            if msg['name'] == "":
-                #system message
-                jid = None
-            else:
-                jid = self.getRealJid("%s/%s" % (msg['room'], msg['name']))
-                if jid:
-                    jid = self.getjidbare(jid)
-        else:
-            if msg['jid'] in self['xep_0045'].getJoinedRooms():
-                jid = self.getRealJid("%s/%s" % (msg['jid'], msg['resource']))
-                if jid:
-                    jid = self.getjidbare(jid)
-            else:
-                jid = self.getjidbare(msg.get('jid', ''))
-        return jid
-
     def getAccessLevel(self, event):
         """ Returns access level of the sender of the event (negative value means bot should ignore this).
-            Overload this if you want ACLs of some description.
+            Override this to get better access control.
         """
         if event['type'] == 'groupchat':
-            if event['name'] == "":
+            if event['name'] == "" or event['room'] not in self.rooms or self.rooms[event['room']] == event['name']:
                 #system message
-                return -10
+                return -666
             return self.getJidsAccessLevel("%s/%s" % (event['room'], event['name']))
         else:
             if event['jid'] in self['xep_0045'].getJoinedRooms():
@@ -222,18 +190,33 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
             Pass in a muc jid if you want, it'll be converted to a real jid if possible
             Accepts 'None' jids (acts as an unknown user).
         """
+        level = 0
+
         jid = self.getRealJid(jid)
         if jid:
             jid = self.getjidbare(jid)
-        if jid in self.getBannedUsers():
-            return -1
-        if jid in self.getOwners():
-            return 3
-        if jid in self.getAdmins():
-            return 2
-        if jid in self.getMembers():
-            return 1
-        return 0
+
+            for group in self.acl:
+                if jid in self.acl[group]['users']:
+                    if self.acl[group]['level'] < 0:
+                        level = min(level, self.acl[group]['level'])
+                    else:
+                        level = max(level, self.acl[group]['level'])
+
+            logging.debug("%s has accesslevel %d." % (jid, level))
+        return level
+
+    def getCommandAccessLevel(self, command):
+        """ Determine required access level for the command.
+            Override this to get better access control.
+        """
+        level = 0
+        commands = self.botconfig.findall('plugins/bot/plugin/acl/' + command)
+        if commands:
+            level = int(commands[0].get('level', 0))
+        logging.debug("Command %s has access level %d" % (command, level))
+        return level
+    
 
     def start(self, event):
         #TODO: make this configurable

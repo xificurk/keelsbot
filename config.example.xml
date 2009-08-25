@@ -18,33 +18,42 @@
 	<!--Location of the sqlite3 database used for persistent storage.-->
 	<storage file='/var/lib/scripts/keelsbot/test.sqlite' />
 
-	<!--Users the bot knows about. Owners have full access to the bot, admins have the next layer of access. If require-membership is set, the bot won't respond to anyone unless they have at least a member entry. Banned users are always ignored.-->
+	<!--Users the bot knows about. You can define whatever groups and levels you want. Negative level should mean ignore them.-->
+	<!--If you put one jid into multiple groups, it will get the maximum available access level, unless one of the groups has negative level value, then it will get the negative value-->
+	<!--You can change required access level for every command in plugin configurations as shown below-->
+	<!--Default values of user's level and command's required level are both 0-->
 	<users>
-		<!--Access level 3-->
-		<owner>
+		<group level="300" name="owners">
 			<jid>yourjid@server.com</jid>
 			<jid>anotherjid@backupserver.com</jid>
-		</owner>
-		<!--Access level 2-->
-		<admin>
+		</group>
+		<group level="200" name="admins">
 			<jid>trusteduser@server.com</jid>
-		</admin>
-		<!--Access level 1-->
-		<member>
+		</group>
+		<group level="100" name="members">
 			<jid>arbitrarybotuser@server.com</jid>
-		</member>
-		<!--Access level -1 => ignore, overrides everything else-->
-		<banned>
+		</group>
+		<group level="-1" name="banned">
 			<jid>banneduser@server.com</jid>
-		</banned>
+		</group>
 	</users>
 
 	<plugins>
 		<bot>
 			<plugin name='admin'>
+				<acl>
+					<rehash level="300" />
+					<die level="300" />
+					<restart level="300" />
+				</acl>
 				<config />
 			</plugin>
 			<plugin name='chatbot'>
+				<acl>
+					<convreload level="300" />
+					<shut level="200" />
+					<chat level="200" />
+				</acl>
 				<config>
 					<!--If you want to debug the conversations, enter the log directory-->
 					<debug log='/path/to/log/dir' />
@@ -76,10 +85,11 @@
 				<config />
 			</plugin>
 			<plugin name='parrot'>
-				<config>
-					<say acl="2" />
-					<tell acl="2" />
-				</config>
+				<acl>
+					<say level="2" />
+					<tell level="2" />
+				</acl>
+				<config />
 			</plugin>
 			<plugin name='pingbot'>
 				<config />

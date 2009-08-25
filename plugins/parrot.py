@@ -27,17 +27,9 @@ class parrot(object):
         self.bot = bot
         self.config = config
         self.about = u"'Parrot' umožňuje zaslat vybraným uživatelům text jménem bota do MUCu nebo přímo na JID.\nAutoři: Kevin Smith, Petr Morávek"
-        self.tellAcl = 2
-        self.sayAcl = 2
-        acl = self.config.findall('tell')
-        if acl is not None:
-            self.tellAcl = acl[0].get('acl', self.tellAcl)
-        acl = self.config.findall('say')
-        if acl is not None:
-            self.sayAcl = acl[0].get('acl', self.sayAcl)
 
-        self.bot.addCommand('say', self.handle_say, u"Zaslat zprávu do MUCu", u"Bot odešle zprávu do zadaného MUCu.", 'say muc text', self.sayAcl)
-        self.bot.addCommand('tell', self.handle_tell, u"Zaslat zprávu JID", u"Bot odešle zprávu zadanému JID.", 'tell jid text', self.tellAcl)
+        self.bot.addCommand('say', self.handle_say, u"Zaslat zprávu do MUCu", u"Bot odešle zprávu do zadaného MUCu.", 'say muc text')
+        self.bot.addCommand('tell', self.handle_tell, u"Zaslat zprávu JID", u"Bot odešle zprávu zadanému JID.", 'tell jid text')
 
     def handle_say(self, command, args, msg):
         if args.count(" ") >= 1:

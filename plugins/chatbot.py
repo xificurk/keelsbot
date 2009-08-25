@@ -177,9 +177,9 @@ class chatbot(object):
         if debug != None and debug.get('log', None) != None:
             self.logPath = debug.get('log')
         self.about = u"'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM..\nAutoři: Pavel Šimerda, Petr Morávek"
-        self.bot.addCommand('shut', self.handle_shut, u'Vypnout chatbota v MUC', u"Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'shut [MUC]', level=2)
-        self.bot.addCommand('chat', self.handle_chat, u'Zapnout chatbota v MUC', u"Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'chat [MUC]', level=2)
-        self.bot.addCommand('convreload', self.handle_reload, u'Znovunačtení konverzací', u"Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", 'convreload', level=3)
+        self.bot.addCommand('shut', self.handle_shut, u'Vypnout chatbota v MUC', u"Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'shut [MUC]')
+        self.bot.addCommand('chat', self.handle_chat, u'Zapnout chatbota v MUC', u"Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'chat [MUC]')
+        self.bot.addCommand('convreload', self.handle_reload, u'Znovunačtení konverzací', u"Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", 'convreload')
         self.bot.add_event_handler("groupchat_message", self.handle_message, threaded=True)
         self.bot.add_event_handler("message", self.handle_message, threaded=True)
         self.running = True
@@ -314,14 +314,15 @@ class chatbot(object):
         if msg.get('message', '').startswith(self.bot.cmd_prefix):
             respond = False
             level = self.bot.getAccessLevel(msg)
-            if level < self.bot.minAccessLevel:
-                respond = True
-            else:
-                command = msg.get('message', '').split(' ', 1)[0]
-                if len(self.bot.cmd_prefix):
-                    command = command.split(self.bot.cmd_prefix, 1)[-1]
-                if command not in self.bot.commands or self.bot.commands[command]['level'] > level:
+            if level >= 0:
+                if level < self.bot.minAccessLevel:
                     respond = True
+                else:
+                    command = msg.get('message', '').split(' ', 1)[0]
+                    if len(self.bot.cmd_prefix):
+                        command = command.split(self.bot.cmd_prefix, 1)[-1]
+                    if command not in self.bot.commands or self.bot.commands[command]['level'] > level:
+                        respond = True
             if respond == False:
                 return False
 

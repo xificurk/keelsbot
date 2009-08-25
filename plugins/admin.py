@@ -26,9 +26,9 @@ class admin(object):
         self.bot = bot
         self.config = config
         self.about = u"'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.addCommand('rehash', self.handle_rehash, 'Rehash', u"Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", 'rehash', 3)
-        self.bot.addCommand('die', self.handle_die, 'Die', u"Killnout bota.", 'die', 3)
-        self.bot.addCommand('restart', self.handle_restart, 'Restart', u"Restartovat bota a znovu připojit...", 'restart', 3)
+        self.bot.addCommand('rehash', self.handle_rehash, 'Rehash', u"Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", 'rehash')
+        self.bot.addCommand('die', self.handle_die, 'Die', u"Killnout bota.", 'die')
+        self.bot.addCommand('restart', self.handle_restart, 'Restart', u"Restartovat bota a znovu připojit...", 'restart')
 
     def handle_rehash(self, command, args, msg):
         self.bot.rehash()
