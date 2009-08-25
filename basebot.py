@@ -42,7 +42,7 @@ class basebot(object):
     def handle_message_event(self, msg):
         print msg.keys()
         level = self.getAccessLevel(msg)
-        logging.debug("Event lvl: %d, MinAclLevel: %d" % (level, self.minAccessLevel))
+        logging.debug("User lvl: %d, MinAclLevel: %d" % (level, self.minAccessLevel))
         if level < self.minAccessLevel or level < 0:
             return
         command = msg.get('message', '').split(' ', 1)[0]

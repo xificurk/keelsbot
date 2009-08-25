@@ -236,16 +236,7 @@ class seen(object):
         seenData = self.seenstore.get(args)
         if seenData == None:
             return args + u"? Vůbec nevím, o kom je řeč..."
-        ''' There is some bug in xep_0045 - does not function properly...
-        if self.bot['xep_0045']:
-            room = msg.get('room', None)
-            if room != None:
-                if args in self.bot['xep_0045'].getRoster(room):
-                    return "%s je tady!"  % args
-            for muc in self.bot['xep_0045'].getJoinedRooms():
-                if args in self.bot['xep_0045'].getRoster(muc):
-                    return "%s je teď v místnosti %s."  % (args, muc)
-        '''
+
         sinceTime = datetime.datetime.now() - seenData.eventTime
         sinceTimeStr = self.getStringTime(sinceTime)
         status = ""
