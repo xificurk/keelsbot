@@ -70,9 +70,9 @@ class help(object):
                 if self.bot.getAccessLevel(msg) < self.bot.commands[args]['level']:
                     return u"Neznám, neumím..."
             response += "%s\n" % self.bot.help[args][0]
-            if self.bot.help[args][2] and isCommand:
-                response += u"Použití: %s%s\n" % (self.bot.cmd_prefix, self.bot.help[args][2])
             response += self.bot.help[args][1]
+            if self.bot.help[args][2] and isCommand:
+                response += u"\n\nPoužití: %s%s" % (self.bot.cmd_prefix, self.bot.help[args][2])
         else:
             response += u"Neznám, neumím..."
         return response

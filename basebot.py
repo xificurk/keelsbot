@@ -45,11 +45,12 @@ class basebot(object):
         logging.debug("User lvl: %d, MinAclLevel: %d" % (level, self.minAccessLevel))
         if level < self.minAccessLevel or level < 0:
             return
-        command = msg.get('message', '').split(' ', 1)[0]
-        if ' ' in msg.get('message', ''):
-            args = msg['message'].split(' ', 1)[-1]
-        else:
-            args = ''
+        command = msg.get('message', '').split("\n", 1)[0].split(' ', 1)[0]
+        if len(command):
+            args = msg.get('message', '').split(command, 1)[1]
+            if args.startswith(' '):
+                args = args.split(' ', 1)[-1]
+        logging.debug("Got command '%s' with args '%s'" % (command, args))
         if command.startswith(self.cmd_prefix):
             if len(self.cmd_prefix):
                 command = command.split(self.cmd_prefix, 1)[-1]

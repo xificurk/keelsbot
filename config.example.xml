@@ -91,6 +91,9 @@
 				</acl>
 				<config />
 			</plugin>
+			<plugin name='pastebin'>
+				<config />
+			</plugin>
 			<plugin name='pingbot'>
 				<config />
 			</plugin>

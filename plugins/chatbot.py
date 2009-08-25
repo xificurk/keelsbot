@@ -318,7 +318,7 @@ class chatbot(object):
                 if level < self.bot.minAccessLevel:
                     respond = True
                 else:
-                    command = msg.get('message', '').split(' ', 1)[0]
+                    command = msg.get('message', '').split("\n",1)[0].split(' ', 1)[0]
                     if len(self.bot.cmd_prefix):
                         command = command.split(self.bot.cmd_prefix, 1)[-1]
                     if command not in self.bot.commands or self.bot.commands[command]['level'] > level:
