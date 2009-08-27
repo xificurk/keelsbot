@@ -26,12 +26,19 @@ class pingbot(object):
         self.bot = bot
         self.config = config
         self.about = u"'Pingbot' umožňuje uživatelům pingnout jiné JIDy.\nAutor: Kevin Smith"
-        self.bot.addCommand('ping', self.handle_ping, 'Ping', u"Zobrazuje odezvu k zadanému JIDu.", 'ping jid')
+        self.bot.addCommand('ping', self.handle_ping, 'Ping', u"Zobrazuje odezvu k zadanému JIDu, případně v MUCu podle přezdívky.", 'ping [jid|nick]')
 
     def handle_ping(self, command, args, msg):
-        latency = self.bot['xep_0199'].sendPing(args, 10)
-        if latency == None:
-            response = u"Žádná odezva od " + args
-        else:
-            response = u"Odezva od %s obdržena za %d sekund." % (args, latency)
+	args = args.split(' ',1)[0]
+	if msg['type'] == 'groupchat' and args in self.bot.plugin['xep_0045'].getRoster(msg['room']):
+	    jid = "%s/%s" % (msg['room'], args)
+	elif msg.get('jid') in self.bot.rooms and args in self.bot.plugin['xep_0045'].getRoster(msg['jid']):
+	    jid = "%s/%s" % (msg['jid'], args)
+	else:
+	    jid = args
+
+	[latency,error] = self.bot['xep_0199'].sendPing(jid, 5)
+        response = u"Odezva od %s: %dms." % (args, latency*1000)
+	if error is not None:
+	    response = response + " (%s)" % error
         return response

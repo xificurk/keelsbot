@@ -29,17 +29,19 @@ class xep_0199(base.base_plugin):
 	def plugin_init(self):
 		self.description = "XMPP Ping"
 		self.xep = "0199"
-		self.xmpp.add_handler("<iq type='get' xmlns='jabber:client'><ping xmlns='http://www.xmpp.org/extensions/xep-0199.html#ns'/></iq>", self.handler_ping)
-		if self.config.get('keepalive', True):
+		self.xmpp.add_handler("<iq type='get' xmlns='jabber:client'><ping xmlns='urn:xmpp:ping'/></iq>", self.handler_ping)
+		if self.config.get('keepalive', True) or True:
 			self.xmpp.add_event_handler('session_start', self.handler_pingserver, threaded=True)
 	
 	def post_init(self):
-		self.xmpp['xep_0030'].add_feature('http://www.xmpp.org/extensions/xep-0199.html#ns')
+		self.xmpp['xep_0030'].add_feature('urn:xmpp:ping')
 	
 	def handler_pingserver(self, xml):
-		time.sleep(self.config.get('frequency', 300))
-		while self.sendPing(self.xmpp.server, self.config.get('timeout', 30)) is not False:
-			time.sleep(self.config.get('frequency', 300))
+		error = None
+		while error is None:
+			time.sleep(self.config.get('frequency', 30))
+			logging.debug("KA")
+			error = self.sendPing(self.xmpp.server, self.config.get('timeout', 300))[1]
 		logging.debug("Did not recieve ping back in time.  Requesting Reconnect.")
 		self.xmpp.requestReconnect()
 	
@@ -51,17 +53,21 @@ class xep_0199(base.base_plugin):
 	def sendPing(self, jid, timeout = 30):
 		""" sendPing(jid, timeout)
 		Sends a ping to the specified jid, returning the time (in seconds)
-		to receive a reply, or None if no reply is received in timeout seconds.
+		to receive a reply, and error or None.
 		"""
 		id = self.xmpp.getNewId()
 		iq = self.xmpp.makeIq(id)
 		iq.attrib['type'] = 'get'
 		iq.attrib['to'] = jid
-		ping = ET.Element('{http://www.xmpp.org/extensions/xep-0199.html#ns}ping')
+		ping = ET.Element('{urn:xmpp:ping}ping')
 		iq.append(ping)
-		startTime = time.clock()
+		startTime = time.time()
 		pingresult = self.xmpp.send(iq, self.xmpp.makeIq(id), timeout)
-		endTime = time.clock()
+		endTime = time.time()
 		if pingresult == False:
-			return None
-		return endTime - startTime
+			error = "timed out"
+		else:
+			error = pingresult.find('{jabber:client}error')
+			if error is not None:
+				error = "%s: %s" % (error.get('code'), error.getchildren()[0].tag.split('}',1)[1])
+		return [endTime - startTime, error]
