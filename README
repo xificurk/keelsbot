@@ -24,6 +24,4 @@ Suggested Packages
     Required for authentication on many servers.
 * PythonDNS
     You may need to specify your server in your config if you don't have this.
-* TCL/Tkinter
-    Required for the eggdrop plugin.
 
