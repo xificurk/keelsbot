@@ -65,7 +65,7 @@ class xep_0045(base.base_plugin):
             else:
                 entry[tag] = None
         
-        if entry.get('type', None) == 'unavailable':
+        if entry['status'] == 'unavailable':
             del(self.rooms[room][nick])
         else:
             self.rooms[room][nick] = entry
