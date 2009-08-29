@@ -30,7 +30,7 @@ class xep_0199(base.base_plugin):
 		self.description = "XMPP Ping"
 		self.xep = "0199"
 		self.xmpp.add_handler("<iq type='get' xmlns='jabber:client'><ping xmlns='urn:xmpp:ping'/></iq>", self.handler_ping)
-		if self.config.get('keepalive', True) or True:
+		if self.config.get('keepalive', True):
 			self.xmpp.add_event_handler('session_start', self.handler_pingserver, threaded=True)
 	
 	def post_init(self):
@@ -39,9 +39,8 @@ class xep_0199(base.base_plugin):
 	def handler_pingserver(self, xml):
 		error = None
 		while error is None:
-			time.sleep(self.config.get('frequency', 30))
-			logging.debug("KA")
-			error = self.sendPing(self.xmpp.server, self.config.get('timeout', 300))[1]
+			time.sleep(self.config.get('frequency', 300))
+			error = self.sendPing(self.xmpp.server, self.config.get('timeout', 30))[1]
 		logging.debug("Did not recieve ping back in time.  Requesting Reconnect.")
 		self.xmpp.requestReconnect()
 	
