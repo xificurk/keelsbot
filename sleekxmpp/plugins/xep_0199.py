@@ -45,7 +45,7 @@ class xep_0199(base.base_plugin):
 			time.sleep(self.config.get('frequency', 300))
 			error = self.sendPing(self.xmpp.server, self.config.get('timeout', 30))[1]
 		logging.debug("Did not recieve ping back in time.  Requesting Reconnect.")
-		self.xmpp.requestReconnect()
+		self.xmpp.reconnect()
 	
 	def handler_ping(self, xml):
 		iq = self.xmpp.makeIqResult(xml.get('id', 'unknown'))
