@@ -78,7 +78,7 @@ class xep_0045(base.base_plugin):
         mfrom = xml.attrib['from']
         message = xml.find('{jabber:client}body').text
         subject = xml.find('{jabber:client}subject')
-        if subject:
+        if subject is not None:
             subject = subject.text
         else:
             subject = ''
