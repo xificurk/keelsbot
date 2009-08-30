@@ -1,23 +1,26 @@
+# This Python file uses the following encoding: utf-8
 """
-	SleekXMPP: The Sleek XMPP Library
-	XEP-0199 (Ping) support
-	Copyright (C) 2007  Kevin Smith
-	This file is part of SleekXMPP.
+    sleekxmpp/plugins/xep_0199.py - XEP-0199 (Ping) support. 
+    Copyright (C) 2007 Kevin Smith
+    Copyright (C) 2009 Petr Morávek
 
-	SleekXMPP is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
+    This file is part of KeelsBot.
 
-	SleekXMPP is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    Keelsbot is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-	You should have received a copy of the GNU General Public License
-	along with SleekXMPP; if not, write to the Free Software
-	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    KeelsBot is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
 from xml.etree import cElementTree as ET
 import base
 import time

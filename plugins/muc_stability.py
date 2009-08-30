@@ -1,10 +1,13 @@
 # This Python file uses the following encoding: utf-8
 """
-    muc_stability.py - A plugin for keeping Sleek in muc channels it joins.
+    plugins/muc_stability.py - A plugin for keeping a bot in MUC channels
+    it joins.
     Copyright (C) 2008 Kevin Smith
-    Translation by Petr Morávek
+    Copyright (C) 2009 Petr Morávek
 
-    KeelsBot is free software; you can redistribute it and/or modify
+    This file is part of KeelsBot.
+
+    Keelsbot is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
@@ -14,9 +17,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this software; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
 import logging
@@ -27,7 +30,7 @@ class muc_stability(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'MUC_stability' se snaží udržet KeelsBota v kanále.\nAutor: Kevin Smith"
+        self.about = u"'MUC_stability' se snaží udržet KeelsBota v kanále.\nAutoři: Kevin Smith, Petr Morávek"
         self.shuttingDown = False
         thread.start_new(self.loop, ())
         self.bot.add_handler("<message xmlns='jabber:client' type='error'><error type='modify' code='406' ><not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></message>", self.handle_message_error)

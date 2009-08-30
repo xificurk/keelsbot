@@ -1,10 +1,12 @@
 # This Python file uses the following encoding: utf-8
 """
-    irssilogs.py - A plugin for logging muc traffic in an irssi style.
+    plugins/irssilogs.py - A plugin for logging MUC traffice in an irssi style.
     Copyright (C) 2008 Kevin Smith
-    Minor changes by Petr Morávek
+    Copyright (C) 2009 Petr Morávek
 
-    KeelsBot is free software; you can redistribute it and/or modify
+    This file is part of KeelsBot.
+
+    Keelsbot is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
@@ -14,9 +16,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this software; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
 import datetime
@@ -113,7 +115,7 @@ class irssilogs(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'Irssilogs' slouží pro logování dění v MUCu.\nAutor: Kevin Smith"
+        self.about = u"'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
         self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
         self.bot.add_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
         self.roomLogFiles = {}

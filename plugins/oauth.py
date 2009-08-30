@@ -1,10 +1,12 @@
 # This Python file uses the following encoding: utf-8
 """
-    oauth.py - Authorization of contacts.
-    Most of the code is taken from SleekBot's oauth plugin.
-    Translation: Petr Morávek
+    plugins/oauth.py - Authorization of contacts.
+    Copyright (C) 2008 Nathan Fritz
+    Copyright (C) 2009 Petr Morávek
 
-    KeelsBot is free software; you can redistribute it and/or modify
+    This file is part of KeelsBot.
+
+    Keelsbot is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
@@ -14,9 +16,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this software; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
 import logging
@@ -27,7 +29,7 @@ class oauth(object):
         self.bot = bot
         #print dir(self.bot)
         self.config = config
-        self.about = u"'OAuth' slouží k automatické autorizaci kontaktů."
+        self.about = u"'OAuth' slouží k automatické autorizaci kontaktů.\nAutoři: Nathan Fritz, Petr Morávek"
         self.xmpp = self.bot
         self.bot.add_handler("<iq type='get' xmlns='jabber:client'><query xmlns='urn:xmpp:oauth:request' /></iq>", self.handleOAuthRequest, threaded=True)
         self.bot.add_handler("<iq type='get' xmlns='jabber:client'><query xmlns='urn:xmpp:oauth:access' /></iq>", self.handleOAuthAccess, threaded=True)
