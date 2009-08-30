@@ -406,7 +406,7 @@ class chatbot(object):
                 logFile = msg['room']
                 message = "%s\t%s" % (msg['name'], message)
             else:
-                logFile = "%s---%s" % (msg.get('jid', ''), msg.get('resource', ''))
+                logFile = "%s---%s" % (msg.get('jid', '').replace("/", "-"), msg.get('resource', '').replace("/", "-"))
             dnf = 'OK'
             if reply == None:
                 dnf = 'DNF'
