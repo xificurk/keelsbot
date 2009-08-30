@@ -24,7 +24,7 @@
 import datetime
 import time
 import logging
-import codecs
+import re
 
 class irssilogfile(object):
     """ Handle writing to a single irssi log file.
@@ -54,17 +54,18 @@ class irssilogfile(object):
         values['reason'] = presence.get('status', "")
         values['time'] = self.datetimeToTimestamp(presence['dateTime'])
         if presence.get('type', None) == 'unavailable':
-            line = '%(time)s -!- %(nick)s odešel [%(reason)s]'
+            line = u'%(time)s -!- %(nick)s odešel [%(reason)s]'
         else:
-            line = '%(time)s -!- %(nick)s vstoupil'
+            line = u'%(time)s -!- %(nick)s vstoupil'
+
         self.appendLogLine(line % values)
         
     def logMessage(self, message):
         """ Log the message to the file.
             Formats:
             message = '09:43:42 <Nick> messagebody'
-            action = '10:45:42  * Nick actionbodies'
-            topic = '18:38:42 -!- Nick změnil téma na: New Topic'
+            action  = '10:45:42  * Nick actionbodies'
+            topic   = '18:38:42 -!- Nick změnil téma na: New Topic'
         """
         values = {}
         values['nick'] = message['name']
@@ -75,18 +76,26 @@ class irssilogfile(object):
         system = False
         if values['body'][:4] == '/me ':
             action = True
+            values['body'] = values['body'][4:]
         if message['name'] == '':
             system = True
+        match = re.match("^(.*) has set the subject to: (.*)", message["message"])
+	if match:
+	    topic = True
+	    values["body"] = match.group(2)
+	    values["nick"] = match.group(1)
+        elif message["subject"] != "":
+            topic = True
+            values["body"] = message["subject"]
 
-        if system:
-            line = '%(time)s -!- %(body)s'
+        if topic:
+            line = u"%(time)s -!- %(nick)s nastavil téma na: %(body)s"
+        elif system:
+            line = u"%(time)s -!- %(body)s"
         elif action:
-            values['body'] = values['body'][4:]
-            line = '%(time)s  * %(nick)s %(body)s'
-        elif topic:
-            line = '%(time)s -!- %(nick)s změnil téma na: %(body)s'
+            line = u"%(time)s  * %(nick)s %(body)s"
         else:
-            line = '%(time)s <%(nick)s> %(body)s'
+            line = u"%(time)s <%(nick)s> %(body)s"
 
         self.appendLogLine(line % values)
         
@@ -121,6 +130,7 @@ class irssilogs(object):
         self.about = "'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
         self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
         self.bot.add_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
+        self.bot.add_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.handle_groupchat_topic)
         self.roomLogFiles = {}
         self.roomMembers = {}
         logs = self.config.findall('log')
@@ -161,6 +171,25 @@ class irssilogs(object):
         if message['room'] in self.roomLogFiles.keys():
             self.roomLogFiles[message['room']].logMessage(message)
 
+    def handle_groupchat_topic(self, xml):
+        """ Handle a message event without body element in a muc.
+        """
+        message = {}
+        message["message"] = xml.find("{jabber:client}body")
+        if message["message"] is None:
+            message["message"] = ""
+            message['dateTime'] = datetime.datetime.now()
+            self.check_for_date_change(message['dateTime'])
+
+            mfrom = xml.attrib['from']
+            message["room"] = self.bot.getjidbare(mfrom)
+            if message['room'] in self.roomLogFiles.keys():
+                message["subject"] = xml.find("{jabber:client}subject").text
+                message["name"] = self.bot.getjidresource(mfrom)
+                message["type"] = xml.attrib.get('type', 'normal')
+                self.roomLogFiles[message["room"]].logMessage(message)
+
     def shutDown(self):
         self.bot.del_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
         self.bot.del_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
+	self.bot.del_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.handle_groupchat_topic)
