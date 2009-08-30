@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/admin.py - A plugin for administering the bot.
     Copyright (C) 2007 Kevin Smith
@@ -27,22 +27,22 @@ class admin(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.addCommand('rehash', self.handle_rehash, 'Rehash', u"Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", 'rehash')
-        self.bot.addCommand('die', self.handle_die, 'Die', u"Killnout bota.", 'die')
-        self.bot.addCommand('restart', self.handle_restart, 'Restart', u"Restartovat bota a znovu připojit...", 'restart')
+        self.about = "'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
+        self.bot.addCommand('rehash', self.handle_rehash, 'Rehash', "Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", 'rehash')
+        self.bot.addCommand('die', self.handle_die, 'Die', "Killnout bota.", 'die')
+        self.bot.addCommand('restart', self.handle_restart, 'Restart', "Restartovat bota a znovu připojit...", 'restart')
 
     def handle_rehash(self, command, args, msg):
         self.bot.rehash()
-        response = u"Rehashnuto šéfiku."
+        response = "Rehashnuto šéfiku."
         return response
 
     def handle_restart(self, command, args, msg):
         self.bot.restart()
-        response = u"Restartováno šéfiku."
+        response = "Restartováno šéfiku."
         return response
 
     def handle_die(self, command, args, msg):
-        response = u"Umírám..."
+        response = "Umírám..."
         self.bot.die()
         return response

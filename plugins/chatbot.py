@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/chatbot.py - A plugin making a bot chat with users.
     Copyright (C) 2008 Pavel Šimerda
@@ -179,10 +179,10 @@ class chatbot(object):
         debug = self.config.find('debug')
         if debug != None and debug.get('log', None) != None:
             self.logPath = debug.get('log')
-        self.about = u"'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM..\nAutoři: Pavel Šimerda, Petr Morávek"
-        self.bot.addCommand('shut', self.handle_shut, u'Vypnout chatbota v MUC', u"Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'shut [MUC]')
-        self.bot.addCommand('chat', self.handle_chat, u'Zapnout chatbota v MUC', u"Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'chat [MUC]')
-        self.bot.addCommand('convreload', self.handle_reload, u'Znovunačtení konverzací', u"Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", 'convreload')
+        self.about = "'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM.\nAutoři: Pavel Šimerda, Petr Morávek"
+        self.bot.addCommand('shut', self.handle_shut, 'Vypnout chatbota v MUC', "Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'shut [MUC]')
+        self.bot.addCommand('chat', self.handle_chat, 'Zapnout chatbota v MUC', "Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'chat [MUC]')
+        self.bot.addCommand('convreload', self.handle_reload, 'Znovunačtení konverzací', "Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", 'convreload')
         self.bot.add_event_handler("groupchat_message", self.handle_message, threaded=True)
         self.bot.add_event_handler("message", self.handle_message, threaded=True)
         self.running = True
@@ -230,10 +230,10 @@ class chatbot(object):
                 args = msg.get('jid', None)
 
         if self.rooms.get(args, None) == None:
-            return u"V místnosti '%s' já vůbec nechatuju ;-)" % args
+            return "V místnosti '%s' já vůbec nechatuju ;-)" % args
         else:
             self.rooms[args]['chatty'] = True
-            return u'OK, začnu se vykecávat v místnosti %s' % args
+            return 'OK, začnu se vykecávat v místnosti %s' % args
 
     def handle_shut(self, command, args, msg):
         if args == '':
@@ -243,15 +243,15 @@ class chatbot(object):
                 args = msg.get('jid', None)
 
         if self.rooms.get(args, None) == None:
-            return u"V místnosti '%s' já vůbec nechatuju ;-)" % args
+            return "V místnosti '%s' já vůbec nechatuju ;-)" % args
         else:
             self.rooms[args]['chatty'] = False
-            return u'OK, v místnosti %s se už nebudu vykecávat ;-)' % args
+            return 'OK, v místnosti %s se už nebudu vykecávat ;-)' % args
 
     def handle_reload(self, command, args, msg):
         self.conversations = Conversations(self.dicts)
         logging.info('Conversation files reloaded.')
-        return u'Tak jsem to znova načetl, šéfiku.'
+        return 'Tak jsem to znova načetl, šéfiku.'
 
     def handle_message(self, msg):
         """ Handle message for chatbot
@@ -413,7 +413,13 @@ class chatbot(object):
             dnf = 'OK'
             if reply == None:
                 dnf = 'DNF'
-            file('%s/%s.log' % (self.logPath, logFile), 'a').write(('%s\t%s\t%s\n\t\t%s\n' % (datetime.datetime.now(), dnf, message.replace("\n", "||"), reply)).encode('utf-8'))
+            line = "%s\t%s\t%s\n\t\t%s\n" % (datetime.datetime.now(), dnf, message.replace("\n", "||"), reply)
+            if type(line) is unicode:
+                line = line.encode("utf-8")
+            fp = file('%s/%s.log' % (self.logPath, logFile), 'a')
+            fp.write(line)
+            fp.flush()
+            fp.close()
 
     def responseFilters(self, msg, reply, filters):
         """ Apply filters

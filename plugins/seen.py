@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/seen.py - A plugin for tracking user sightings.
     Copyright (C) 2007 Kevin Smith
@@ -153,8 +153,8 @@ class seen(object):
         self.bot = bot
         self.config = config
         self.seenstore = seenstore(self.bot.store)
-        self.about = u"'Seen' umožňuje uživatelům ptát se, kdy naposledy byl někdo jiný iděn v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.addCommand('seen', self.handle_seen_request, u'Naposledy viděn', u"Kdy byl zadaný uživatel naposledy spatřen?", 'seen nick')
+        self.about = "'Seen' umožňuje uživatelům ptát se, kdy naposledy byl někdo jiný iděn v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
+        self.bot.addCommand('seen', self.handle_seen_request, 'Naposledy viděn', "Kdy byl zadaný uživatel naposledy spatřen?", 'seen nick')
         self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
         self.bot.add_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
 
@@ -187,9 +187,9 @@ class seen(object):
         days -= months * 30
         if months > 0:
             if months == 1:
-                months_str = u"1 měsícem"
+                months_str = "1 měsícem"
             else:
-                months_str = u"%d měsíci" % months
+                months_str = "%d měsíci" % months
             response += months_str
 
         if len(response) > 0 or days > 0:
@@ -234,22 +234,22 @@ class seen(object):
 
     def handle_seen_request(self, command, args, msg):
         if args == None or args == "":
-            return u"Lamo! Musíš napsat, o kom chceš informace! ;-)"
+            return "Lamo! Musíš napsat, o kom chceš informace! ;-)"
         seenData = self.seenstore.get(args)
         if seenData == None:
-            return args + u"? Vůbec nevím, o kom je řeč..."
+            return args + "? Vůbec nevím, o kom je řeč..."
 
         sinceTime = datetime.datetime.now() - seenData.eventTime
         sinceTimeStr = self.getStringTime(sinceTime)
         status = ""
         if seenData.stanzaType == seenevent.messageType:
-            status = u", když psal \"%s\"" % seenData.text
+            status = ", když psal \"%s\"" % seenData.text
         elif seenData.stanzaType == seenevent.presenceType and seenData.text is not None:
-            status = u" (%s)" % seenData.text
-        state = u" v místnosti"
+            status = " (%s)" % seenData.text
+        state = " v místnosti"
         if seenData.stanzaType == seenevent.partType:
-            state = u", jak opouští místnost"
-        return u"%s byl naposledy spatřen%s %s před %s%s."  %(args, state, seenData.muc, sinceTimeStr, status)
+            state = ", jak opouští místnost"
+        return "%s byl naposledy spatřen%s %s před %s%s."  %(args, state, seenData.muc, sinceTimeStr, status)
 
     def shutDown(self):
         self.bot.del_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)

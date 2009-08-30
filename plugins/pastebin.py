@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/pastebin.py - A plugin for sending code snippets to pastebin.cz.
     Copyright (C) 2009 Petr Morávek
@@ -30,14 +30,14 @@ class pastebin(object):
         default = self.config.findall('default')[0]
         self.lang = default.get('lang', 'text')
         self.expiration = default.get('expiration', 'd')
-        self.about = u"'Pastebin' umožňuje odeslání kódu na pastebin.cz.\nAutor: Petr Morávek"
-        self.bot.addCommand('paste', self.handle_paste, 'Pastebin', u"Odešle kód na pastebin.cz.\nNa prvním řádku bere v libovolném pořadí oddělené mezerou platnost (d - den, w - týden, m - měsíc, y - rok; výchozí hodnota je %s), název jazyku (podle http://www.pastebin.cz/info/api, výchozí hodnota je %s), a zda odeslat vygenerovaný odkaz přímo do MUCu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek).\nNa druhém řádku je titulek (může být prázdný).\nNa všech dalších řádcích je samotný kód." % (self.expiration, self.lang), u"paste [d|w|m|y] [lang] [0|1]\nTitulek\nKód")
+        self.about = "'Pastebin' umožňuje odeslání kódu na pastebin.cz.\nAutor: Petr Morávek"
+        self.bot.addCommand('paste', self.handle_paste, 'Pastebin', "Odešle kód na pastebin.cz.\nNa prvním řádku bere v libovolném pořadí oddělené mezerou platnost (d - den, w - týden, m - měsíc, y - rok; výchozí hodnota je %s), název jazyku (podle http://www.pastebin.cz/info/api, výchozí hodnota je %s), a zda odeslat vygenerovaný odkaz přímo do MUCu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek).\nNa druhém řádku je titulek (může být prázdný).\nNa všech dalších řádcích je samotný kód." % (self.expiration, self.lang), "paste [d|w|m|y] [lang] [0|1]\nTitulek\nKód")
 
     def handle_paste(self, command, args, msg):
         paste = args.split("\n", 2)
         logging.debug(paste)
         if len(paste) < 3:
-            return u"Neplatné zadání, mrkni na !help paste."
+            return "Neplatné zadání, mrkni na help."
 
         sendToMUC = 0
         lang = self.lang

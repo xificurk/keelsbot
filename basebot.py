@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     basebot.py - basic bot class.
     Copyright (C) 2007 Nathan Fritz 

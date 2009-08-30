@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/oauth.py - Authorization of contacts.
     Copyright (C) 2008 Nathan Fritz
@@ -29,7 +29,7 @@ class oauth(object):
         self.bot = bot
         #print dir(self.bot)
         self.config = config
-        self.about = u"'OAuth' slouží k automatické autorizaci kontaktů.\nAutoři: Nathan Fritz, Petr Morávek"
+        self.about = "'OAuth' slouží k automatické autorizaci kontaktů.\nAutoři: Nathan Fritz, Petr Morávek"
         self.xmpp = self.bot
         self.bot.add_handler("<iq type='get' xmlns='jabber:client'><query xmlns='urn:xmpp:oauth:request' /></iq>", self.handleOAuthRequest, threaded=True)
         self.bot.add_handler("<iq type='get' xmlns='jabber:client'><query xmlns='urn:xmpp:oauth:access' /></iq>", self.handleOAuthAccess, threaded=True)

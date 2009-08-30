@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/irssilogs.py - A plugin for logging MUC traffice in an irssi style.
     Copyright (C) 2008 Kevin Smith
@@ -34,8 +34,8 @@ class irssilogfile(object):
         """
         self.muc = muc
         self.fileName = fileName
-        self.logfile = codecs.open(self.fileName, 'a', 'utf-8')
-        line = u"--- Začátek logování"
+        self.logfile = file(self.fileName, 'a')
+        line = "--- Začátek logování"
         self.appendLogLine(line)
     
     def datetimeToTimestamp(self, dt):
@@ -54,9 +54,9 @@ class irssilogfile(object):
         values['reason'] = presence.get('status', "")
         values['time'] = self.datetimeToTimestamp(presence['dateTime'])
         if presence.get('type', None) == 'unavailable':
-            line = u'%(time)s -!- %(nick)s odešel [%(reason)s]'
+            line = '%(time)s -!- %(nick)s odešel [%(reason)s]'
         else:
-            line = u'%(time)s -!- %(nick)s vstoupil'
+            line = '%(time)s -!- %(nick)s vstoupil'
         self.appendLogLine(line % values)
         
     def logMessage(self, message):
@@ -79,14 +79,14 @@ class irssilogfile(object):
             system = True
 
         if system:
-            line = u'%(time)s -!- %(body)s'
+            line = '%(time)s -!- %(body)s'
         elif action:
             values['body'] = values['body'][4:]
-            line = u'%(time)s  * %(nick)s %(body)s'
+            line = '%(time)s  * %(nick)s %(body)s'
         elif topic:
-            line = u'%(time)s -!- %(nick)s změnil téma na: %(body)s'
+            line = '%(time)s -!- %(nick)s změnil téma na: %(body)s'
         else:
-            line = u'%(time)s <%(nick)s> %(body)s'
+            line = '%(time)s <%(nick)s> %(body)s'
 
         self.appendLogLine(line % values)
         
@@ -96,9 +96,9 @@ class irssilogfile(object):
             --- Day changed Thu Aug 16 2007
         """
         values = {}
-        values['dayOfWeek'] = [u'Pondělí', u'Úterý', u'Středa', u'Čtvrtek', u'Pátek', u'Sobota', u'Neděle'][newDate.weekday()]
+        values['dayOfWeek'] = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'][newDate.weekday()]
         values['day'] = newDate.day
-        values['monthName'] = [u'ledna', u'února', u'března', u'dubna', u'května', u'června', u'července', u'srpna', u'září', u'října', u'listopadu', u'prosince'][newDate.month - 1]
+        values['monthName'] = ['ledna', 'února', 'března', 'dubna', 'května', 'června', 'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'][newDate.month - 1]
         values['year'] = newDate.year
         line = "--- %(dayOfWeek)s %(day)s. %(monthName)s %(year)s"
         self.appendLogLine(line % values)
@@ -106,7 +106,10 @@ class irssilogfile(object):
     def appendLogLine(self, line):
         """ Append the line to the log
         """
-        self.logfile.write("%s\n" % line)
+        line = line + "\n"
+        if type(line) is unicode:
+            line = line.encode('utf-8')
+        self.logfile.write(line)
         self.logfile.flush()
 
 
@@ -115,7 +118,7 @@ class irssilogs(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = "'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
         self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
         self.bot.add_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
         self.roomLogFiles = {}

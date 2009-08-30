@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/parrot.py - A plugin for making a bot parrot text to MUC or JID.
     Copyright (C) 2007 Kevin Smith
@@ -28,23 +28,23 @@ class parrot(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'Parrot' umožňuje zaslat vybraným uživatelům text jménem bota do MUCu nebo přímo na JID.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = "'Parrot' umožňuje zaslat vybraným uživatelům text jménem bota do MUCu nebo přímo na JID.\nAutoři: Kevin Smith, Petr Morávek"
 
-        self.bot.addCommand('say', self.handle_say, u"Zaslat zprávu do MUCu", u"Bot odešle zprávu do zadaného MUCu.", 'say muc text')
-        self.bot.addCommand('tell', self.handle_tell, u"Zaslat zprávu JID", u"Bot odešle zprávu zadanému JID.", 'tell jid text')
+        self.bot.addCommand('say', self.handle_say, "Zaslat zprávu do MUCu", "Bot odešle zprávu do zadaného MUCu.", 'say muc text')
+        self.bot.addCommand('tell', self.handle_tell, "Zaslat zprávu JID", "Bot odešle zprávu zadanému JID.", 'tell jid text')
 
     def handle_say(self, command, args, msg):
         if args.count(" ") >= 1:
             [muc, text] = args.split(" ",1)
         else:
-            return u"Nedostatečný počet parametrů."
+            return "Nedostatečný počet parametrů."
         self.bot.sendMessage(muc, text, mtype='groupchat')
-        return u"Odesláno."
+        return "Odesláno."
 
     def handle_tell(self, command, args, msg):
         if args.count(" ") >= 1:
             [jid, text] = args.split(" ",1)
         else:
-            return u"Nedostatečný počet parametrů."
+            return "Nedostatečný počet parametrů."
         self.bot.sendMessage(jid, text, mtype='chat')
-        return u"Odesláno."
+        return "Odesláno."

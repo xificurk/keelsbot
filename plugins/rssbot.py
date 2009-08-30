@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/rssbot.py - A plugin for streaming RSS entries into a MUC.
     Copyright (C) 2007 Kevin Smith
@@ -32,7 +32,7 @@ class rssbot(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'RSSbot' umožňuje posílat do MUCu odkazy na nové položky z vybraných RSS kanálů.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = "'RSSbot' umožňuje posílat do MUCu odkazy na nové položky z vybraných RSS kanálů.\nAutoři: Kevin Smith, Petr Morávek"
 
         self.workPath = "."
         path = self.config.find('work')

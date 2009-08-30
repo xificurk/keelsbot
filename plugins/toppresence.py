@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 """
     plugins/toppresence.py - A plugin for tracking current and maximum number
     of users in MUC.
@@ -66,10 +66,10 @@ class toppresence(object):
         self.bot = bot
         self.config = config
         self.store = toppresencestore(self.bot.store)
-        self.about = u"'TopPresence' sleduje počet uživatelů v MUCu a hlásí, když je dosažen rekord.\nAutor: Petr Morávek"
+        self.about = "'TopPresence' sleduje počet uživatelů v MUCu a hlásí, když je dosažen rekord.\nAutor: Petr Morávek"
         self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
-        self.bot.addCommand('cu', self.handle_cu, u'Počet uživatelů v MUCu', u"Vypíše aktuální počet uživatelů v MUCu.", u'cu')
-        self.bot.addCommand('mu', self.handle_mu, u'Maximální počet uživatelů v MUCu', u"Vypíše historicky nejvyšší počet uživatelů v MUCu.", u'mu')
+        self.bot.addCommand('cu', self.handle_cu, 'Počet uživatelů v MUCu', "Vypíše aktuální počet uživatelů v MUCu.", 'cu')
+        self.bot.addCommand('mu', self.handle_mu, 'Maximální počet uživatelů v MUCu', "Vypíše historicky nejvyšší počet uživatelů v MUCu.", 'mu')
 
     def handle_groupchat_presence(self, presence):
         """ Keep track of the presences in mucs.
@@ -84,7 +84,7 @@ class toppresence(object):
 
         if actual > stored:
             self.store.update(muc, actual)
-            self.bot.sendMessage("%s" % muc, u"V místnosti je historicky nejvyšší počet uživatelů (%d)." % actual, mtype='groupchat')
+            self.bot.sendMessage("%s" % muc, "V místnosti je historicky nejvyšší počet uživatelů (%d)." % actual, mtype='groupchat')
 
     def handle_cu(self, command, args, msg):
         if msg['type'] == 'groupchat':
@@ -95,7 +95,7 @@ class toppresence(object):
             return
 
         actual = len(self.bot.plugin['xep_0045'].getRoster(muc))
-        return u'Momentálně tu vidím %d uživatelů.' % actual
+        return 'Momentálně tu vidím %d uživatelů.' % actual
 
     def handle_mu(self, command, args, msg):
         if msg['type'] == 'groupchat':
@@ -106,7 +106,7 @@ class toppresence(object):
             return
 
         stored = self.store.get(muc)
-        return u'Viděl jsem tu nanejvýše %d uživatelů najednou.' % stored
+        return 'Viděl jsem tu nanejvýše %d uživatelů najednou.' % stored
 
     def shutDown(self):
         self.bot.del_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)

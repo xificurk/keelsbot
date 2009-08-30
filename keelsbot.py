@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-# This Python file uses the following encoding: utf-8
-
+# -*- coding: utf-8 -*-
 """
     keelsbot.py - KeelsBot class. 
     Copyright (C) 2007, 2008 Nathan Fritz
@@ -66,9 +65,9 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
 
     def baseTranslations(self):
         self.translations["about"] = {"cs":"O KeelsBotovi"}
-        self.translations["about_text"] = {"cs":u"KeelsBot je upravenou verzí SleekBota, kterou napsal Petr Morávek.\nKeelsBot těží z kódu projektu SleekBot, jehož autory jsou Nathan Fritz a Kevin Smith.\nPro komunikaci používá knihovnu SleekXMPP, jejímž autorem je taktéž Nathan Fritz.\nhttp://keelsbot.googlecode.com"}
+        self.translations["about_text"] = {"cs":"KeelsBot je upravenou verzí SleekBota, kterou napsal Petr Morávek.\nKeelsBot těží z kódu projektu SleekBot, jehož autory jsou Nathan Fritz a Kevin Smith.\nPro komunikaci používá knihovnu SleekXMPP, jejímž autorem je taktéž Nathan Fritz.\nhttp://keelsbot.googlecode.com"}
         self.translations["plugins"] = {"cs":"Pluginy"}
-        self.translations["commands"] = {"cs":u"Příkazy"}
+        self.translations["commands"] = {"cs":"Příkazy"}
         self.translations["about_plugin"] = {"cs":"O pluginu"}
 
     def parseUserGroups(self):
@@ -165,17 +164,17 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
         del self.botPlugin[pluginName]
     
     def registerBotPlugin(self, pluginname, config):
-		""" Registers a bot plugin pluginname is the file and class name,
-		and config is an xml element passed to the plugin. Will reload the plugin module,
-		so previously loaded plugins can be updated.
-		"""
-		if pluginname in globals()['plugins'].__dict__:
-			reload(globals()['plugins'].__dict__[pluginname])
-		else:
-			__import__(self.plugin_name_to_module(pluginname))
-		self.botPlugin[pluginname] = getattr(globals()['plugins'].__dict__[pluginname], pluginname)(self, config)
-		self.pluginConfig[pluginname] = config
-		return True
+        """ Registers a bot plugin pluginname is the file and class name,
+        and config is an xml element passed to the plugin. Will reload the plugin module,
+        so previously loaded plugins can be updated.
+        """
+        if pluginname in globals()['plugins'].__dict__:
+            reload(globals()['plugins'].__dict__[pluginname])
+        else:
+            __import__(self.plugin_name_to_module(pluginname))
+        self.botPlugin[pluginname] = getattr(globals()['plugins'].__dict__[pluginname], pluginname)(self, config)
+        self.pluginConfig[pluginname] = config
+        return True
         
     def getRealJid(self, jid):
         """ Returns the 'real' jid.
