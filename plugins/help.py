@@ -27,13 +27,13 @@ class help(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'Help' slouží pro vypisování nápovědy k příkazům KeelsBota.\nAutor: Petr Morávek"
-        self.bot.addCommand('help', self.handle_help, "Nápověda", "Pokud nebylo určeno téma, vypíše seznam dostupných příkazů a dalších možných témat nápovědy. V opačném případě vypíše nápovědu na dané téma.", "help [téma/příkaz]")
-        self.bot.addCommand('commands', self.handle_commands, "Příkazy", "Vypíše seznam dostupných příkazů.", "commands")
+        self.about = u"'Help' slouží pro vypisování nápovědy k příkazům KeelsBota.\nAutor: Petr Morávek"
+        self.bot.addCommand(u'help', self.handle_help, u"Nápověda", u"Pokud nebylo určeno téma, vypíše seznam dostupných příkazů a dalších možných témat nápovědy. V opačném případě vypíše nápovědu na dané téma.", u"help [téma/příkaz]")
+        self.bot.addCommand(u'commands', self.handle_commands, u"Příkazy", u"Vypíše seznam dostupných příkazů.", u"commands")
 
     def handle_commands(self, command, args, msg):
         level = self.bot.getAccessLevel(msg)
-        response = "Dostupné příkazy:\n"
+        response = u"Dostupné příkazy:\n"
         for cmd in sorted(self.bot.commands):
             if self.bot.commands[cmd]["level"] > level:
                 continue
@@ -52,7 +52,7 @@ class help(object):
                 if topic in self.bot.commands:
                     continue
                 if start:
-                    response += "\nDalší dostupná témata nápovědy:\n"
+                    response += u"\nDalší dostupná témata nápovědy:\n"
                     start = False
                 response += "%s" % (topic)
                 if self.bot.help[topic][0] is not None:
@@ -70,11 +70,11 @@ class help(object):
             if args in self.bot.commands:
                 isCommand = True
                 if self.bot.getAccessLevel(msg) < self.bot.commands[args]['level']:
-                    return "Neznám, neumím..."
+                    return u"Neznám, neumím..."
             response += "%s\n" % self.bot.help[args][0]
             response += self.bot.help[args][1]
             if self.bot.help[args][2] and isCommand:
-                response += "\n\nPoužití: %s%s" % (self.bot.cmd_prefix, self.bot.help[args][2])
+                response += u"\n\nPoužití: %s%s" % (self.bot.cmd_prefix, self.bot.help[args][2])
         else:
-            response += "Neznám, neumím..."
+            response += u"Neznám, neumím..."
         return response

@@ -30,7 +30,7 @@ class muc_stability(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'MUC_stability' se snaží udržet KeelsBota v kanále.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = u"'MUC_stability' se snaží udržet KeelsBota v kanále.\nAutoři: Kevin Smith, Petr Morávek"
         self.shuttingDown = False
         thread.start_new(self.loop, ())
         self.bot.add_handler("<message xmlns='jabber:client' type='error'><error type='modify' code='406' ><not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></message>", self.handle_message_error)

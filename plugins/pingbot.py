@@ -27,8 +27,8 @@ class pingbot(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'Pingbot' umožňuje uživatelům pingnout jiné JIDy.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.addCommand('ping', self.handle_ping, 'Ping', "Zobrazuje odezvu k zadanému JIDu, případně v MUCu podle přezdívky.", 'ping [jid|nick]')
+        self.about = u"'Pingbot' umožňuje uživatelům pingnout jiné JIDy.\nAutoři: Kevin Smith, Petr Morávek"
+        self.bot.addCommand(u'ping', self.handle_ping, u'Ping', u"Zobrazuje odezvu k zadanému JIDu, případně v MUCu podle přezdívky.", u'ping [jid|nick]')
 
     def handle_ping(self, command, args, msg):
 	args = args.split(' ',1)[0]
@@ -40,7 +40,7 @@ class pingbot(object):
 	    jid = args
 
 	[latency,error] = self.bot['xep_0199'].sendPing(jid, 5)
-        response = "Odezva od %s: %dms." % (args, latency*1000)
+        response = u"Odezva od %s: %dms." % (args, latency*1000)
 	if error is not None:
 	    response = response + " (%s)" % error
         return response

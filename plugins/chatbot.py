@@ -179,10 +179,10 @@ class chatbot(object):
         debug = self.config.find('debug')
         if debug != None and debug.get('log', None) != None:
             self.logPath = debug.get('log')
-        self.about = "'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM.\nAutoři: Pavel Šimerda, Petr Morávek"
-        self.bot.addCommand('shut', self.handle_shut, 'Vypnout chatbota v MUC', "Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'shut [MUC]')
-        self.bot.addCommand('chat', self.handle_chat, 'Zapnout chatbota v MUC', "Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", 'chat [MUC]')
-        self.bot.addCommand('convreload', self.handle_reload, 'Znovunačtení konverzací', "Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", 'convreload')
+        self.about = u"'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM.\nAutoři: Pavel Šimerda, Petr Morávek"
+        self.bot.addCommand(u'shut', self.handle_shut, u'Vypnout chatbota v MUC', u"Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", u'shut [MUC]')
+        self.bot.addCommand(u'chat', self.handle_chat, u'Zapnout chatbota v MUC', u"Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", u'chat [MUC]')
+        self.bot.addCommand(u'convreload', self.handle_reload, u'Znovunačtení konverzací', u"Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", u'convreload')
         self.bot.add_event_handler("groupchat_message", self.handle_message, threaded=True)
         self.bot.add_event_handler("message", self.handle_message, threaded=True)
         self.running = True

@@ -27,11 +27,11 @@ class mafianlife(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'MafianLife' vrací odkaz na komiks z MaFian liFe.\nAutor: Petr Morávek"
-        self.bot.addCommand('mafian', self.handle_mafian, 'Strip MaFian liFe', "Vrací odkaz na strip z MaFian liFe", 'mafian [číslo stripu]')
+        self.about = u"'MafianLife' vrací odkaz na komiks z MaFian liFe.\nAutor: Petr Morávek"
+        self.bot.addCommand(u'mafian', self.handle_mafian, u'Strip MaFian liFe', u"Vrací odkaz na strip z MaFian liFe", u'mafian [číslo stripu]')
 
     def handle_mafian(self, command, args, msg):
         if args == "":
-            return "No tak se nestyď, řekni mi číslo stripu, který chceš ;-)"
+            return u"No tak se nestyď, řekni mi číslo stripu, který chceš ;-)"
         nr = int(args)
         return "http://www-ucjf.troja.mff.cuni.cz/scheirich/comics/mff_life_%.2d.jpg" % nr

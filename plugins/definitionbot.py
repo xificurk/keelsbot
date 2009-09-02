@@ -56,7 +56,7 @@ class definitionstore(object):
         cur.execute('SELECT description FROM definitions WHERE name=?', (name.lower(),))
         results = cur.fetchall()
         if len(results) == 0:
-            return "Vůbec netuším, kdo nebo co je " + name + "."
+            return u"Vůbec netuším, kdo nebo co je %s." % name
         return name + " == " + results[0][0]
         db.close()
     
@@ -73,9 +73,9 @@ class definitionbot(object):
         self.bot = bot
         self.config = config
         self.definitionstore = definitionstore(self.bot.store)
-        self.about = "'Definitionbot' slouží pro pamatování si definicí a jejich vypisování.\nAutor: Petr Morávek"
-        self.bot.addCommand('!', self.handle_definition, 'Definice', "Uloží definici do databáze.", "! víceslovný název = [definice]")
-        self.bot.addCommand('?', self.handle_query, 'Dotaz na definici', "Vrátí požadovanou definici z databáze.", "? víceslovný název")
+        self.about = u"'Definitionbot' slouží pro pamatování si definicí a jejich vypisování.\nAutor: Petr Morávek"
+        self.bot.addCommand(u'!', self.handle_definition, u'Definice', u"Uloží definici do databáze.", u"! víceslovný název = [definice]")
+        self.bot.addCommand(u'?', self.handle_query, u'Dotaz na definici', u"Vrátí požadovanou definici z databáze.", u"? víceslovný název")
 
     def handle_definition(self, command, args, msg):
         name = None
@@ -83,19 +83,19 @@ class definitionbot(object):
         if args.count("=") > 0:
             [name, description] = args.split("=",1)
         else:
-            return "Něco ti tam chybí, šéfiku!"
+            return u"Něco ti tam chybí, šéfiku!"
         name = name.strip()
         description = description.strip()
 
         if name != None and name != "":
             if description == None or description == "":
                 self.definitionstore.delete(name)
-                response = "Smazáno (pokud to tam teda bylo ;-))"
+                response = u"Smazáno (pokud to tam teda bylo ;-))"
             else:
                 self.definitionstore.update(name, description)
-                response = name + " == " + description
+                response = "%s == %s" % (name, description)
         else:
-            return "Musíš zadat, co chceš definovat!"
+            return u"Musíš zadat, co chceš definovat!"
 
         logging.debug("handle_definition done: %s" % response)
         return response

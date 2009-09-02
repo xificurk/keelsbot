@@ -28,8 +28,8 @@ class uptime(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'Uptime' umožňuje uživatelům ptát se na uptime bota.\nAutor: Petr Morávek"
-        self.bot.addCommand('uptime', self.handle_uptime, 'Uptime bota', "Jak dlouho už bot běží?", 'uptime')
+        self.about = u"'Uptime' umožňuje uživatelům ptát se na uptime bota.\nAutor: Petr Morávek"
+        self.bot.addCommand(u'uptime', self.handle_uptime, u'Uptime bota', u"Jak dlouho už bot běží?", u'uptime')
         self.started = datetime.timedelta(seconds = time.time())
 
     def getStringUpt(self, time):
@@ -42,20 +42,20 @@ class uptime(object):
         months = days / 30
         days -= months * 30
         if months > 0:
-            months_str = "%d měsíc" % months
+            months_str = u"%d měsíc" % months
             if months > 4:
-                months_str += "ů"
+                months_str += u"ů"
             elif months > 1:
-                months_str += "e"
+                months_str += u"e"
             response += months_str
 
         if len(response) > 0 or days > 0:
             if days > 4 or days == 0:
-                days_str = "%d dnů" % days
+                days_str = u"%d dnů" % days
             elif days > 1:
-                days_str = "%d dny" % days
+                days_str = u"%d dny" % days
             else:
-                days_str = "%d den" % days
+                days_str = u"%d den" % days
             if len(response) > 0:
                 return response + " a " + days_str
             response += days_str
@@ -97,4 +97,4 @@ class uptime(object):
     def handle_uptime(self, command, args, msg):
         now = datetime.timedelta(seconds = time.time())
         diff = now - self.started
-        return "Jsem vzhůru už %s" % self.getStringUpt(diff) + "."
+        return u"Jsem vzhůru už %s" % self.getStringUpt(diff) + "."

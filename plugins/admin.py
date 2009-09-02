@@ -27,22 +27,22 @@ class admin(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.addCommand('rehash', self.handle_rehash, 'Rehash', "Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", 'rehash')
-        self.bot.addCommand('die', self.handle_die, 'Die', "Killnout bota.", 'die')
-        self.bot.addCommand('restart', self.handle_restart, 'Restart', "Restartovat bota a znovu připojit...", 'restart')
+        self.about = u"'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
+        self.bot.addCommand(u'rehash', self.handle_rehash, u'Rehash', u"Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", u'rehash')
+        self.bot.addCommand(u'die', self.handle_die, u'Die', u"Killnout bota.", u'die')
+        self.bot.addCommand(u'restart', self.handle_restart, u'Restart', u"Restartovat bota a znovu připojit...", u'restart')
 
     def handle_rehash(self, command, args, msg):
         self.bot.rehash()
-        response = "Rehashnuto šéfiku."
+        response = u"Rehashnuto šéfiku."
         return response
 
     def handle_restart(self, command, args, msg):
         self.bot.restart()
-        response = "Restartováno šéfiku."
+        response = u"Restartováno šéfiku."
         return response
 
     def handle_die(self, command, args, msg):
-        response = "Umírám..."
+        response = u"Umírám..."
         self.bot.die()
         return response

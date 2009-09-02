@@ -32,7 +32,7 @@ class rssbot(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'RSSbot' umožňuje posílat do MUCu odkazy na nové položky z vybraných RSS kanálů.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = u"'RSSbot' umožňuje posílat do MUCu odkazy na nové položky z vybraných RSS kanálů.\nAutoři: Kevin Smith, Petr Morávek"
 
         self.workPath = "."
         path = self.config.find('work')
@@ -89,7 +89,7 @@ class rssbot(object):
     def sendItem(self, item, muc, feedName):
         """ Sends a summary of an rss item to a specified muc.
         """
-        text = "%s: %s\n%s" % (feedName, self.bot.xmlesc(item['title']), item['link'])
+        text = u"%s: %s\n%s" % (feedName, self.bot.xmlesc(item['title']), item['link'])
         self.bot.sendMessage(muc, text, mtype='groupchat')
     
     def cacheFilename(self, feedUrl):

@@ -64,11 +64,11 @@ class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
         self.registerCommands()
 
     def baseTranslations(self):
-        self.translations["about"] = {"cs":"O KeelsBotovi"}
-        self.translations["about_text"] = {"cs":"KeelsBot je upravenou verzí SleekBota, kterou napsal Petr Morávek.\nKeelsBot těží z kódu projektu SleekBot, jehož autory jsou Nathan Fritz a Kevin Smith.\nPro komunikaci používá knihovnu SleekXMPP, jejímž autorem je taktéž Nathan Fritz.\nhttp://keelsbot.googlecode.com"}
-        self.translations["plugins"] = {"cs":"Pluginy"}
-        self.translations["commands"] = {"cs":"Příkazy"}
-        self.translations["about_plugin"] = {"cs":"O pluginu"}
+        self.translations["about"] = {"cs":u"O KeelsBotovi"}
+        self.translations["about_text"] = {"cs":u"KeelsBot je upravenou verzí SleekBota, kterou napsal Petr Morávek.\nKeelsBot těží z kódu projektu SleekBot, jehož autory jsou Nathan Fritz a Kevin Smith.\nPro komunikaci používá knihovnu SleekXMPP, jejímž autorem je taktéž Nathan Fritz.\nhttp://keelsbot.googlecode.com"}
+        self.translations["plugins"] = {"cs":u"Pluginy"}
+        self.translations["commands"] = {"cs":u"Příkazy"}
+        self.translations["about_plugin"] = {"cs":u"O pluginu"}
 
     def parseUserGroups(self):
         """ Parse user groups for ACLs.

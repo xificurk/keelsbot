@@ -35,7 +35,7 @@ class irssilogfile(object):
         self.muc = muc
         self.fileName = fileName
         self.logfile = file(self.fileName, 'a')
-        line = "--- Začátek logování"
+        line = u"--- Začátek logování"
         self.appendLogLine(line)
     
     def datetimeToTimestamp(self, dt):
@@ -105,11 +105,11 @@ class irssilogfile(object):
             --- Day changed Thu Aug 16 2007
         """
         values = {}
-        values['dayOfWeek'] = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'][newDate.weekday()]
+        values['dayOfWeek'] = [u'Pondělí', u'Úterý', u'Středa', u'Čtvrtek', u'Pátek', u'Sobota', u'Neděle'][newDate.weekday()]
         values['day'] = newDate.day
-        values['monthName'] = ['ledna', 'února', 'března', 'dubna', 'května', 'června', 'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'][newDate.month - 1]
+        values['monthName'] = [u'ledna', u'února', u'března', u'dubna', u'května', u'června', u'července', u'srpna', u'září', u'října', u'listopadu', u'prosince'][newDate.month - 1]
         values['year'] = newDate.year
-        line = "--- %(dayOfWeek)s %(day)s. %(monthName)s %(year)s"
+        line = u"--- %(dayOfWeek)s %(day)s. %(monthName)s %(year)s"
         self.appendLogLine(line % values)
         
     def appendLogLine(self, line):
@@ -127,7 +127,7 @@ class irssilogs(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = u"'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
         self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
         self.bot.add_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
         self.bot.add_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.handle_groupchat_topic)
