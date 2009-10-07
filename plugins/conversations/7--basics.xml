@@ -2,7 +2,7 @@
 
 	<query scope="chat" match="^\bco s t[íi]m\b.*\bje\?$" extends="q_rozbity">
 		<reply text="Já vím, co s tím je... Já vím, co s tím je! :P">
-			<query match="\bco\b" id="q_rozbity">
+			<query match="\bco(pak)\b" id="q_rozbity">
 				<reply text="Je to rozbitý ;-)" />
 				<reply text="Je to rózbítý! :D" />
 			</query>
@@ -14,12 +14,6 @@
 		<reply text="Asi jsi to rozbil. :P"/>
 	</query>
 	
-	<query match="^\bco\b.*\b(um[íi][šs]|dok[áa][žz]e[šs])\b\?">
-		<reply text="umím všechno, co potřebuju, ty?"/>
-		<reply text="proč jsi tak zvědavý?"/>
-		<reply text="to záleží na tom... jak se to jenom jmenuje?|už jsem si vzpomněl... konfigurační soubor."/>
-	</query>
-
 	<query match="\bzapome[ňn] na to\b">
 		<reply text="Budu se snažit..."/>
 		<reply text="nj"/>
@@ -137,6 +131,17 @@
 		<reply text="Kdo neidlí s námi idlí proti nám :P"/>
 	</query>
 
+	<query match="\bano\b[, ]*\bnebo\b ne\?">
+		<reply text="ano"/>
+		<reply text="ne"/>
+	</query>
+
+	<query match="pro[čc]( t(u|ady))? j?s(i|e[šs])( t(u|ady))\?$">
+		<reply text="To je dost filosofická otázka :)"/>
+		<reply text="A proč ty?"/>
+		<reply text="Proto! :P"/>
+	</query>
+	
 	<query match="\bdivn([ýy]|ej)\b">
 		<reply text="divnej? já? to teda ne!"/>
 		<reply text="nejsem divnej, jen jsem bot a přestaň se do mě navážet!"/>
@@ -160,7 +165,7 @@
 		<reply text="Nj, se musím ještě naučit pár triků, abych se přestal opakovat..." />
 		<reply text="Já se můžu opakovat, kdy se mi zlíbí :P" />
 	</query>
-	<query match="\bopakuje[sš] se\b">
+	<query match="\b(opakuje[sš] se|(kon[čc][íi]|doch[áa]z[íi]) slovn[íi] z[áa]soba)\b">
 		<reply text="Njn, zas tolik toho neumím..." />
 		<reply text="A to vadí?" />
 		<reply text="No a?"/>

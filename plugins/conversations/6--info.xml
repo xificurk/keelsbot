@@ -7,7 +7,7 @@
 		<reply text="//TIME//" filter="time" />
 		<reply text="Stejně jako včera touhle dobou :P" />
 		<reply text="//TIME//, proč se ptáš?" filter="time" id="r_proc">
-			<query match="">
+			<query match="[^?]$">
 				<reply text="Aha" />
 				<reply text="ok" />
 				<reply text="hmm..." />
@@ -34,15 +34,6 @@
 				</reply>
 			</query>
 		</reply>
-	</query>
-	
-	<query match="\bm[áa][šs] r[áa]d\b.*\?$">
-		<reply text="Jasně"/>
-		<reply text="Celkem jo"/>
-		<reply text="jo"/>
-		<reply text="Ani ne"/>
-		<reply text="Moc ne"/>
-		<reply text="ne"/>
 	</query>
 	
 	<query match="bude pršet\?$" extends="q_pocasi" />
