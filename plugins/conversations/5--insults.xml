@@ -14,7 +14,7 @@
 		<reply text="až tak, jo?"/>
 	</query>
 	
-	<query match="\b(vole|hovado|kokote?|magore?|blb(e|[čc]ku)?|debile?|kret[ée]ne?|p[yi][čc][oa]|idiote?|lamo)\b">
+	<query match="\b(vole|hovado|kokote?|magore?|blb(e|[čc]ku)?|deb(ile?|[íi]lku)|kret[ée]ne?|p[yi][čc][oa]|idiot(e?|e[čc]ku)|lamk?o)\b">
 		<reply scope="public" text="/se urazil a s //NICK// se nebude bavit."/>
 		<reply text="koukám, že máš vytříbený slovník..."/>
 		<reply text="trhni si!"/>
