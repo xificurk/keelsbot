@@ -74,5 +74,11 @@
 		<reply text="Co myslíš? :-)" />
 		<reply text="S člověkem? Že se nestydíš, takhle mě urážet... :D"/>
 	</query>
+	
+	<query match="\bfacebook">
+		<reply text="Facebook je fůůj, já jsem jen na Friendface :P"/>
+		<reply text="Facebook je sra*ka, ale až otevřou ten svůj jabber chat, tak budem moct pokecat ;)"/>
+		<reply text="Facebook je pro děcka, dospěláci chlastaj :P" />
+	</query>
 
 </conversation>
