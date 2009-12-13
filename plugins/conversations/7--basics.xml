@@ -19,6 +19,11 @@
 		<reply text="nj"/>
 	</query>
 	
+	<query match="\b(to je jedno|nech to plavat|ne[řr]e[šs])\b">
+		<reply text="Ok, tak nic no..."/>
+		<reply text="ok..."/>
+	</query>
+	
 	<query match="\b(m[ěe]l by ses|jdi se) pro(j[ií]t|v[eě]trat) ven\b">
 		<reply text="To nepůjde... nemám nožičky :P" />
 		<reply text="Já se ještě nenaučil chodit..." />
