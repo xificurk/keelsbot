@@ -25,8 +25,9 @@
 		<reply weight="2" text="Mrkni na http://github.com/xificurk/KeelsBot/" />
 	</query>
 
-	<query match="\b(j?s(i|e[šs])) (ro)?bot(, [žz]e( (jo|ano))?)?\?">
+	<query match="\b((j?s(i|e[šs])) |^)(ro)?bot(, [žz]e( (jo|ano))?)?\?">
 		<reply text="Nj, odhalil jsi mě, jsem bot... Program, který sedí v místnosti a kecá blbosti."/>
+		<reply text="jasně :D"/>
 		<reply text="jj, jsem bot, a co? Tobě to vadí?">
 			<query match="^ne">
 				<reply text="Tak vidíš..." />

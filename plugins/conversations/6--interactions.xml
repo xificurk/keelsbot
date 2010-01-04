@@ -73,8 +73,8 @@
 		<reply text="Hm, tak nic no..." filter="no-direct" />
 		<reply text="kruci" filter="no-direct" />
 		<reply text="sakra" filter="no-direct" />
-		<reply text="/ je kaput :(" filter="no-direct" />
-		<reply text="/ si jde vykopat hrob :)" filter="no-direct" />
+		<reply text="/je kaput :(" filter="no-direct" />
+		<reply text="/si jde vykopat hrob :)" filter="no-direct" />
 		<reply text="a je ze mě mrtvola..." filter="no-direct" />
 		<reply weight="6" text="" />
 	</query>
