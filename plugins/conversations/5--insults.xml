@@ -46,7 +46,7 @@
 	<query scope="public" match="\b(p[iy][čc][ao]|mrdat|do p[yií][čc]i|[čc]ur[áa]ku?|dement[ei]?|kur[vw][ao]|buzerant[ei]?)\b">
 		<reply text=""/>
 		<reply text="Mírni slovník..." filter="direct"/>
-		<reply text="Važ slova... ať se neproletíš ;-)" filter="direct"/>
+		<reply text="Není třeba hnedka nadávat..." filter="direct"/>
 	</query>
 
 </conversation>

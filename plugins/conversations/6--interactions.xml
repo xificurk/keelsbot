@@ -78,5 +78,15 @@
 		<reply text="a je ze mě mrtvola..." filter="no-direct" />
 		<reply weight="6" text="" />
 	</query>
+	
+	<query scope="public" match=": (#[0-9]+\+-V diskusi je [0-9]+|Vtip #[0-9]+ \(kategorie:)">
+		<reply weight="20" text="" />
+		<reply text="lol" filter="no-direct" />
+		<reply text=":D" filter="no-direct" />
+		<reply text="slabý..." filter="no-direct" />
+		<reply text="dobrej" filter="no-direct" />
+		<reply text="!lamer" filter="no-direct" />
+		<reply text="!vtip" filter="no-direct" />
+	</query>
 
 </conversation>
