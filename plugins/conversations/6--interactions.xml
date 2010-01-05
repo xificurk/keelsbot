@@ -79,14 +79,16 @@
 		<reply weight="6" text="" />
 	</query>
 	
-	<query scope="public" match=": (#[0-9]+\+-V diskusi je [0-9]+|Vtip #[0-9]+ \(kategorie:)">
+	<query scope="public" match=": (#[0-9]+\+-V diskusi je [0-9]+|Vtip #[0-9]+ \(kategorie:)" id="q_vtip_lamer">
 		<reply weight="20" text="" />
 		<reply text="lol" filter="no-direct" />
 		<reply text=":D" filter="no-direct" />
 		<reply text="slabý..." filter="no-direct" />
 		<reply text="dobrej" filter="no-direct" />
-		<reply text="!lamer" filter="no-direct" />
-		<reply text="!vtip" filter="no-direct" />
+		<reply text="!lamer" filter="no-direct" id="r_vtip_lamer">
+			<query match=": (#[0-9]+\+-V diskusi je [0-9]+|Vtip #[0-9]+ \(kategorie:)" extends="q_vtip_lamer"/>
+		</reply>
+		<reply text="!vtip" filter="no-direct" extends="r_vtip_lamer"/>
 	</query>
 
 </conversation>
