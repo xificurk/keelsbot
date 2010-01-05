@@ -79,7 +79,7 @@
 		<reply weight="6" text="" />
 	</query>
 	
-	<query scope="public" match=": (#[0-9]+\+-V diskusi je [0-9]+|Vtip #[0-9]+ \(kategorie:)" id="q_vtip_lamer">
+	<query scope="public" match=": (#[0-9]+\+-V diskusi j(e|sou) [0-9]+|Vtip #[0-9]+ \(kategorie:)" id="q_vtip_lamer">
 		<reply weight="20" text="" />
 		<reply text="lol" filter="no-direct" />
 		<reply text=":D" filter="no-direct" />
