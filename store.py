@@ -19,13 +19,23 @@
 
 import sqlite3
 
+
 class store(object):
-    """ Store persistent data in sqlite3.
-    """
     def __init__(self, filename):
         self.filename = filename
-    
+
+
     def getDb(self):
-        """ Return a new DB connection
-        """
-        return sqlite3.connect(self.filename)
+        """Return a new DB connection"""
+        con = sqlite3.connect(self.filename)
+        con.row_factory = sqlite3.Row
+        return con
+
+
+    def query(self, query, values=()):
+        """Perform query in current database"""
+        db = self.getDb()
+        result = db.cursor().execute(query, values).fetchall()
+        db.commit()
+        db.close()
+        return result

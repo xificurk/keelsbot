@@ -47,6 +47,10 @@
         <plugin name="acl">
             <config />
         </plugin>
+        <plugin name="definitions">
+            <config />
+        </plugin>
+
 
         <plugin name="chatbot">
             <acl>
@@ -64,9 +68,7 @@
                 <dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
             </config>
         </plugin>
-        <plugin name="definitionbot">
-            <config />
-        </plugin>
+
         <plugin name="help">
             <config />
         </plugin>

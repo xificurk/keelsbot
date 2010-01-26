@@ -25,7 +25,7 @@ class admin(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = "'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = "'Admin' umožňuje administrátorům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
         self.bot.addCommand("rehash", self.rehash, "Rehash", "Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", "rehash")
         self.bot.addCommand("restart", self.restart, "Restart", "Restartovat bota a znovu připojit...", "restart")
         self.bot.addCommand("die", self.die, "Die", "Killnout bota.", "die")
