@@ -93,7 +93,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         """
         self.acl = {}
         groups = self.botconfig.findall("/users/group")
-        if groups is not None:
+        if len(groups) > 0:
             for group in groups:
                 level = int(group.get("level", 0))
                 name = group.get("name", "group-{0}".format(level))
@@ -104,7 +104,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
                     self.log.error("User group name collision '{0}'.".format(name))
                     continue
                 userJids = group.findall("jid")
-                if userJids is not None:
+                if len(userJids) > 0:
                     for jid in userJids:
                         self.log.debug("Adding user {0} to group '{1}'.".format(jid.text, name))
                         self.acl[name]["users"].append(jid.text)
@@ -114,7 +114,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         """ Registers all bot plugins required by botconfig.
         """
         plugins = self.botconfig.findall("/plugins/plugin")
-        if plugins is not None:
+        if len(plugins) > 0:
             for plugin in plugins:
                 name = plugin.attrib["name"]
                 self.log.info("Loading plugin {0}.".format(name))
@@ -170,7 +170,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         """
         level = 0
         levelXml = self.botconfig.findall("/plugins/plugin/acl/{0}".format(command))
-        if levelXml is not None:
+        if len(levelXml) > 0:
             level = int(levelXml[0].get("level", 0))
         self.log.debug("Command '{0}' has access level {1}.".format(command, level))
         return level
@@ -287,7 +287,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         self.log.info("Re-syncing with required channels.")
         newRoomXml = self.botconfig.findall("/rooms/muc")
         newRooms = {}
-        if newRoomXml is not None:
+        if len(newRoomXml) > 0:
             for room in newRoomXml:
                 newRooms[room.attrib["room"]] = room.attrib["nick"]
         for room in self.rooms.keys():

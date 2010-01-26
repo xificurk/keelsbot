@@ -44,6 +44,10 @@
             </acl>
             <config />
         </plugin>
+        <plugin name="acl">
+            <config />
+        </plugin>
+
         <plugin name="chatbot">
             <acl>
                 <convreload level="300" />
