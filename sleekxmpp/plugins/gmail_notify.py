@@ -18,7 +18,7 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 from __future__ import with_statement
-import base
+from . import base
 import logging
 from xml.etree import cElementTree as ET
 import traceback
@@ -39,7 +39,7 @@ class gmail_notify(base.base_plugin):
 			features.append(feature.get('var'))
 		if 'google:mail:notify' in features:
 			logging.debug("Server supports Gmail Notify")
-			self.xmpp.add_handler("<iq type='set' xmlns='jabber:client'><new-mail xmlns='google:mail:notify' /></iq>", self.handler_notify)
+			self.xmpp.add_handler("<iq type='set' xmlns='%s'><new-mail xmlns='google:mail:notify' /></iq>" % self.xmpp.default_ns, self.handler_notify)
 			self.getEmail()
 	
 	def handler_notify(self, xml):

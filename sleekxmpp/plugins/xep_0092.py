@@ -18,7 +18,8 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 from xml.etree import cElementTree as ET
-import base
+from . import base
+from .. xmlstream.handler.xmlwaiter import XMLWaiter
 
 class xep_0092(base.base_plugin):
 	"""
@@ -29,7 +30,7 @@ class xep_0092(base.base_plugin):
 		self.xep = "0092"
 		self.name = self.config.get('name', 'SleekXMPP')
 		self.version = self.config.get('version', '0.1-dev')
-		self.xmpp.add_handler("<iq type='get' xmlns='jabber:client'><query xmlns='jabber:iq:version' /></iq>", self.report_version)
+		self.xmpp.add_handler("<iq type='get' xmlns='%s'><query xmlns='jabber:iq:version' /></iq>" % self.xmpp.default_ns, self.report_version)
 	
 	def post_init(self):
 		self.xmpp['xep_0030'].add_feature('jabber:iq:version')
@@ -54,7 +55,7 @@ class xep_0092(base.base_plugin):
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
 		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
+		result = self.xmpp.send(iq, "<iq xmlns='%s' id='%s'/>" % (self.xmpp.default_ns, id))
 		if result and result is not None and result.get('type', 'error') != 'error':
 			qry = result.find('{jabber:iq:version}query')
 			version = {}

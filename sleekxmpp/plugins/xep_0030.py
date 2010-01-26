@@ -17,8 +17,7 @@
 	along with SleekXMPP; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
-from __future__ import with_statement
-import base
+from . import base
 import logging
 from xml.etree import cElementTree as ET
 
@@ -33,29 +32,28 @@ class xep_0030(base.base_plugin):
 		self.features = {'main': ['http://jabber.org/protocol/disco#info', 'http://jabber.org/protocol/disco#items']}
 		self.identities = {'main': [{'category': 'client', 'type': 'pc', 'name': 'SleekXMPP'}]}
 		self.items = {'main': []}
-		self.xmpp.add_handler("<iq type='get' xmlns='jabber:client'><query xmlns='http://jabber.org/protocol/disco#info' /></iq>", self.info_handler)
-		self.xmpp.add_handler("<iq type='get' xmlns='jabber:client'><query xmlns='http://jabber.org/protocol/disco#items' /></iq>", self.item_handler)
+		self.xmpp.add_handler("<iq type='get' xmlns='%s'><query xmlns='http://jabber.org/protocol/disco#info' /></iq>" % self.xmpp.default_ns, self.info_handler)
+		self.xmpp.add_handler("<iq type='get' xmlns='%s'><query xmlns='http://jabber.org/protocol/disco#items' /></iq>" % self.xmpp.default_ns, self.item_handler)
 	
 	def add_feature(self, feature, node='main'):
-		with self.xmpp.lock:
-			if not self.features.has_key(node):
-				self.features[node] = []
-			self.features[node].append(feature)
+		if not node in self.features:
+			self.features[node] = []
+		self.features[node].append(feature)
 	
 	def add_identity(self, category=None, itype=None, name=None, node='main'):
-		if not self.identities.has_key(node):
+		if not node in self.identities:
 			self.identities[node] = []
 		self.identities[node].append({'category': category, 'type': itype, 'name': name})
 	
 	def add_item(self, jid=None, name=None, node='main', subnode=''):
-		if not self.items.has_key(node):
+		if not node in self.items:
 			self.items[node] = []
 		self.items[node].append({'jid': jid, 'name': name, 'node': subnode})
 
 	def info_handler(self, xml):
 		logging.debug("Info request from %s" % xml.get('from', ''))
 		iq = self.xmpp.makeIqResult(xml.get('id', self.xmpp.getNewId()))
-		iq.attrib['from'] = self.xmpp.fulljid
+		iq.attrib['from'] = xml.get('to')
 		iq.attrib['to'] = xml.get('from', self.xmpp.server)
 		query = xml.find('{http://jabber.org/protocol/disco#info}query')
 		node = query.get('node', 'main')
@@ -76,13 +74,15 @@ class xep_0030(base.base_plugin):
 	def item_handler(self, xml):
 		logging.debug("Item request from %s" % xml.get('from', ''))
 		iq = self.xmpp.makeIqResult(xml.get('id', self.xmpp.getNewId()))
-		iq.attrib['from'] = self.xmpp.fulljid
+		iq.attrib['from'] = xml.get('to')
 		iq.attrib['to'] = xml.get('from', self.xmpp.server)
 		query = self.xmpp.makeIqQuery(iq, 'http://jabber.org/protocol/disco#items').find('{http://jabber.org/protocol/disco#items}query')
 		node = xml.find('{http://jabber.org/protocol/disco#items}query').get('node', 'main')
 		for item in self.items.get(node, []):
 			itemxml = ET.Element('item')
 			itemxml.attrib = item
+			if itemxml.attrib['jid'] is None:
+				itemxml.attrib['jid'] = xml.get('to')
 			query.append(itemxml)
 		self.xmpp.send(iq)
 	
@@ -102,7 +102,7 @@ class xep_0030(base.base_plugin):
 		self.xmpp.makeIqQuery(iq, 'http://jabber.org/protocol/disco#info')
 		if node:
 			iq.find('{http://jabber.org/protocol/disco#info}query').attrib['node'] = node
-		return self.xmpp.send(iq, "<iq id='%s' />" % iq.get('id'))
+		return self.xmpp.send(iq, self.xmpp.makeIq(iq.get('id')))
 
 	def parseInfo(self, xml):
 		result = {'identity': {}, 'feature': []}

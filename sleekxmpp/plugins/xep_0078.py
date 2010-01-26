@@ -20,8 +20,8 @@
 from __future__ import with_statement
 from xml.etree import cElementTree as ET
 import logging
-import sha
-import base
+import hashlib
+from . import base
 
 
 class xep_0078(base.base_plugin):
@@ -31,7 +31,7 @@ class xep_0078(base.base_plugin):
 	def plugin_init(self):
 		self.description = "Non-SASL Authentication (broken)"
 		self.xep = "0078"
-		self.xmpp.add_start_handler(self.check_stream)
+		self.xmpp.add_event_handler("session_start", self.check_stream)
 		#disabling until I fix conflict with PLAIN
 		#self.xmpp.registerFeature("<auth xmlns='http://jabber.org/features/iq-auth'/>", self.auth)
 		self.streamid = ''
@@ -66,7 +66,7 @@ class xep_0078(base.base_plugin):
 		else:
 			logging.debug("Authenticating via jabber:iq:auth Digest")
 			digest = ET.Element('digest')
-			digest.text = sha.sha("%s%s" % (self.streamid, self.xmpp.password)).hexdigest()
+			digest.text = hashlib.sha1(b"%s%s" % (self.streamid, self.xmpp.password)).hexdigest()
 			query.append(digest)
 		attempt.append(query)
 		result = self.xmpp.send(attempt, self.xmpp.makeIq(self.xmpp.id))

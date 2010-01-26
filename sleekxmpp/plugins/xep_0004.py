@@ -48,7 +48,7 @@ class xep_0004(base.base_plugin):
 		return object
 	
 	def buildForm(self, xml):
-		form = Form(xml.attrib['type'])
+		form = Form(ftype=xml.attrib['type'])
 		form.fromXML(xml)
 		return form
 
@@ -95,6 +95,30 @@ class Form(FieldContainer):
 		self.reported = []
 		self.items = []
 	
+	def merge(self, form2):
+		form1 = Form(ftype=self.type)
+		form1.fromXML(self.getXML(self.type))
+		for field in form2.fields:
+			if not field.var in form1.field:
+				form1.addField(field.var, field.type, field.label, field.desc, field.required, field.value)
+			else:
+				form1.field[field.var].value = field.value
+			for option, label in field.options:
+				if (option, label) not in form1.field[field.var].options:
+					form1.fields[field.var].addOption(option, label)
+		return form1
+	
+	def copy(self):
+		newform = Form(ftype=self.type)
+		newform.fromXML(self.getXML(self.type))
+		return newform
+	
+	def update(self, form):
+		values = form.getValues()
+		for var in values:
+			if var in self.fields:
+				self.fields[var].setValue(self.fields[var])
+	
 	def getValues(self):
 		result = {}
 		for field in self.fields:
@@ -103,6 +127,15 @@ class Form(FieldContainer):
 				value = value[0]
 			result[field.var] = value
 		return result
+	
+	def setValues(self, values={}):
+		for field in values:
+			if field in self.field:
+				if isinstance(values[field], list) or isinstance(values[field], tuple):
+					for value in values[field]:
+						self.field[field].setValue(value)
+				else:
+					self.field[field].setValue(values[field])
 	
 	def fromXML(self, xml):
 		self.buildForm(xml)
@@ -160,22 +193,41 @@ class Form(FieldContainer):
 		form = ET.Element('{jabber:x:data}x')
 		form.attrib['type'] = self.type
 		if self.title and self.type in ('form', 'result'):
-			title = ET.Element('title')
+			title = ET.Element('{jabber:x:data}title')
 			title.text = self.title
 			form.append(title)
 		if self.instructions and self.type == 'form':
-			instructions = ET.Element('instructions')
+			instructions = ET.Element('{jabber:x:data}instructions')
 			instructions.text = self.instructions
 			form.append(instructions)
 		for field in self.fields:
 			form.append(field.getXML(self.type))
 		for reported in self.reported:
-			form.append(reported.getXML('reported'))
+			form.append(reported.getXML('{jabber:x:data}reported'))
 		for item in self.items:
 			form.append(item.getXML(self.type))
 		#if tostring:
 		#	form = self.xmpp.tostring(form)
 		return form
+	
+	def getXHTML(self):
+		form = ET.Element('{http://www.w3.org/1999/xhtml}form')
+		if self.title:
+			title = ET.Element('h2')
+			title.text = self.title
+			form.append(title)
+		if self.instructions:
+			instructions = ET.Element('p')
+			instructions.text = self.instructions
+			form.append(instructions)
+		for field in self.fields:
+			form.append(field.getXHTML())
+		for field in self.reported:
+			form.append(field.getXHTML())
+		for field in self.items:
+			form.append(field.getXHTML())
+		return form
+		
 	
 	def makeSubmit(self):
 		self.setType('submit')
@@ -226,6 +278,11 @@ class FormField(object):
 		self.desc = desc
 	
 	def setValue(self, value):
+		if self.type == 'boolean':
+			if value in ('1', 1, True, 'true', 'True', 'yes'):
+				value = True
+			else:
+				value = False
 		if self.islinebreak and value is not None:
 			self.value += value.split('\n')
 		else:
@@ -261,7 +318,7 @@ class FormField(object):
 			self.setDescription(xml.find('{jabber:x:data}desc').text)
 	
 	def getXML(self, ftype):
-		field = ET.Element('field')
+		field = ET.Element('{jabber:x:data}field')
 		if ftype != 'result':
 			field.attrib['type'] = self.type
 		if self.type != 'fixed':
@@ -271,21 +328,21 @@ class FormField(object):
 				field.attrib['label'] = self.label
 		if ftype == 'form':
 			for option in self.options:
-				optionxml = ET.Element('option')
+				optionxml = ET.Element('{jabber:x:data}option')
 				optionxml.attrib['label'] = option[1]
-				optionval = ET.Element('value')
+				optionval = ET.Element('{jabber:x:data}value')
 				optionval.text = option[0]
 				optionxml.append(optionval)
 				field.append(optionxml)
 			if self.required:
-				required = ET.Element('required')
+				required = ET.Element('{jabber:x:data}required')
 				field.append(required)
 			if self.desc:
-				desc = ET.Element('desc')
+				desc = ET.Element('{jabber:x:data}desc')
 				desc.text = self.desc
 				field.append(desc)
 		for value in self.value:
-			valuexml = ET.Element('value')
+			valuexml = ET.Element('{jabber:x:data}value')
 			if value is True or value is False:
 				if value:
 					valuexml.text = '1'
@@ -295,3 +352,76 @@ class FormField(object):
 				valuexml.text = value
 			field.append(valuexml)
 		return field
+	
+	def getXHTML(self):
+		field = ET.Element('div', {'class': 'xmpp-xforms-%s' % self.type})
+		if self.label:
+			label = ET.Element('p')
+			label.text = "%s: " % self.label
+		else:
+			label = ET.Element('p')
+			label.text = "%s: " % self.var
+		field.append(label)
+		if self.type == 'boolean':
+			formf = ET.Element('input', {'type': 'checkbox', 'name': self.var})
+			if len(self.value) and self.value[0] in (True, 'true', '1'):
+				formf.attrib['checked'] = 'checked'
+		elif self.type == 'fixed':
+			formf = ET.Element('p')
+			try:
+				formf.text = ', '.join(self.value)
+			except:
+				pass
+			field.append(formf)
+			formf = ET.Element('input', {'type': 'hidden', 'name': self.var})
+			try:
+				formf.text = ', '.join(self.value)
+			except:
+				pass
+		elif self.type == 'hidden':
+			formf = ET.Element('input', {'type': 'hidden', 'name': self.var})
+			try:
+				formf.text = ', '.join(self.value)
+			except:
+				pass
+		elif self.type in ('jid-multi', 'list-multi'):
+			formf = ET.Element('select', {'name': self.var})
+			for option in self.options:
+				optf = ET.Element('option', {'value': option[0], 'multiple': 'multiple'})
+				optf.text = option[1]
+				if option[1] in self.value:
+					optf.attrib['selected'] = 'selected'
+				formf.append(option)
+		elif self.type in ('jid-single', 'text-single'):
+			formf = ET.Element('input', {'type': 'text', 'name': self.var})
+			try:
+				formf.attrib['value'] = ', '.join(self.value)
+			except:
+				pass
+		elif self.type == 'list-single':
+			formf = ET.Element('select', {'name': self.var})
+			for option in self.options:
+				optf = ET.Element('option', {'value': option[0]})
+				optf.text = option[1]
+				if not optf.text:
+					optf.text = option[0]
+				if option[1] in self.value:
+					optf.attrib['selected'] = 'selected'
+				formf.append(optf)
+		elif self.type == 'text-multi':
+			formf = ET.Element('textarea', {'name': self.var})
+			try:
+				formf.text = ', '.join(self.value)
+			except:
+				pass
+			if not formf.text:
+				formf.text = ' '
+		elif self.type == 'text-private':
+			formf = ET.Element('input', {'type': 'password', 'name': self.var})
+			try:
+				formf.attrib['value'] = ', '.join(self.value)
+			except:
+				pass
+		label.append(formf)
+		return field
+		
