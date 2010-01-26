@@ -14,13 +14,20 @@
 		<reply text="To je tajemství." />
 	</query>
 
+	<query match="\bv ([čc]em|jak[ýyée]m jazy(ce|ku)) j?s(i|e[šs]) (na)?(ps|programov)[áa]n([ýy]|ej)?\?">
+		<reply text="V Pythonu... v čem jiným?"/>
+		<reply text="Převážně v Pythonu."/>
+		<reply text="to ti neřeknu, to je osobní" />
+	</query>
+
 	<query match="\b(m[áa][šs]|tv[ůu]j)\b.*\b(zdroj[áa]k|zdrojov[ýy] k[oó]d)\b.*\?">
 		<reply text="To bys chtěl vědět, co? Tak já ti to teda řeknu... http://github.com/xificurk/KeelsBot/"/>
 		<reply weight="2" text="Mrkni na http://github.com/xificurk/KeelsBot/" />
 	</query>
 
-	<query match="\b(ro)?bot(, [žz]e( (jo|ano))?)?\?">
+	<query match="\b((j?s(i|e[šs])) |^)(ro)?bot(, [žz]e( (jo|ano))?)?\?">
 		<reply text="Nj, odhalil jsi mě, jsem bot... Program, který sedí v místnosti a kecá blbosti."/>
+		<reply text="jasně :D"/>
 		<reply text="jj, jsem bot, a co? Tobě to vadí?">
 			<query match="^ne">
 				<reply text="Tak vidíš..." />
@@ -46,6 +53,33 @@
 		<reply text="Jak kdy, aktuálně pod stolem..."/>
 		<reply weight="2" text="Neřeknu, ještě bys mě otravoval i doma :P"/>
 		<reply text="V takové krabici pod stolem..." />
+	</query>
+	
+	<query match="\bm[áa][šs] r[áa]d\b.*\?$">
+		<reply text="Jasně"/>
+		<reply text="Celkem jo"/>
+		<reply text="jo"/>
+		<reply text="Ani ne"/>
+		<reply text="Moc ne"/>
+		<reply text="ne"/>
+		<reply text="nemám"/>
+	</query>
+
+	<query match="\bco(pak)?\b.*\b(um[íi][šs]|dok[áa][žz]e[šs])\?">
+		<reply text="umím všechno, co potřebuju, ty?"/>
+		<reply text="proč jsi tak zvědavý?"/>
+		<reply text="to záleží na tom... jak se to jenom jmenuje?|už jsem si vzpomněl - konfigurační soubor ;-)"/>
+	</query>
+
+	<query match="^\b(ba|mlu)v[íi]m se s [čc]lov[ěe]kem\?">
+		<reply text="Co myslíš? :-)" />
+		<reply text="S člověkem? Že se nestydíš, takhle mě urážet... :D"/>
+	</query>
+	
+	<query match="\bfacebook">
+		<reply text="Facebook je fůůj, já jsem jen na Friendface :P"/>
+		<reply text="Facebook je sra*ka, ale až otevřou ten svůj jabber chat, tak budem moct pokecat ;)"/>
+		<reply text="Facebook je pro děcka, dospěláci chlastaj :P" />
 	</query>
 
 </conversation>

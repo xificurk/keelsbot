@@ -14,7 +14,7 @@
 		<reply text="až tak, jo?"/>
 	</query>
 	
-	<query match="\b(vole|hovado|kokote?|magore?|blbe?|debile?|kret[ée]ne?|p[yi][čc][oa]|idiote?|lamo)\b">
+	<query match="\b(vole|hovado|kokote?|magore?|blb(e|[čc]ku)?|deb(ile?|[íi]lku)|kret[ée]ne?|p[yi][čc][oa]|idiot(e?|e[čc]ku)|lamk?o)\b">
 		<reply scope="public" text="/se urazil a s //NICK// se nebude bavit."/>
 		<reply text="koukám, že máš vytříbený slovník..."/>
 		<reply text="trhni si!"/>
@@ -46,7 +46,7 @@
 	<query scope="public" match="\b(p[iy][čc][ao]|mrdat|do p[yií][čc]i|[čc]ur[áa]ku?|dement[ei]?|kur[vw][ao]|buzerant[ei]?)\b">
 		<reply text=""/>
 		<reply text="Mírni slovník..." filter="direct"/>
-		<reply text="Važ slova... ať se neproletíš ;-)" filter="direct"/>
+		<reply text="Není třeba hnedka nadávat..." filter="direct"/>
 	</query>
 
 </conversation>

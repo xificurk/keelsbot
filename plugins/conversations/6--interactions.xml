@@ -4,7 +4,15 @@
 		<reply text="">
 			<query scope="global" match="^You can't pull trigger twice in a row$" id="q_roulette_my_turn">
 				<reply text=".roulette" />
-				<reply weight="3" text=""/>
+				<reply weight="4" text="" id="r_roulette_noresponse">
+					<query match="\b(st[řr][íi]lej|hr[ea]j)\b">
+						<reply text="Proč já? :)"/>
+						<reply text="ee... bojim, bojim :)"/>
+						<reply text="už ne"/>
+						<reply text="mně to už stačilo"/>
+						<reply text=".roulette"/>
+					</query>
+				</reply>
 			</query>
 			<query scope="global" match=": chamber #1 of 6 => \+click\+$" id="q_roulette_my_turn_1" extends="q_roulette_my_turn_2">
 				<reply text=".roulette" />
@@ -19,7 +27,7 @@
 				<reply text=".roulette" />
 			</query>
 			<query scope="global" match=": chamber #5 of 6 => \+click\+$" id="q_roulette_my_turn_5" extends="q_roulette_my_turn">
-				<reply text=""/>
+				<reply text="" extends="r_roulette_noresponse"/>
 			</query>
 			<query scope="global" match=": chamber #1 of 6 => \*BANG\*$" extends="q_bang">
 				<reply text="ty máš ale kliku :)" />
@@ -65,10 +73,22 @@
 		<reply text="Hm, tak nic no..." filter="no-direct" />
 		<reply text="kruci" filter="no-direct" />
 		<reply text="sakra" filter="no-direct" />
-		<reply text="/ je kaput :(" filter="no-direct" />
-		<reply text="/ si jde vykopat hrob :)" filter="no-direct" />
+		<reply text="/je kaput :(" filter="no-direct" />
+		<reply text="/si jde vykopat hrob :)" filter="no-direct" />
 		<reply text="a je ze mě mrtvola..." filter="no-direct" />
 		<reply weight="6" text="" />
+	</query>
+	
+	<query scope="public" match=": (#[0-9]+\+-V diskusi j(e|sou) [0-9]+|Vtip #[0-9]+ \(kategorie:)" id="q_vtip_lamer">
+		<reply weight="20" text="" />
+		<reply text="lol" filter="no-direct" />
+		<reply text=":D" filter="no-direct" />
+		<reply text="slabý..." filter="no-direct" />
+		<reply text="dobrej" filter="no-direct" />
+		<reply text="!lamer" filter="no-direct" id="r_vtip_lamer">
+			<query match=": (#[0-9]+\+-V diskusi je [0-9]+|Vtip #[0-9]+ \(kategorie:)" extends="q_vtip_lamer"/>
+		</reply>
+		<reply text="!vtip" filter="no-direct" extends="r_vtip_lamer"/>
 	</query>
 
 </conversation>

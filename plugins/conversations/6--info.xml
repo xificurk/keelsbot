@@ -1,13 +1,13 @@
 <conversation>
 
-	<query scope="chat" match="^kolik je( hodin)?\?$">
+	<query scope="chat" match="kolik je( hodin)?\?$">
 		<reply scope="direct" text="se podívej na hodinky, ne?" />
 		<reply scope="public" text="//TIME//|/by ocenil, kdyby tu //NICK// pro příště nespamoval s takovýma trivialitama." filter="time" />
 		<reply text="//TIME// a nedělej, že se se neumíš podívat sám ;-)" filter="time" />
 		<reply text="//TIME//" filter="time" />
 		<reply text="Stejně jako včera touhle dobou :P" />
 		<reply text="//TIME//, proč se ptáš?" filter="time" id="r_proc">
-			<query match="">
+			<query match="[^?]$">
 				<reply text="Aha" />
 				<reply text="ok" />
 				<reply text="hmm..." />
@@ -15,8 +15,8 @@
 		</reply>
 	</query>
 
-	<query scope="chat" match="^jak[éeyý] je( dnes(ka)?)? datum\?$" extends="q_datum" />
-	<query scope="chat" match="^kolik[áa]t[éeyý]ho (je( dnes(ka)?)?|dnes(ka)? je)\?$" id="q_datum">
+	<query scope="chat" match="jak[éeyý] je( dnes(ka)?)? datum\?$" extends="q_datum" />
+	<query scope="chat" match="kolik[áa]t[éeyý]ho (je( dnes(ka)?)?|dnes(ka)? je)\?$" id="q_datum">
 		<reply scope="direct" text="neumíš používat kalendář?" />
 		<reply text="//DATE// a nedělej, že se se neumíš podívat sám ;-)" filter="date" />
 		<reply text="//DATE//" filter="date" />
@@ -34,15 +34,6 @@
 				</reply>
 			</query>
 		</reply>
-	</query>
-	
-	<query match="\bm[áa][šs] r[áa]d\b.*\?$">
-		<reply text="Jasně"/>
-		<reply text="Celkem jo"/>
-		<reply text="jo"/>
-		<reply text="Ani ne"/>
-		<reply text="Moc ne"/>
-		<reply text="ne"/>
 	</query>
 	
 	<query match="bude pršet\?$" extends="q_pocasi" />

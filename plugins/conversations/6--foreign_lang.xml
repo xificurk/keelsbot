@@ -2,23 +2,28 @@
 	
 	<query scope="chat" match="^(hi|hello)$">
 		<reply weight="2" scope="global" text="" />
-		<reply scope="public" text="lamo, tohle je česká místnost ;-)"/>
-		<reply text="mluv česky, prosím"/>
-		<reply text="asi si moc nepokecáme, jestli neumíš česky..." />
+		<reply scope="public" text="lamo, tohle je česká místnost ;-)" filter="direct"/>
+		<reply text="mluv česky, prosím" filter="direct"/>
+		<reply text="asi si moc nepokecáme, jestli neumíš česky..." filter="direct"/>
 	</query>
 	
 	<query scope="chat" match="([a-z])\1{4,}">
 		<reply scope="global" weight="4" text="" />
-		<reply text="Usnul jsi na klávesnici? :-)"/>
-		<reply text="To ti spadla hlava na klávesnici? :-)"/>
-		<reply weight="2" text="Používáš klávesnici místo polštáře? :P"/>
+		<reply text="Usnul jsi na klávesnici? :-)" filter="direct"/>
+		<reply text="To ti spadla hlava na klávesnici? :-)" filter="direct"/>
+		<reply weight="2" text="Používáš klávesnici místo polštáře? :P" filter="direct"/>
 	</query>
 	
 	<query scope="chat" match="\b(jaxe|vyd[ií](me?|te|[šs])?|vyd[ěe](t|l[iya]?))\b">
 		<reply scope="global" weight="4" text="" />
-		<reply text="Nauč se česky, trubko!"/>
-		<reply text="Á koukám, tebe hodiny češtiny moc nepoznamenaly, co? :)"/>
-		<reply text="Ty bít dobrý Češtyn! :-)"/>
+		<reply text="Nauč se česky, trubko!" filter="direct"/>
+		<reply text="Á koukám, tebe hodiny češtiny moc nepoznamenaly, co? :)" filter="direct"/>
+		<reply text="Ty bít dobrý Češtyn! :-)" filter="direct">
+			<query match="\bvym\b">
+				<reply text="A já zas vydím... :)" filter="direct"/>
+				<reply text=""/>
+			</query>
+		</reply>
 	</query>
 
 	<query match="\bdo you speak english\b">
@@ -27,7 +32,7 @@
 		<reply text="Sorry, Czech only..." />
 	</query>
 	
-	<query match="hablas espa[nñ]ol">
+	<query match="\bhablas espa[nñ]ol\b">
 		<reply text="No, lo siento, hablo sólo checo." />
 		<reply scope="public" text="Esta es una sala checa ;-)" />
 	</query>

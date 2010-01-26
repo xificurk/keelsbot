@@ -71,9 +71,9 @@ class pastebin(object):
         else:
             author = msg['jid'].split('@',1)[0]
 
-        data = {"service_id":2,"service_adapter":"remote_adapter","user_api_key":"d1e70fb6f3010769b8ea3252965aef41","text":code,"author":author,"expiration":expiration,"language":lang}
+        data = {"service_id":2,"service_adapter":"remote_adapter","user_api_key":"d1e70fb6f3010769b8ea3252965aef41","text":code.encode("utf-8"),"author":author.encode("utf-8"),"expiration":expiration,"language":lang.encode("utf-8")}
         if title != '':
-            data['title'] = title
+            data['title'] = title.encode("utf-8")
 
         response = urllib.urlopen("http://www.pastebin.cz/remote",urllib.urlencode(data))
         if response.getcode() != 201:

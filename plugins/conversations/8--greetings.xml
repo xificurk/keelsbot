@@ -1,5 +1,9 @@
 <conversation>
 
+	<query scope="chat" match="^baf">
+		<reply text="lek"/>
+		<reply text="/si leknutím skoro ucvrknul..." />
+	</query>
 	<query scope="chat" match="^(zdrav[íi](m|[čc]ko))(\b.*\b(lidi([čc]ky)?|v[šs]ichni))?[. !]*$" id="q_vitej" extends="q_hoj">
 		<reply text="zdravím" extends="r_hoj"/>
 		<reply text="vítej" extends="r_hoj" />
