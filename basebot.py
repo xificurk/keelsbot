@@ -24,9 +24,6 @@
 
 import logging
 
-LOG_COMM = 8
-logging.addLevelName(LOG_COMM, "COMM")
-
 
 class basebot(object):
     def __init__(self):
@@ -56,7 +53,7 @@ class basebot(object):
     def handleMessageEvent(self, msg):
         """ Parse message event and run the command
         """
-        self.log.log(LOG_COMM, msg)
+        self.log.debug(msg)
         level = self.getAccessLevel(msg)
         self.log.debug("User lvl: {0}, MinAclLevel: {1}".format(level, self.minAccessLevel))
         if level < self.minAccessLevel or level < 0:

@@ -310,7 +310,7 @@ if __name__ == "__main__":
         def filter(self, record):
             record.name = "SleekXMPP"
             record.levelno = int(record.levelno/10)
-            return True
+            return logging.getLogger("").getEffectiveLevel() <= record.levelno
 
     # Setup console output logging
     coloredLog = console.ColorLogging(fmt="%(levelname)-8s %(name)s >> %(message)s")
@@ -349,33 +349,39 @@ if __name__ == "__main__":
     clientVersion = __version__
     global shouldRestart
     shouldRestart = True
-    while shouldRestart:
-        shouldRestart = False
-        #load xml config
-        mainlog.info("Loading config file: {0}".format(configFile))
-        config = ET.parse(configFile)
-        auth = config.find("auth")
+    try:
+        while shouldRestart:
+            shouldRestart = False
+            #load xml config
+            mainlog.info("Loading config file: {0}".format(configFile))
+            config = ET.parse(configFile)
+            auth = config.find("auth")
 
-        client = config.find("/client")
-        if client is not None:
-            clientName = client.get("name", clientName)
-            clientVersion = client.get("version", clientVersion)
-            mainlog.debug("Setting user customized Client {0}-{1}".format(clientName, clientVersion))
+            client = config.find("/client")
+            if client is not None:
+                clientName = client.get("name", clientName)
+                clientVersion = client.get("version", clientVersion)
+                mainlog.debug("Setting user customized Client {0}-{1}".format(clientName, clientVersion))
 
-        #init
-        mainlog.info("Logging in as {0}".format(auth.attrib["jid"]))
+            #init
+            mainlog.info("Logging in as {0}".format(auth.attrib["jid"]))
 
-        plugin_config = {}
-        plugin_config["xep_0092"] = {"name": clientName, "version": clientVersion}
+            plugin_config = {}
+            plugin_config["xep_0092"] = {"name": clientName, "version": clientVersion}
 
-        bot = keelsbot(configFile, auth.attrib["jid"], auth.attrib["pass"], plugin_config=plugin_config)
+            bot = keelsbot(configFile, auth.attrib["jid"], auth.attrib["pass"], plugin_config=plugin_config)
 
-        if auth.get("server", None) is None:
-            # we don't know the server, but the lib can probably figure it out
-            bot.connect()
-        else:
-            bot.connect((auth.attrib["server"], 5222))
-        bot.process()
+            if auth.get("server", None) is None:
+                # we don't know the server, but the lib can probably figure it out
+                bot.connect()
+            else:
+                bot.connect((auth.attrib["server"], 5222))
+            bot.process()
 
-        while bot.state["connected"]:
-            time.sleep(1)
+            while bot.state["connected"]:
+                time.sleep(1)
+
+    except KeyboardInterrupt:
+        bot.die()
+        time.sleep(2)
+        raise SystemExit
