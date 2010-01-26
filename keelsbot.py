@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
     keelsbot.py - KeelsBot class. 
     Copyright (C) 2007, 2008 Nathan Fritz
     Copyright (C) 2007, 2008 Kevin Smith
-    Copyright (C) 2008, 2009 Petr Morávek
+    Copyright (C) 2008-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -23,321 +23,359 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from __future__ import with_statement
+__version__ = "0.2"
+
+
 import logging
-import sleekxmpp.sleekxmpp
-from basebot import basebot
-from store import store
+from optparse import IndentedHelpFormatter
 from optparse import OptionParser
-from xml.etree import ElementTree as ET
-import os
-import time
-import plugins
+import os.path
+import platform
+import re
 import sys
+import time
+from xml.etree import ElementTree as ET
 
-class keelsbot(sleekxmpp.sleekxmpp.xmppclient, basebot):
-    def __init__(self, configFile, jid, password, ssl=False, plugin_config = {}):
-        self.configFile = configFile
-        self.botconfig = self.loadConfig(configFile)
-        sleekxmpp.sleekxmpp.xmppclient.__init__(self, jid, password, ssl, plugin_config)
+import libs.console as console
+from libs.versioning import VersionInfo
+
+from basebot import basebot
+import plugins
+import sleekxmpp
+from store import store
+
+
+class keelsbot(sleekxmpp.ClientXMPP, basebot):
+    def __init__(self, configFile, jid, password, ssl=False, plugin_config={}):
+        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl, plugin_config)
         basebot.__init__(self)
-        storageXml = self.botconfig.find('storage')
-        if storageXml is not None:
-            self.store = store(storageXml.attrib['file'])
-        else:
-            logging.warning("No storage element found in config file - proceeding with no persistent storage, plugin behaviour may be undefined.")
-        accessLevel = self.botconfig.find('access-level')
-        if accessLevel is not None:
-            self.minAccessLevel = max(int(accessLevel.get('min', 0)),0)
-        lang = self.botconfig.find('lang')
-        if lang is not None:
-            lang = lang.text
-        if lang in ['cs']:
-            self.lang = lang
+        self.log = logging.getLogger("keelsbot")
+        self.configFile = configFile
+        self.loadConfig(configFile)
 
-        self.parseUserGroups()
         self.rooms = {}
         self.botPlugin = {}
-        self.pluginConfig = {}
+
         self.add_event_handler("session_start", self.start, threaded=True)
-        self.register_bot_plugins()
+
+        self.registerPlugin("xep_0004")
+        self.registerPlugin("xep_0030")
+        self.registerPlugin("xep_0045")
+        self.registerPlugin("xep_0050")
+        self.registerPlugin("xep_0060")
+        self.registerPlugin("xep_0092")
+
+        self.registerBotPlugins()
         self.registerCommands()
-
-    def baseTranslations(self):
-        self.translations["about"] = {"cs":u"O KeelsBotovi"}
-        self.translations["about_text"] = {"cs":u"KeelsBot je upravenou verzí SleekBota, kterou napsal Petr Morávek.\nKeelsBot těží z kódu projektu SleekBot, jehož autory jsou Nathan Fritz a Kevin Smith.\nPro komunikaci používá knihovnu SleekXMPP, jejímž autorem je taktéž Nathan Fritz.\nhttp://keelsbot.googlecode.com"}
-        self.translations["plugins"] = {"cs":u"Pluginy"}
-        self.translations["commands"] = {"cs":u"Příkazy"}
-        self.translations["about_plugin"] = {"cs":u"O pluginu"}
-
-    def parseUserGroups(self):
-        """ Parse user groups for ACLs.
-        """
-        self.acl = {}
-        groups = self.botconfig.findall('users/group')
-        if groups:
-            for group in groups:
-                level = int(group.get('level', 0))
-                name = group.get('name', "group-%s" % level)
-                if name not in self.acl:
-                    self.acl[name] = {'level':level,'users':[]}
-                userJids = group.findall('jid')
-                if userJids:
-                    for jid in userJids:
-                        logging.debug("appending %s to %s list" % (jid.text, name))
-                        self.acl[name]['users'].append(jid.text)
-        logging.debug(self.acl)
 
 
     def loadConfig(self, configFile):
         """ Load the specified config. Does not attempt to make changes based upon config.
         """
-        return ET.parse(configFile)
-    
-    def registerCommands(self):
-        """ Register all ad-hoc commands with SleekXMPP.
+        self.botconfig = ET.parse(configFile)
+
+        storageXml = self.botconfig.find("/storage")
+        if storageXml is not None:
+            self.store = store(storageXml.attrib["file"])
+        else:
+            self.log.warn("No storage element found in config file - proceeding with no persistent storage, plugin behaviour may be undefined.")
+
+        accessLevel = self.botconfig.find("/access-level")
+        if accessLevel is not None:
+            self.minAccessLevel = max(int(accessLevel.get("min", 0)), 0)
+
+        self.parseUserGroups()
+
+
+    def parseUserGroups(self):
+        """ Parse user groups for ACLs.
         """
-        aboutform = self.plugin['xep_0004'].makeForm('form', self.translate("about"))
-        aboutform.addField('about', 'fixed', value=self.translate("about_text"))
-        self.plugin['xep_0050'].addCommand('about', self.translate("about"), aboutform)
-        pluginform = self.plugin['xep_0004'].makeForm('form', self.translate("plugins"))
-        plugins = pluginform.addField('plugin', 'list-single', self.translate("plugins"))
-        for key in self.botPlugin:
-            plugins.addOption(key, key)
-        plugins = pluginform.addField('option', 'list-single', self.translate("commands"))
-        plugins.addOption('about', self.translate("about_plugin"))
-        self.plugin['xep_0050'].addCommand('plugins', self.translate("plugins"), pluginform, self.form_plugin_command, True)
+        self.acl = {}
+        groups = self.botconfig.findall("/users/group")
+        if groups is not None:
+            for group in groups:
+                level = int(group.get("level", 0))
+                name = group.get("name", "group-{0}".format(level))
+                if name not in self.acl:
+                    self.log.debug("Adding user group '{0}' with level {1}.".format(name, level))
+                    self.acl[name] = {"level":level, "users":[]}
+                else:
+                    self.log.error("User group name collision '{0}'.".format(name))
+                    continue
+                userJids = group.findall("jid")
+                if userJids is not None:
+                    for jid in userJids:
+                        self.log.debug("Adding user {0} to group '{1}'.".format(jid.text, name))
+                        self.acl[name]["users"].append(jid.text)
 
-    def del_event_handler(self, name, pointer, threaded=False, disposable=False):
-        with self.lock:
-            self.event_handlers[name].pop(self.event_handlers[name].index((pointer, threaded, disposable)))
 
-    def del_handler(self, xmlobj, pointer, disposable=False, threaded=False, filter = False):
-        with self.lock:
-            self.recv_handler.pop(self.recv_handler.index((xmlobj, pointer, disposable, threaded, filter)))
-
-    def form_plugin_command(self, form, sessid):
-        """ Take appropriate action when a plugin ad-hoc request is received.
-        """
-        value = form.getValues()
-        option = value['option']
-        plugin = value['plugin']
-        if option == 'about':
-            aboutform = self.plugin['xep_0004'].makeForm('form', self.translate("about_plugin"))
-            aboutform.addField('about', 'fixed', value=self.botPlugin[plugin].about)
-            return aboutform, None, False
-        elif option == 'config':
-            pass
-
-    def register_bot_plugins(self):
+    def registerBotPlugins(self):
         """ Registers all bot plugins required by botconfig.
         """
-        plugins = self.botconfig.findall('plugins/bot/plugin')
-        if plugins:
+        plugins = self.botconfig.findall("/plugins/plugin")
+        if plugins is not None:
             for plugin in plugins:
-                logging.info("Loading plugin %s." % (plugin.attrib['name']))
-                loaded = self.registerBotPlugin(plugin.attrib['name'], plugin.find('config'))
+                name = plugin.attrib["name"]
+                self.log.info("Loading plugin {0}.".format(name))
+                loaded = self.registerBotPlugin(name, plugin.find("config"))
                 if not loaded:
-                    logging.info("Loading plugin %s FAILED." % (plugin.attrib['name']))
-    
-    def deregister_bot_plugins(self):
-        """ Unregister all loaded bot plugins.
-        """
-        for plugin in self.botPlugin.keys():
-            self.deregisterBotPlugin(plugin)
-    
-    def plugin_name_to_module(self, pluginname):
-        """ Takes a plugin name, and returns a module name
-        """
-        #following taken from sleekxmpp.py
-        # discover relative "path" to the plugins module from the main app, and import it.
-        return "%s.%s" % (globals()['plugins'].__name__, pluginname)
-    
-    def deregisterBotPlugin(self, pluginName):
-        """ Unregisters a bot plugin.
-        """
-        logging.info("Unloading plugin %s" % pluginName)
-        if hasattr(self.botPlugin[pluginName], 'shutDown'):
-            logging.debug("Plugin has a shutDown() method, so calling that.")
-            self.botPlugin[pluginName].shutDown()
-        del self.pluginConfig[pluginName]
-        del self.botPlugin[pluginName]
-    
-    def registerBotPlugin(self, pluginname, config):
-        """ Registers a bot plugin pluginname is the file and class name,
+                    self.log.error("Loading plugin {0} FAILED.".format(name))
+
+
+    def registerBotPlugin(self, name, config):
+        """ Registers a bot plugin name is the file and class name,
         and config is an xml element passed to the plugin. Will reload the plugin module,
         so previously loaded plugins can be updated.
         """
-        if pluginname in globals()['plugins'].__dict__:
-            reload(globals()['plugins'].__dict__[pluginname])
+        if name in globals()["plugins"].__dict__:
+            reload(globals()["plugins"].__dict__[name])
         else:
-            __import__(self.plugin_name_to_module(pluginname))
-        self.botPlugin[pluginname] = getattr(globals()['plugins'].__dict__[pluginname], pluginname)(self, config)
-        self.pluginConfig[pluginname] = config
+            __import__("{0}.{1}".format(globals()["plugins"].__name__, name))
+        self.botPlugin[name] = getattr(globals()["plugins"].__dict__[name], name)(self, config)
         return True
-        
-    def getRealJid(self, jid):
-        """ Returns the 'real' jid.
-            If the jid isn't in a muc, it is returned.
-            If the jid is in a muc and the true jid is known, that is returned.
-            If it's in muc and the true jid isn't known, None is returned.
+
+
+    def registerCommands(self):
+        """ Register all ad-hoc commands with SleekXMPP.
         """
-        bareJid = self.getjidbare(jid)
-        nick = self.getjidresource(jid)
-        if bareJid in self.plugin['xep_0045'].getJoinedRooms():
-            logging.debug("Checking real jid for %s %s (%s)" %(bareJid, nick, jid))
-            realJid = self.plugin['xep_0045'].getJidProperty(bareJid, nick, 'jid')
-            if realJid:
-                return realJid
-            else:
-                return None
-        return jid
+        aboutform = self.plugin["xep_0004"].makeForm("form", "O KeelsBotovi")
+        aboutform.addField("about", "fixed", value="KeelsBot je upravenou verzí SleekBota, kterou napsal Petr Morávek.\nKeelsBot těží z kódu projektu SleekBot, jehož autory jsou Nathan Fritz a Kevin Smith.\nPro komunikaci používá knihovnu SleekXMPP, jejímž autorem je taktéž Nathan Fritz.\nhttp://github.com/xificurk/KeelsBot")
+        self.plugin["xep_0050"].addCommand("about", "O KeelsBotovi", aboutform)
 
-    def getAccessLevel(self, event):
-        """ Returns access level of the sender of the event (negative value means bot should ignore this).
-            Override this to get better access control.
+        pluginform = self.plugin["xep_0004"].makeForm("form", "Pluginy")
+        plugins = pluginform.addField("plugin", "list-single", "Pluginy")
+        for name in self.botPlugin:
+            plugins.addOption(name, name)
+        commands = pluginform.addField("option", "list-single", "Příkazy")
+        commands.addOption("about", "O pluginu")
+        self.plugin["xep_0050"].addCommand("plugins", "Pluginy", pluginform, self.pluginCommandForm, True)
+
+
+    def pluginCommandForm(self, form, sessid):
+        """ Take appropriate action when a plugin ad-hoc request is received.
         """
-        if event['type'] == 'groupchat':
-            if event['name'] == "" or event['room'] not in self.rooms or self.rooms[event['room']] == event['name']:
-                #system message
-                return -666
-            return self.getJidsAccessLevel("%s/%s" % (event['room'], event['name']))
-        else:
-            if event['jid'] in self['xep_0045'].getJoinedRooms():
-                return self.getJidsAccessLevel("%s/%s" % (event['jid'], event['resource']))
-            return self.getJidsAccessLevel(event.get('jid', ''))
+        value = form.getValues()
+        option = value["option"]
+        plugin = value["plugin"]
+        if option == "about":
+            aboutform = self.plugin["xep_0004"].makeForm("form", "O pluginu")
+            aboutform.addField("about", "fixed", value=self.botPlugin[plugin].about)
+            return aboutform, None, False
 
-    def getJidsAccessLevel(self, jid):
-        """ Returns access level of the jid (negative value means bot should ignore this).
-            Pass in a muc jid if you want, it'll be converted to a real jid if possible
-            Accepts 'None' jids (acts as an unknown user).
-        """
-        level = 0
-
-        jid = self.getRealJid(jid)
-        if jid:
-            jid = self.getjidbare(jid)
-
-            for group in self.acl:
-                if jid in self.acl[group]['users']:
-                    if self.acl[group]['level'] < 0:
-                        level = min(level, self.acl[group]['level'])
-                    else:
-                        level = max(level, self.acl[group]['level'])
-
-            logging.debug("%s has accesslevel %d." % (jid, level))
-        return level
 
     def getCommandAccessLevel(self, command):
         """ Determine required access level for the command.
             Override this to get better access control.
         """
         level = 0
-        commands = self.botconfig.findall('plugins/bot/plugin/acl/' + command)
-        if commands:
-            level = int(commands[0].get('level', 0))
-        logging.debug("Command %s has access level %d" % (command, level))
+        levelXml = self.botconfig.findall("/plugins/plugin/acl/{0}".format(command))
+        if levelXml is not None:
+            level = int(levelXml[0].get("level", 0))
+        self.log.debug("Command '{0}' has access level {1}.".format(command, level))
         return level
-    
+
+
+    def getAccessLevel(self, event):
+        """ Returns access level of the sender of the event (negative value means bot should ignore this).
+            Override this to get better access control.
+        """
+        if event["type"] == "groupchat":
+            if event["from"].full == event["mucroom"] or event["mucroom"] not in self.rooms or self.rooms[event["mucroom"]] == event["mucnick"]:
+                #system, error, or own message
+                return -666
+
+        level = 0
+        jid = self.getRealJid(event["from"])
+        if jid is not None:
+            jid = jid.bare
+
+            for group in self.acl:
+                if jid in self.acl[group]["users"]:
+                    if self.acl[group]["level"] < 0:
+                        level = min(level, self.acl[group]["level"])
+                    else:
+                        level = max(level, self.acl[group]["level"])
+
+        self.log.debug("{0} has accesslevel {1}.".format(jid, level))
+        return level
+
+
+
+    def getRealJid(self, jid):
+        """ Returns the 'real' jid.
+            If the jid isn't in a muc, it is returned.
+            If the jid is in a muc and the true jid is known, that is returned.
+            If the jid is in a muc and the true jid isn't known, None is returned.
+        """
+        if jid.bare in self.plugin["xep_0045"].getJoinedRooms():
+            self.log.debug("Checking real jid for {0}.".format(jid))
+            return self.plugin["xep_0045"].getJidProperty(jid.bare, jid.resource, "jid")
+        else:
+            return jid
+
+
+    def deregisterBotPlugins(self):
+        """ Unregister all loaded bot plugins.
+        """
+        for plugin in self.botPlugin.keys():
+            self.deregisterBotPlugin(plugin)
+
+
+    def deregisterBotPlugin(self, name):
+        """ Unregisters a bot plugin.
+        """
+        self.logg.info("Unloading plugin {0}.".format(name))
+        if hasattr(self.botPlugin[name], "shutDown"):
+            self.log.debug("Plugin has a shutDown() method, so calling that.")
+            self.botPlugin[name].shutDown()
+        del self.botPlugin[name]
+
+
+    def del_event_handler(self, name, pointer, threaded=False, disposable=False):
+        with self.lock:
+            self.event_handlers[name].remove((pointer, threaded, disposable))
+
 
     def start(self, event):
-        #TODO: make this configurable
-        self.requestRoster()
-        self.sendPresence(ppriority = self.botconfig.find('auth').get('priority', '1'))
+        """ Start the bot
+        """
+        self.getRoster()
+        self.sendPresence(ppriority=self.botconfig.find("/auth").get("priority", "1"))
         self.joinRooms()
-    
+
+
     def rehash(self):
         """ Re-reads the config file, making appropriate runtime changes.
             Causes all plugins to be reloaded (or unloaded). The XMPP stream, and
             channels will not be disconnected.
         """
-        logging.info("Deregistering bot plugins for rehash")
-        del globals()['plugins']
-        globals()['plugins'] = __import__('plugins')
+        self.log.warn("Deregistering bot plugins for rehash.")
+        del globals()["plugins"]
+        globals()["plugins"] = __import__("plugins")
         self.clearCommands()
-        self.deregister_bot_plugins()
-        logging.info("Reloading config file")
-        self.botconfig = self.loadConfig(self.configFile)
-        self.register_bot_plugins()
-        self.joinRooms()
-    
-    
-    def joinRooms(self):
-        logging.info("Re-syncing with required channels")
-        newRoomXml = self.botconfig.findall('rooms/muc')
-        newRooms = {}
-        if newRoomXml:
-            for room in newRoomXml:
-                newRooms[room.attrib['room']] = room.attrib['nick']
-        for room in self.rooms.keys():
-            if room not in newRooms.keys():
-                logging.info("Parting room %s." % room)
-                self.plugin['xep_0045'].leaveMUC(room, self.rooms[room])
-                del self.rooms[room]
-        for room in newRooms.keys():
-            if room not in self.rooms.keys():
-                self.rooms[room] = newRooms[room]
-                logging.info("Joining room %s as %s." % (room, newRooms[room]))
-                self.plugin['xep_0045'].joinMUC(room, newRooms[room])
+        self.deregisterBotPlugins()
 
-    def die(self):
-        """ Kills the bot.
-        """
-        self.deregister_bot_plugins()
-        self.rooms = {}
-        logging.info("Disconnecting bot")
-        self.disconnect()
+        self.log.info("Reloading config file.")
+        self.botconfig = self.loadConfig(self.configFile)
+
+        self.registerBotPlugins()
+        self.joinRooms()
+
 
     def restart(self):
         """ Cause the bot to be completely restarted (will reconnect etc.)
         """
         global shouldRestart
         shouldRestart = True
-        logging.info("Restarting bot")
+        self.log.warn("Restarting bot.")
         self.die()
 
-if __name__ == '__main__':
-    #parse command line arguements
-    optp = OptionParser()
-    optp.add_option('-q','--quiet', help='set logging to ERROR', action='store_const', dest='loglevel', const=logging.ERROR, default=logging.INFO)
-    optp.add_option('-d','--debug', help='set logging to DEBUG', action='store_const', dest='loglevel', const=logging.DEBUG, default=logging.INFO)
-    optp.add_option('-v','--verbose', help='set logging to COMM', action='store_const', dest='loglevel', const=5, default=logging.INFO)
-    optp.add_option("-c","--config", dest="configfile", default="config.xml", help="set config file to use")
-    opts,args = optp.parse_args()
-    
-    logging.basicConfig(level=opts.loglevel, format='%(levelname)-8s %(message)s')
 
+    def die(self):
+        """ Kills the bot.
+        """
+        self.deregisterBotPlugins()
+        self.rooms = {}
+        self.log.warn("Disconnecting bot.")
+        self.disconnect()
+
+
+    def joinRooms(self):
+        """ Join MUC rooms
+        """
+        self.log.info("Re-syncing with required channels.")
+        newRoomXml = self.botconfig.findall("/rooms/muc")
+        newRooms = {}
+        if newRoomXml is not None:
+            for room in newRoomXml:
+                newRooms[room.attrib["room"]] = room.attrib["nick"]
+        for room in self.rooms.keys():
+            if room not in newRooms.keys():
+                self.log.info("Leaving room {0}.".format(room))
+                self.plugin["xep_0045"].leaveMUC(room, self.rooms[room])
+                del self.rooms[room]
+        for room in newRooms.keys():
+            if room not in self.rooms.keys():
+                self.rooms[room] = newRooms[room]
+                self.log.info("Joining room {0} as {1}.".format(room, newRooms[room]))
+                self.plugin["xep_0045"].joinMUC(room, newRooms[room])
+
+
+
+if __name__ == "__main__":
+    class sleekxmppLogFilter(logging.Filter):
+        def __init__(self):
+            logging.Filter.__init__(self)
+
+        def filter(self, record):
+            record.name = "SleekXMPP"
+            record.levelno = int(record.levelno/10)
+            return True
+
+    # Setup console output logging
+    coloredLog = console.ColorLogging(fmt="%(levelname)-8s %(name)s >> %(message)s")
+    rootlog = logging.getLogger("")
+    rootlog.addHandler(coloredLog)
+    rootlog.addFilter(sleekxmppLogFilter())
+    rootlog.setLevel(logging.WARN)
+
+    # Parse command line arguements
+    optp = OptionParser(formatter=IndentedHelpFormatter(max_help_position=40), conflict_handler="resolve", version="%prog "+__version__)
+    optp.add_option("-c", "--config", dest="configfile", default="config.xml", help="set config file to use")
+    optp.add_option("-n", "--no-color", help="disable usage of colored output", dest="color", action="store_false", default=True)
+    optp.add_option("-q", "--quiet", help="set logging to ERROR", dest="loglevel", action="store_const", const=logging.ERROR, default=logging.WARN)
+    optp.add_option("-v", "--verbose", help="set logging to INFO", dest="loglevel", action="store_const", const=logging.INFO)
+    optp.add_option("-d", "--debug", help="set logging to DEBUG", dest="loglevel", action="store_const", const=logging.DEBUG)
+    optp.add_option("-D", "--Debug", help="set logging to ALL", dest="loglevel", action="store_const", const=0)
+
+    opts,args = optp.parse_args()
+    rootlog.setLevel(opts.loglevel)
+    mainlog = logging.getLogger("main")
+    console.useColor = opts.color
+    console.changeColor(console.colors["reset"], sys.stdout)
+    console.changeColor(console.colors["reset"], sys.stderr)
+    print("")
+    configFile = os.path.expanduser(opts.configfile)
+
+    # Check requirements
+    # NOTE: Ubuntu modifies version string by '+', OMG :-(, so we drop all but numbers and dots
+    version = re.sub("[^0-9.]+", "", platform.python_version())
+    version = VersionInfo(version)
+    minVersion = "3.1"
+    if version < minVersion:
+        mainlog.critical("You need at least Python {0} to run this script.".format(minVersion))
+
+    clientName = "KeelsBot"
+    clientVersion = __version__
     global shouldRestart
     shouldRestart = True
     while shouldRestart:
         shouldRestart = False
         #load xml config
-        logging.info("Loading config file: %s" % opts.configfile)
-        configFile = os.path.expanduser(opts.configfile)
+        mainlog.info("Loading config file: {0}".format(configFile))
         config = ET.parse(configFile)
-        auth = config.find('auth')
-        
-        clientName = 'KeelsBot'
-        clientVersion = '0.1-dev'
-        client = config.find('client')
+        auth = config.find("auth")
+
+        client = config.find("/client")
         if client is not None:
-            clientName = client.get('name', clientName)
-            clientVersion = client.get('version', clientVersion)
-            logging.debug('Setting user customized Client ' + clientName + ' ' + clientVersion)
-    
+            clientName = client.get("name", clientName)
+            clientVersion = client.get("version", clientVersion)
+            mainlog.debug("Setting user customized Client {0}-{1}".format(clientName, clientVersion))
+
         #init
-        logging.info("Logging in as %s" % auth.attrib['jid'])
-    
+        mainlog.info("Logging in as {0}".format(auth.attrib["jid"]))
+
         plugin_config = {}
-        plugin_config['xep_0092'] = {'name': clientName, 'version': clientVersion}
-    
-        bot = keelsbot(configFile, auth.attrib['jid'], auth.attrib['pass'], plugin_config=plugin_config)
-        
-        if not auth.get('server', None):
+        plugin_config["xep_0092"] = {"name": clientName, "version": clientVersion}
+
+        bot = keelsbot(configFile, auth.attrib["jid"], auth.attrib["pass"], plugin_config=plugin_config)
+
+        if auth.get("server", None) is None:
             # we don't know the server, but the lib can probably figure it out
             bot.connect()
         else:
-            bot.connect((auth.attrib['server'], 5222))
+            bot.connect((auth.attrib["server"], 5222))
         bot.process()
-        while bot.connected:
+
+        while bot.state["connected"]:
             time.sleep(1)

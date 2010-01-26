@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #    keelsbot.sh - Sample runner script, useful for keeping a bot up to date and running.
-#    Copyright (C) 2008, 2009 Petr Morávek
+#    Copyright (C) 2008-2010 Petr Morávek
 #
 #    This file is part of KeelsBot.
 #
@@ -32,7 +32,7 @@ CONFIG=$1
 # This is location of log file
 LOGFILE="/var/log/scripts/keelsbot/$CONFIG.log"
 # This is location of config file
-CONFIGFILE="/var/lib/scripts/keelsbot/config.$CONFIG.xml"
+CONFIGFILE="/var/lib/scripts/keelsbot/$CONFIG.config.xml"
 
 if [ ! -f "$CONFIGFILE" ] ; then
 	echo "ERROR: Configuration file $CONFIGFILE not found!"
@@ -60,6 +60,6 @@ while true; do
 		echo "Updating bot from master git repository..." >> $LOGFILE
 		git pull 1>> $LOGFILE 2>> $LOGFILE
 	fi
-	python $KEELSDIR/keelsbot.py -c "$CONFIGFILE" 1>> $LOGFILE 2>> $LOGFILE
+	python3 $KEELSDIR/keelsbot.py -c "$CONFIGFILE" 1>> $LOGFILE 2>> $LOGFILE
 	sleep 10
 done

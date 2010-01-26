@@ -1,122 +1,117 @@
 <config>
-	<!--Bot authorisation details-->
-	<auth jid='user@server.com/Resource' pass='secreteating' priority='10' server='__optional__' />
-	
-	<!--Bot client identification details - optional, do not change unless you want to mask the true nature of the bot :)-->
-	<!--<client name="KeelsBot" version="0.1-dev" />-->
+    <!--Bot authorisation details-->
+    <auth jid="user@server.com/Resource" pass="secreteating" priority="10" server="__optional__" />
 
-	<!--Defines the minimum access level for bot to respond to commands. Default is 0 = respond to all users except banned-->
-	<!--<access-level min="0" />-->
-	
-	<!--Defines the language (currently only cs)-->
-	<lang>cs</lang>
+    <!--Bot client identification details - optional, do not change unless you want to mask the true nature of the bot :)-->
+    <!--<client name="KeelsBot" version="0.2" />-->
 
-	<rooms>
-		<muc room='room@server.com' nick='KeelsBot' />
-	</rooms>
+    <!--Defines the minimum access level for bot to respond to commands. Default is 0 = respond to all users except banned-->
+    <!--<access-level min="0" />-->
 
-	<!--Location of the sqlite3 database used for persistent storage.-->
-	<storage file='/var/lib/scripts/keelsbot/test.sqlite' />
+    <rooms>
+        <muc room="room@server.com" nick="KeelsBot" />
+    </rooms>
 
-	<!--Users the bot knows about. You can define whatever groups and levels you want. Negative level should mean ignore them.-->
-	<!--If you put one jid into multiple groups, it will get the maximum available access level, unless one of the groups has negative level value, then it will get the negative value-->
-	<!--You can change required access level for every command in plugin configurations as shown below-->
-	<!--Default values of user's level and command's required level are both 0-->
-	<users>
-		<group level="300" name="owners">
-			<jid>yourjid@server.com</jid>
-			<jid>anotherjid@backupserver.com</jid>
-		</group>
-		<group level="200" name="admins">
-			<jid>trusteduser@server.com</jid>
-		</group>
-		<group level="100" name="members">
-			<jid>arbitrarybotuser@server.com</jid>
-		</group>
-		<group level="-1" name="banned">
-			<jid>banneduser@server.com</jid>
-		</group>
-	</users>
+    <!--Location of the sqlite3 database used for persistent storage.-->
+    <storage file="/var/lib/scripts/keelsbot/test.sqlite" />
 
-	<plugins>
-		<bot>
-			<plugin name='admin'>
-				<acl>
-					<rehash level="300" />
-					<die level="300" />
-					<restart level="300" />
-				</acl>
-				<config />
-			</plugin>
-			<plugin name='chatbot'>
-				<acl>
-					<convreload level="300" />
-					<shut level="200" />
-					<chat level="200" />
-				</acl>
-				<config>
-					<!--If you want to debug the conversations, enter the log directory-->
-					<debug log='/path/to/log/dir' />
-					<!--Rooms, where KeelsBot is supposed to respond-->
-					<muc room='room@server.com' />
-					<muc room='room2@server2.com' disabled="disabled" />
-					<!--What dictionary KeelsBot should use-->
-					<dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
-				</config>
-			</plugin>
-			<plugin name='definitionbot'>
-				<config />
-			</plugin>
-			<plugin name='help'>
-				<config />
-			</plugin>
-			<plugin name='irssilogs'>
-				<config> 
-					<log room='room@server.com' file='/path/to/file.log' />
-				</config>
-			</plugin>
-			<plugin name='mafianlife'>
-				<config />
-			</plugin>
-			<plugin name='muc_stability'>
-				<config />
-			</plugin>
-			<plugin name='oauth'>
-				<config />
-			</plugin>
-			<plugin name='parrot'>
-				<acl>
-					<say level="200" />
-					<tell level="200" />
-				</acl>
-				<config />
-			</plugin>
-			<plugin name='pastebin'>
-				<config>
-					<!--If you want, you can change default language (text) and expiration (d), see http://www.pastebin.cz/info/api-->
-					<default lang="php" expiration="d" />
-				</config>
-			</plugin>
-			<plugin name='pingbot'>
-				<config />
-			</plugin>
-			<plugin name='rssbot'>
-				<config>
-					<work path='/path/to/working/dir' />
-					<feed url='http://example.com/feed.xml' refresh='60'>
-						<muc room='room@server.com' />
-					</feed>
-				</config>
-			</plugin>
-			<plugin name='seen'>
-				<config />
-			</plugin>
-			<plugin name='toppresence'>
-				<config />
-			</plugin>
-			<plugin name='uptime'>
-				<config />
-			</plugin>
-		</bot>
-	</plugins>
+    <!--Users the bot knows about. You can define whatever groups and levels you want. Negative level should mean ignore them.-->
+    <!--If you put one jid into multiple groups, it will get the maximum available access level, unless one of the groups has negative level value, then it will get the negative value-->
+    <!--You can change required access level for every command in plugin configurations as shown below-->
+    <!--Default values of user's level and command's required level are both 0-->
+    <users>
+        <group level="300" name="owners">
+            <jid>yourjid@server.com</jid>
+            <jid>anotherjid@backupserver.com</jid>
+        </group>
+        <group level="200" name="admins">
+            <jid>trusteduser@server.com</jid>
+        </group>
+        <group level="100" name="members">
+            <jid>arbitrarybotuser@server.com</jid>
+        </group>
+        <group level="-1" name="banned">
+            <jid>banneduser@server.com</jid>
+        </group>
+    </users>
+
+    <plugins>
+        <plugin name="admin">
+            <acl>
+                <rehash level="300" />
+                <die level="300" />
+                <restart level="300" />
+            </acl>
+            <config />
+        </plugin>
+        <plugin name="chatbot">
+            <acl>
+                <convreload level="300" />
+                <shut level="200" />
+                <chat level="200" />
+            </acl>
+            <config>
+                <!--If you want to debug the conversations, enter the log directory-->
+                <debug log="/path/to/log/dir" />
+                <!--Rooms, where KeelsBot is supposed to respond-->
+                <muc room="room@server.com" />
+                <muc room="room2@server2.com" disabled="disabled" />
+                <!--What dictionary KeelsBot should use-->
+                <dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
+            </config>
+        </plugin>
+        <plugin name="definitionbot">
+            <config />
+        </plugin>
+        <plugin name="help">
+            <config />
+        </plugin>
+        <plugin name="irssilogs">
+            <config>
+                <log room="room@server.com" file="/path/to/file.log" />
+            </config>
+        </plugin>
+        <plugin name="mafianlife">
+            <config />
+        </plugin>
+        <plugin name="muc_stability">
+            <config />
+        </plugin>
+        <plugin name="oauth">
+            <config />
+        </plugin>
+        <plugin name="parrot">
+            <acl>
+                <say level="200" />
+                <tell level="200" />
+            </acl>
+            <config />
+        </plugin>
+        <plugin name="pastebin">
+            <config>
+                <!--If you want, you can change default language (text) and expiration (d), see http://www.pastebin.cz/info/api-->
+                <default lang="php" expiration="d" />
+            </config>
+        </plugin>
+        <plugin name="pingbot">
+            <config />
+        </plugin>
+        <plugin name="rssbot">
+            <config>
+                <work path="/path/to/working/dir" />
+                <feed url="http://example.com/feed.xml" refresh="60">
+                    <muc room="room@server.com" />
+                </feed>
+            </config>
+        </plugin>
+        <plugin name="seen">
+            <config />
+        </plugin>
+        <plugin name="toppresence">
+            <config />
+        </plugin>
+        <plugin name="uptime">
+            <config />
+        </plugin>
+    </plugins>
 </config>
