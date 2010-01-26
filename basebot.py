@@ -28,7 +28,7 @@ import logging
 class basebot(object):
     def __init__(self):
         self.log = logging.getLogger("basebot")
-        self.cmd_prefix = "!"
+        self.cmdPrefix = "!"
         self.minAccessLevel = 0
         self.clearCommands()
         self.add_event_handler("message", self.handleMessageEvent, threaded=True)
@@ -59,9 +59,9 @@ class basebot(object):
         if level < self.minAccessLevel or level < 0:
             return
         message = msg.get("body", "")
-        if message.startswith(self.cmd_prefix):
+        if message.startswith(self.cmdPrefix):
             # Remove cmd_prefix from message
-            message = message[len(cmd_prefix):]
+            message = message[len(self.cmdPrefix):]
 
             # Get command name
             command = message.split("\n", 1)[0].split(" ", 1)[0]
@@ -69,12 +69,11 @@ class basebot(object):
                 # No command name -> return
                 return
 
-            # Parse arguments
-            args = message[len(command)+1:]
-
-            self.log.debug("Command '{0}' with args '{1}'".format(command, args))
-
             if command in self.commands and self.commands[command]["level"] <= level:
+                # Parse arguments
+                args = message[len(command)+1:]
+                self.log.debug("Command '{0}' with args '{1}'".format(command, args))
+
                 response = self.commands[command]["pointer"](command, args, msg)
                 if msg["type"] == "groupchat":
                     self.sendMessage(msg["mucroom"], "{0}: {1}".format(msg["mucnick"], response), mtype="groupchat")

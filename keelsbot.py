@@ -26,6 +26,7 @@
 __version__ = "0.2"
 
 
+from imp import reload
 import logging
 from optparse import IndentedHelpFormatter
 from optparse import OptionParser
@@ -196,7 +197,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
                     else:
                         level = max(level, self.acl[group]["level"])
 
-        self.log.debug("{0} has accesslevel {1}.".format(jid, level))
+        self.log.debug("'{0}' has accesslevel {1}.".format(jid, level))
         return level
 
 
@@ -217,14 +218,14 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
     def deregisterBotPlugins(self):
         """ Unregister all loaded bot plugins.
         """
-        for plugin in self.botPlugin.keys():
+        for plugin in list(self.botPlugin.keys()):
             self.deregisterBotPlugin(plugin)
 
 
     def deregisterBotPlugin(self, name):
         """ Unregisters a bot plugin.
         """
-        self.logg.info("Unloading plugin {0}.".format(name))
+        self.log.info("Unloading plugin {0}.".format(name))
         if hasattr(self.botPlugin[name], "shutDown"):
             self.log.debug("Plugin has a shutDown() method, so calling that.")
             self.botPlugin[name].shutDown()
@@ -256,7 +257,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         self.deregisterBotPlugins()
 
         self.log.info("Reloading config file.")
-        self.botconfig = self.loadConfig(self.configFile)
+        self.loadConfig(self.configFile)
 
         self.registerBotPlugins()
         self.joinRooms()
@@ -380,6 +381,7 @@ if __name__ == "__main__":
 
             while bot.state["connected"]:
                 time.sleep(1)
+        raise SystemExit
 
     except KeyboardInterrupt:
         bot.die()

@@ -2,7 +2,7 @@
 """
     plugins/admin.py - A plugin for administering the bot.
     Copyright (C) 2007 Kevin Smith
-    Copyright (C) 2008, 2009 Petr Morávek
+    Copyright (C) 2008-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -21,28 +21,23 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import logging
-
 class admin(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.addCommand(u'rehash', self.handle_rehash, u'Rehash', u"Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", u'rehash')
-        self.bot.addCommand(u'die', self.handle_die, u'Die', u"Killnout bota.", u'die')
-        self.bot.addCommand(u'restart', self.handle_restart, u'Restart', u"Restartovat bota a znovu připojit...", u'restart')
+        self.about = "'Admin' umožňuje vlastníkům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
+        self.bot.addCommand("rehash", self.rehash, "Rehash", "Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", "rehash")
+        self.bot.addCommand("restart", self.restart, "Restart", "Restartovat bota a znovu připojit...", "restart")
+        self.bot.addCommand("die", self.die, "Die", "Killnout bota.", "die")
 
-    def handle_rehash(self, command, args, msg):
+    def rehash(self, command, args, msg):
         self.bot.rehash()
-        response = u"Rehashnuto šéfiku."
-        return response
+        return "Rehashnuto, šéfiku."
 
-    def handle_restart(self, command, args, msg):
+    def restart(self, command, args, msg):
         self.bot.restart()
-        response = u"Restartováno šéfiku."
-        return response
+        return "Restartováno, šéfiku."
 
-    def handle_die(self, command, args, msg):
-        response = u"Umírám..."
+    def die(self, command, args, msg):
         self.bot.die()
-        return response
+        return "Umírám..."
