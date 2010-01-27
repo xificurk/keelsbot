@@ -107,9 +107,6 @@
         <plugin name="oauth">
             <config />
         </plugin>
-        <plugin name="pingbot">
-            <config />
-        </plugin>
         <plugin name="rssbot">
             <config>
                 <work path="/path/to/working/dir" />
