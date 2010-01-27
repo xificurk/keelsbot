@@ -48,7 +48,8 @@ from store import store
 
 class keelsbot(sleekxmpp.ClientXMPP, basebot):
     def __init__(self, configFile, jid, password, ssl=False, plugin_config={}):
-        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl, plugin_config)
+        plugin_whitelist = ["xep_0004", "xep_0030", "xep_0045", "xep_0050", "xep_0086", "xep_0092", "xep_0199"]
+        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl, plugin_config=plugin_config, plugin_whitelist=plugin_whitelist)
         basebot.__init__(self)
         self.log = logging.getLogger("keelsbot")
         self.configFile = configFile
@@ -58,14 +59,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         self.botPlugin = {}
 
         self.add_event_handler("session_start", self.start, threaded=True)
-
-        self.registerPlugin("xep_0004")
-        self.registerPlugin("xep_0030")
-        self.registerPlugin("xep_0045")
-        self.registerPlugin("xep_0050")
-        self.registerPlugin("xep_0060")
-        self.registerPlugin("xep_0092")
-
+        self.register_plugins()
         self.registerBotPlugins()
         self.registerCommands()
 
