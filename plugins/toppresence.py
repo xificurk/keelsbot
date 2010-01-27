@@ -43,6 +43,7 @@ class toppresence(object):
         muc = presence["muc"].getRoom()
         if muc == None or muc not in self.bot.rooms:
             return
+        self.log.debug(self.bot.plugin["xep_0045"].getRoster(muc))
         current = len(self.bot.plugin["xep_0045"].getRoster(muc))
         time.sleep(2)
         current = max(len(self.bot.plugin["xep_0045"].getRoster(muc)), current)
