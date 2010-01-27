@@ -22,19 +22,17 @@
 """
 
 import datetime
-import time
 
 
 class uptime(object):
     def __init__(self, bot, config):
         self.about = "'Uptime' umožňuje vypisuje uptime bota.\nAutor: Petr Morávek"
         bot.addCommand("uptime", self.uptime, "Uptime bota", "Jak dlouho už bot běží?", "uptime")
-        self.started = datetime.timedelta(seconds=time.time())
+        self.started = datetime.datetime.now()
 
 
     def uptime(self, command, args, msg):
-        now = datetime.timedelta(seconds=time.time())
-        diff = now - self.started
+        diff = datetime.datetime.now() - self.started
         return "Jsem vzhůru už {0}.".format(self.formatTimeDiff(diff))
 
 
