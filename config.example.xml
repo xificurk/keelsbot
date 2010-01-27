@@ -57,6 +57,9 @@
         <plugin name="mafianlife">
             <config />
         </plugin>
+        <plugin name="muc_stability">
+            <config />
+        </plugin>
         <plugin name="parrot">
             <acl>
                 <say level="200" />
@@ -101,9 +104,6 @@
             <config>
                 <log room="room@server.com" file="/path/to/file.log" />
             </config>
-        </plugin>
-        <plugin name="muc_stability">
-            <config />
         </plugin>
         <plugin name="rssbot">
             <config>

@@ -3,7 +3,7 @@
     plugins/muc_stability.py - A plugin for keeping a bot in MUC channels
     it joins.
     Copyright (C) 2008 Kevin Smith
-    Copyright (C) 2009 Petr Morávek
+    Copyright (C) 2009-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -23,45 +23,45 @@
 """
 
 import logging
-import datetime, time
-import thread
+import threading
+import time
+
 
 class muc_stability(object):
     def __init__(self, bot, config):
+        self.log = logging.getLogger("keelsbot.muc_stability")
         self.bot = bot
-        self.config = config
-        self.about = u"'MUC_stability' se snaží udržet KeelsBota v kanále.\nAutoři: Kevin Smith, Petr Morávek"
+        self.about = "'MUC_stability' se snaží udržet KeelsBota v kanále.\nAutoři: Kevin Smith, Petr Morávek"
         self.shuttingDown = False
-        thread.start_new(self.loop, ())
-        self.bot.add_handler("<message xmlns='jabber:client' type='error'><error type='modify' code='406' ><not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></message>", self.handle_message_error)
-        
-        
+        threading.Thread(target=self.loop).start()
+        self.bot.add_handler("<message xmlns='jabber:client' type='error'><error type='modify' code='406' ><not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></message>", self.messageError)
+
+
     def loop(self):
-        """ Perform the muc checking.
+        """ Perform the MUC checking.
         """
         while not self.shuttingDown:
-            #print "looping on feed %s" % feedUrl
-            if self.bot['xep_0045']:
-                for muc in self.bot['xep_0045'].getJoinedRooms():
-                    jid = self.bot['xep_0045'].getOurJidInRoom(muc)
-                    self.bot.sendMessage(jid, None, mtype='chat')
             time.sleep(600)
+            if self.bot.plugin["xep_0045"]:
+                for muc in self.bot.plugin["xep_0045"].getJoinedRooms():
+                    jid = self.bot.plugin["xep_0045"].getOurJidInRoom(muc)
+                    self.bot.sendMessage(jid, None, mtype="chat")
 
-    def handle_message_error(self, xml):
+
+    def messageError(self, xml):
         """ On error messages, see if it's from a muc, and rejoin the muc if so.
             (Subtle as a flying mallet)
         """
-        source = xml.attrib['from']
+        source = xml.attrib["from"]
         room = self.bot.getjidbare(source)
-        if room not in self.bot['xep_0045'].getJoinedRooms():
+        if room not in self.bot.plugin["xep_0045"].getJoinedRooms():
             return
-        nick = self.bot.getjidresource(self.bot['xep_0045'].getOurJidInRoom(room))
-        logging.debug("muc_stability: error from %s, rejoining as %s" %(room, nick))
-        self.bot['xep_0045'].joinMUC(room, nick)
+        nick = self.bot.getjidresource(self.bot.plugin["xep_0045"].getOurJidInRoom(room))
+        self.log.debug("Error from {0}, rejoining as {1}.".format(room, nick))
+        self.bot.plugin["xep_0045"].joinMUC(room, nick)
+
 
     def shutDown(self):
-        self.bot.del_handler("<message xmlns='jabber:client' type='error'><error type='modify' code='406' ><not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></message>", self.handle_message_error)
-
-"""<message  to="jabber@conference.jabber.org/sleek" id="abbbb" />
-"""
+        self.shuttingDown = True
+        #self.bot.del_handler("<message xmlns='jabber:client' type='error'><error type='modify' code='406' ><not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></message>", self.handle_message_error)
 
