@@ -44,6 +44,7 @@
                 <rehash level="300" />
                 <die level="300" />
                 <restart level="300" />
+                <loglevel level="300" />
             </acl>
             <config />
         </plugin>

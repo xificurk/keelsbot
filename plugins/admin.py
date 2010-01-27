@@ -21,13 +21,18 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import logging
+
+
 class admin(object):
     def __init__(self, bot, config):
         self.bot = bot
+        self.loglevels = {"ALL":0, "DEBUG":10, "INFO":20, "WARNING":30, "ERROR":40, "CRITICAL":50}
         self.about = "'Admin' umožňuje administrátorům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
         bot.addCommand("rehash", self.rehash, "Rehash", "Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", "rehash")
         bot.addCommand("restart", self.restart, "Restart", "Restartovat bota a znovu připojit...", "restart")
         bot.addCommand("die", self.die, "Die", "Killnout bota.", "die")
+        bot.addCommand("loglevel", self.loglevel, "Log level", "Nastavit úroveň logování.", "loglevel <0-50|{0}>".format("|".join(sorted(self.loglevels, key=self.loglevels.get))))
 
     def rehash(self, command, args, msg):
         self.bot.rehash()
@@ -40,3 +45,19 @@ class admin(object):
     def die(self, command, args, msg):
         self.bot.die()
         return "Umírám..."
+
+    def loglevel(self, command, args, msg):
+        if not args.isdigit():
+            args = args.upper()
+            if args in self.loglevels:
+                args = self.loglevels[args]
+            else:
+                return "Musíš zadat číslo v rozmezí 0-50, nebo jednu z hodnot {0}.".format(", ".join(sorted(self.loglevels, key=self.loglevels.get)))
+        else:
+            args = int(args)
+
+        if args < 0 or args > 50:
+            return "Musíš zadat číslo v rozmezí 0-50, nebo jednu z hodnot {0}.".format(", ".join(sorted(self.loglevels, key=self.loglevels.get)))
+
+        logging.getLogger("").setLevel(args)
+        return "Nastaveno."
