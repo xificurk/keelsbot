@@ -53,6 +53,9 @@
         <plugin name="help">
             <config />
         </plugin>
+        <plugin name="uptime">
+            <config />
+        </plugin>
 
 
         <plugin name="chatbot">
@@ -113,9 +116,6 @@
             <config />
         </plugin>
         <plugin name="toppresence">
-            <config />
-        </plugin>
-        <plugin name="uptime">
             <config />
         </plugin>
     </plugins>

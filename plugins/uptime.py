@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     plugins/uptime.py - A plugin for displaying bot's uptime.
-    Copyright (C) 2009 Petr Morávek
+    Copyright (C) 2009-2010 Petr Morávek
     This code was inspired by similar plugin for SleekBot.
 
     This file is part of KeelsBot.
@@ -21,80 +21,81 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import logging
-import datetime, time
+import datetime
+import time
+
 
 class uptime(object):
     def __init__(self, bot, config):
-        self.bot = bot
-        self.config = config
-        self.about = u"'Uptime' umožňuje uživatelům ptát se na uptime bota.\nAutor: Petr Morávek"
-        self.bot.addCommand(u'uptime', self.handle_uptime, u'Uptime bota', u"Jak dlouho už bot běží?", u'uptime')
-        self.started = datetime.timedelta(seconds = time.time())
+        self.about = "'Uptime' umožňuje vypisuje uptime bota.\nAutor: Petr Morávek"
+        bot.addCommand("uptime", self.uptime, "Uptime bota", "Jak dlouho už bot běží?", "uptime")
+        self.started = datetime.timedelta(seconds=time.time())
 
-    def getStringUpt(self, time):
+
+    def uptime(self, command, args, msg):
+        now = datetime.timedelta(seconds=time.time())
+        diff = now - self.started
+        return "Jsem vzhůru už {0}.".format(self.formatTimeDiff(diff))
+
+
+    def formatTimeDiff(self, time):
         days = time.days
         seconds = time.seconds
-        
+
         months = hours = minutes = 0
         response = ""
 
-        months = days / 30
+        months = int(days / 30)
         days -= months * 30
         if months > 0:
-            months_str = u"%d měsíc" % months
+            monthsStr = "{0} měsíc".format(months)
             if months > 4:
-                months_str += u"ů"
+                monthsStr += "ů"
             elif months > 1:
-                months_str += u"e"
-            response += months_str
+                monthsStr += "e"
+            response = monthsStr
 
         if len(response) > 0 or days > 0:
             if days > 4 or days == 0:
-                days_str = u"%d dnů" % days
+                daysStr = "{0} dnů".format(days)
             elif days > 1:
-                days_str = u"%d dny" % days
+                daysStr = "{0} dny".format(days)
             else:
-                days_str = u"%d den" % days
+                daysStr = "{0} den".format(days)
             if len(response) > 0:
-                return response + " a " + days_str
-            response += days_str
+                return response + " a " + daysStr
+            response = daysStr
 
-        hours = seconds / 3600
+        hours = int(seconds / 3600)
         seconds -= hours * 3600
         if len(response) > 0 or hours > 0:
-            hours_str = "%d hodin" % hours
+            hoursStr = "{0} hodin".format(hours)
             if hours > 1 and hours <= 4:
-                hours_str += "y"
+                hoursStr += "y"
             elif hours == 1:
-                hours_str += "u"
+                hoursStr += "u"
             if len(response) > 0:
-                return response + " a " + hours_str
-            response += hours_str
+                return response + " a " + hoursStr
+            response = hoursStr
 
-        minutes = seconds / 60
+        minutes = int(seconds / 60)
         seconds -= minutes * 60
         if len(response) > 0 or minutes > 0:
-            minutes_str = "%d minut" % minutes
+            minutesStr = "{0} minut".format(minutes)
             if minutes > 1 and minutes <= 4:
-                minutes_str += "y"
+                minutesStr += "y"
             elif minutes == 1:
-                minutes_str += "u"
+                minutesStr += "u"
             if len(response) > 0:
-                return response + " a " + minutes_str
-            response += minutes_str
+                return response + " a " + minutesStr
+            response = minutesStr
 
         if len(response) > 0 or seconds > 0:
-            seconds_str = "%d sekund" % seconds
+            secondsStr = "{0} sekund".format(seconds)
             if seconds > 1 and seconds <= 4:
-                seconds_str += "y"
+                secondsStr += "y"
             elif seconds == 1:
-                seconds_str += "u"
+                secondsStr += "u"
             if len(response) > 0:
-                return response + " a " + seconds_str
-            return seconds_str
-
-    def handle_uptime(self, command, args, msg):
-        now = datetime.timedelta(seconds = time.time())
-        diff = now - self.started
-        return u"Jsem vzhůru už %s" % self.getStringUpt(diff) + "."
+                return response + " a " + secondsStr
+            return secondsStr
