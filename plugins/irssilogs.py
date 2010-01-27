@@ -2,7 +2,7 @@
 """
     plugins/irssilogs.py - A plugin for logging MUC traffice in an irssi style.
     Copyright (C) 2008 Kevin Smith
-    Copyright (C) 2009 Petr Morávek
+    Copyright (C) 2009-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -22,174 +22,184 @@
 """
 
 import datetime
-import time
+import locale
 import logging
 import re
 
-class irssilogfile(object):
-    """ Handle writing to a single irssi log file.
-    """
-    def __init__(self, muc, fileName):
-        """ Create a logfile handler for a given muc and file.
-        """
-        self.muc = muc
-        self.fileName = fileName
-        self.logfile = file(self.fileName, 'a')
-        line = u"--- Začátek logování"
-        self.appendLogLine(line)
-    
-    def datetimeToTimestamp(self, dt):
-        """ Convert a datetime to hh:mm
-        """
-        return "%02d:%02d:%02d" % (dt.hour, dt.minute, dt.second)
-        
-    def logPresence(self, presence):
-        """ Log the presence to the file.
-            Formats:
-            join = '20:06:07 -!- Nick vstoupi'
-            quit = '19:07:08 -!- Nick odešel [status]'
-        """
-        values = {}
-        values['nick'] = presence['nick']
-        values['reason'] = presence.get('status', "")
-        values['time'] = self.datetimeToTimestamp(presence['dateTime'])
-        if presence.get('type', None) == 'unavailable':
-            line = u'%(time)s -!- %(nick)s odešel [%(reason)s]'
-        else:
-            line = u'%(time)s -!- %(nick)s vstoupil'
-
-        self.appendLogLine(line % values)
-        
-    def logMessage(self, message):
-        """ Log the message to the file.
-            Formats:
-            message = '09:43:42 <Nick> messagebody'
-            action  = '10:45:42  * Nick actionbodies'
-            topic   = '18:38:42 -!- Nick změnil téma na: New Topic'
-        """
-        values = {}
-        values['nick'] = message['name']
-        values['time'] = self.datetimeToTimestamp(message['dateTime'])
-        values['body'] = message['message']
-        action = False
-        topic = False
-        system = False
-        if values['body'][:4] == '/me ':
-            action = True
-            values['body'] = values['body'][4:]
-        if message['name'] == '':
-            system = True
-        match = re.match("^(.*) has set the subject to: (.*)", message["message"])
-	if match:
-	    topic = True
-	    values["body"] = match.group(2)
-	    values["nick"] = match.group(1)
-        elif message["subject"] != "":
-            topic = True
-            values["body"] = message["subject"]
-
-        if topic:
-            line = u"%(time)s -!- %(nick)s nastavil téma na: %(body)s"
-        elif system:
-            line = u"%(time)s -!- %(body)s"
-        elif action:
-            line = u"%(time)s  * %(nick)s %(body)s"
-        else:
-            line = u"%(time)s <%(nick)s> %(body)s"
-
-        self.appendLogLine(line % values)
-        
-    def logDateChange(self, newDate):
-        """ Log a date change.
-            Format:
-            --- Day changed Thu Aug 16 2007
-        """
-        values = {}
-        values['dayOfWeek'] = [u'Pondělí', u'Úterý', u'Středa', u'Čtvrtek', u'Pátek', u'Sobota', u'Neděle'][newDate.weekday()]
-        values['day'] = newDate.day
-        values['monthName'] = [u'ledna', u'února', u'března', u'dubna', u'května', u'června', u'července', u'srpna', u'září', u'října', u'listopadu', u'prosince'][newDate.month - 1]
-        values['year'] = newDate.year
-        line = u"--- %(dayOfWeek)s %(day)s. %(monthName)s %(year)s"
-        self.appendLogLine(line % values)
-        
-    def appendLogLine(self, line):
-        """ Append the line to the log
-        """
-        line = line + "\n"
-        if type(line) is unicode:
-            line = line.encode('utf-8')
-        self.logfile.write(line)
-        self.logfile.flush()
-
+locale.setlocale(locale.LC_ALL, ("cs_CZ", "UTF-8"))
 
 
 class irssilogs(object):
     def __init__(self, bot, config):
+        self.log = logging.getLogger("keelsbot.irssilogs")
         self.bot = bot
         self.config = config
-        self.about = u"'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
-        self.bot.add_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
-        self.bot.add_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.handle_groupchat_topic)
+        self.about = "'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
+        self.bot.add_event_handler("groupchat_presence", self.logPresence, threaded=True)
+        self.bot.add_event_handler("groupchat_message", self.logMessage, threaded=True)
+        self.bot.add_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.logTopic, threaded=True)
+        self.lastdate = datetime.datetime.now()
         self.roomLogFiles = {}
         self.roomMembers = {}
-        logs = self.config.findall('log')
-        self.lastdate = datetime.datetime.now()
+        logs = self.config.findall("log")
         if logs:
             for log in logs:
-                room = log.attrib['room']
-                fileName = log.attrib['file']
-                self.roomLogFiles[room] = irssilogfile(room, fileName)
+                room = log.attrib["room"]
+                fileName = log.attrib["file"]
+                self.roomLogFiles[room] = irssilogfile(fileName)
                 self.roomMembers[room] = []
-                logging.info("irssilogs.py script logging %s to %s." % (room, fileName))
+                self.log.debug("Starting logging {0} to {1}.".format(room, fileName))
 
-    def check_for_date_change(self, date):
+
+    def checkDateChange(self, date):
         if date.day != self.lastdate.day:
+            self.lastdate = date
             for log in self.roomLogFiles.values():
-                self.lastdate = date
                 log.logDateChange(date)
 
-    def handle_groupchat_presence(self, presence):
+
+    def logPresence(self, event):
         """ Monitor MUC presences.
         """
-        presence['dateTime'] = datetime.datetime.now()
-        self.check_for_date_change(presence['dateTime'])
-        if presence['room'] in self.roomLogFiles.keys():
-            if presence.get('type', None) == 'unavailable' or presence['nick'] not in self.roomMembers[presence['room']]:
-                self.roomLogFiles[presence['room']].logPresence(presence)
-                if presence.get('type', None) == 'unavailable':
-                    if presence['nick'] in self.roomMembers[presence['room']]:
-                        self.roomMembers[presence['room']].remove(presence['nick'])
-                else:
-                    self.roomMembers[presence['room']].append(presence['nick'])
+        presence = {}
+        presence["dateTime"] = datetime.datetime.now()
+        presence["room"] = event["muc"].getRoom()
+        presence["nick"] = event["muc"].getNick()
+        presence["status"] = event["status"]
+        presence["type"] = event["type"]
+        self.checkDateChange(presence["dateTime"])
 
-    def handle_groupchat_message(self, message):
+        if presence["room"] in self.roomLogFiles:
+            if presence["type"] == "unavailable" or presence["nick"] not in self.roomMembers[presence["room"]]:
+                self.roomLogFiles[presence["room"]].logPresence(presence)
+
+                if presence["type"] == "unavailable":
+                    if presence["nick"] in self.roomMembers[presence["room"]]:
+                        self.roomMembers[presence["room"]].remove(presence["nick"])
+                else:
+                    self.roomMembers[presence["room"]].append(presence["nick"])
+
+
+    def logMessage(self, event):
         """ Monitor MUC messages.
         """
-        message['dateTime'] = datetime.datetime.now()
-        self.check_for_date_change(message['dateTime'])
-        if message['room'] in self.roomLogFiles.keys():
-            self.roomLogFiles[message['room']].logMessage(message)
+        message = {}
+        message["dateTime"] = datetime.datetime.now()
+        self.checkDateChange(message["dateTime"])
 
-    def handle_groupchat_topic(self, xml):
+        if event["mucroom"] in self.roomLogFiles:
+            message["room"] = event["mucroom"]
+            message["message"] = event["body"]
+
+            if event["from"].full == event["mucroom"]:
+                # system message
+                message["nick"] = ""
+            else:
+                message["nick"] = event["mucnick"]
+
+            if event["subject"] != "":
+                message["subject"] = event["subject"]
+                match = re.match("^(.*?) has set the subject to:", message["message"])
+                if match is not None:
+                    message["nick"] = match.group(1)
+
+            self.roomLogFiles[message["room"]].logMessage(message)
+
+
+    def logTopic(self, event):
         """ Handle a message event without body element in a muc.
         """
-        message = {}
-        message["message"] = xml.find("{jabber:client}body")
-        if message["message"] is None:
-            message["message"] = ""
-            message['dateTime'] = datetime.datetime.now()
-            self.check_for_date_change(message['dateTime'])
+        if event.find("{jabber:client}body") is not None:
+            return
 
-            mfrom = xml.attrib['from']
-            message["room"] = self.bot.getjidbare(mfrom)
-            if message['room'] in self.roomLogFiles.keys():
-                message["subject"] = xml.find("{jabber:client}subject").text
-                message["name"] = self.bot.getjidresource(mfrom)
-                message["type"] = xml.attrib.get('type', 'normal')
-                self.roomLogFiles[message["room"]].logMessage(message)
+        message = {}
+        message["dateTime"] = datetime.datetime.now()
+        self.checkDateChange(message["dateTime"])
+
+        if self.bot.getjidbare(event.get("from")) in self.roomLogFiles:
+            message["message"] = ""
+            message["room"] = self.bot.getjidbare(event.get("from"))
+            message["nick"] = self.bot.getjidresource(event.get("from"))
+            message["subject"] = event.find("{jabber:client}subject").text
+            self.roomLogFiles[message["room"]].logMessage(message)
+
 
     def shutDown(self):
-        self.bot.del_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
-        self.bot.del_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
-	self.bot.del_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.handle_groupchat_topic)
+        self.bot.del_event_handler("groupchat_presence", self.logPresence, threaded=True)
+        self.bot.del_event_handler("groupchat_message", self.logMessage, threaded=True)
+        #self.bot.del_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.handle_groupchat_topic)
+
+
+
+class irssilogfile(object):
+    """ Handle writing to a single irssi log file.
+    """
+    def __init__(self, fileName):
+        """ Create a logfile handler for a given muc and file.
+        """
+        self.log = logging.getLogger("keelsbot.irssilogs.file")
+        self.logfile = open(fileName, "a")
+        self.appendLogLine("--- Začátek logování")
+        self.logDateChange(datetime.datetime.now())
+
+
+    def appendLogLine(self, message):
+        """ Append the line to the log.
+        """
+        self.logfile.write(message + "\n")
+        self.logfile.flush()
+
+
+    def logDateChange(self, date):
+        """ Log a date change.
+            Format:
+            --- Čtvrtek 16.8.2007
+        """
+        self.appendLogLine(date.strftime("--- %A %x"))
+
+
+    def logPresence(self, presence):
+        """ Log the presence to the file.
+            Formats:
+            join = "20:06:07 -!- Nick vstoupil"
+            quit = "19:07:08 -!- Nick odešel [status]"
+        """
+        self.log.debug("Logging presence: {0}.".format(presence))
+        presence["dateTime"] = presence["dateTime"].strftime("%X")
+        if presence["type"] == "unavailable":
+            line = "{dateTime} -!- {nick} odešel [{status}]"
+        else:
+            line = "{dateTime} -!- {nick} vstoupil"
+        self.appendLogLine(line.format(**presence))
+
+
+    def logMessage(self, message):
+        """ Log the message to the file.
+            Formats:
+            message = "09:43:42 <Nick> messagebody"
+            action  = "10:45:42  * Nick actionbodies"
+            topic   = "18:38:42 -!- Nick nastavil téma na: Nové téma"
+        """
+        self.log.debug("Logging message: {0}.".format(message))
+        message["dateTime"] = message["dateTime"].strftime("%X")
+        action = False
+        topic = False
+        system = False
+        if message["message"][:4] == "/me ":
+            action = True
+            message["message"] = message["message"][4:]
+        if message["nick"] == "":
+            system = True
+        if "subject" in message:
+            topic = True
+
+        if topic:
+            line = "{dateTime} -!- {nick} nastavil téma na: {subject}"
+        elif system:
+            line = "{dateTime} -!- {message}"
+        elif action:
+            line = "{dateTime}  * {nick} {message}"
+        else:
+            line = "{dateTime} <{nick}> {message}"
+
+        self.appendLogLine(line.format(**message))

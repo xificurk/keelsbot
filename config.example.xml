@@ -54,6 +54,11 @@
         <plugin name="help">
             <config />
         </plugin>
+        <plugin name="irssilogs">
+            <config>
+                <log room="room@server.com" file="/path/to/file.log" />
+            </config>
+        </plugin>
         <plugin name="mafianlife">
             <config />
         </plugin>
@@ -98,11 +103,6 @@
                 <muc room="room2@server2.com" disabled="disabled" />
                 <!--What dictionary KeelsBot should use-->
                 <dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
-            </config>
-        </plugin>
-        <plugin name="irssilogs">
-            <config>
-                <log room="room@server.com" file="/path/to/file.log" />
             </config>
         </plugin>
         <plugin name="rssbot">
