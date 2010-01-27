@@ -104,9 +104,6 @@
         <plugin name="muc_stability">
             <config />
         </plugin>
-        <plugin name="oauth">
-            <config />
-        </plugin>
         <plugin name="rssbot">
             <config>
                 <work path="/path/to/working/dir" />
