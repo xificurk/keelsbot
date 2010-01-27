@@ -66,6 +66,9 @@
         <plugin name="seen">
             <config />
         </plugin>
+        <plugin name="toppresence">
+            <config />
+        </plugin>
         <plugin name="uptime">
             <config />
         </plugin>
@@ -114,9 +117,6 @@
                     <muc room="room@server.com" />
                 </feed>
             </config>
-        </plugin>
-        <plugin name="toppresence">
-            <config />
         </plugin>
     </plugins>
 </config>

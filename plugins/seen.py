@@ -163,7 +163,6 @@ class seenStore(object):
         if len(results) == 0:
             return None
         result = results[0]
-        print("{0} -> {1}".format(result["dateTime"], datetime.datetime.strptime(result["dateTime"][0:19], "%Y-%m-%d %H:%M:%S")))
         return seenEvent(result["nick"], result["muc"], result["type"], datetime.datetime.strptime(result["dateTime"][0:19], "%Y-%m-%d %H:%M:%S"), result["text"])
 
 
