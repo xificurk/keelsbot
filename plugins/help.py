@@ -25,7 +25,6 @@
 class help(object):
     def __init__(self, bot, config):
         self.bot = bot
-        self.config = config
         self.about = "'Help' slouží pro vypisování nápovědy k příkazům KeelsBota.\nAutor: Petr Morávek"
         self.bot.addCommand("help", self.help, "Nápověda", "Pokud nebylo určeno téma, vypíše seznam dostupných příkazů a dalších možných témat nápovědy. V opačném případě vypíše nápovědu na dané téma.", "help [téma/příkaz]")
         self.bot.addCommand("commands", self.commands, "Příkazy", "Vypíše seznam dostupných příkazů.", "commands")

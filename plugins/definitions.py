@@ -26,7 +26,6 @@ import logging
 class definitions(object):
     def __init__(self, bot, config):
         self.bot = bot
-        self.config = config
         self.log = logging.getLogger("keelsbot.definitions")
         self.store = definitionsStore(self.bot.store)
         self.about = "'Definitions' slouží pro pamatování si definicí a jejich vypisování.\nAutor: Petr Morávek"

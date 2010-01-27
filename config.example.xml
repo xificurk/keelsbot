@@ -36,15 +36,15 @@
     </users>
 
     <plugins>
+        <plugin name="acl">
+            <config />
+        </plugin>
         <plugin name="admin">
             <acl>
                 <rehash level="300" />
                 <die level="300" />
                 <restart level="300" />
             </acl>
-            <config />
-        </plugin>
-        <plugin name="acl">
             <config />
         </plugin>
         <plugin name="definitions">

@@ -23,7 +23,6 @@
 class acl(object):
     def __init__(self, bot, config):
         self.bot = bot
-        self.config = config
         self.about = "'Acl' umožňuje zjistit přístupová práva uživatelů podle JID.\nAutor: Petr Morávek"
         self.bot.addCommand("level", self.level, "Level", "Vypíše úroveň přístupu odesilatele.", "level")
 
