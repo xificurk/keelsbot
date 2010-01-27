@@ -50,6 +50,9 @@
         <plugin name="definitions">
             <config />
         </plugin>
+        <plugin name="help">
+            <config />
+        </plugin>
 
 
         <plugin name="chatbot">
@@ -67,10 +70,6 @@
                 <!--What dictionary KeelsBot should use-->
                 <dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
             </config>
-        </plugin>
-
-        <plugin name="help">
-            <config />
         </plugin>
         <plugin name="irssilogs">
             <config>

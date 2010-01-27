@@ -2,7 +2,7 @@
 """
     plugins/help.py - A plugin for displaying help for commands and other 
     topics.
-    Copyright (C) 2008 Petr Morávek
+    Copyright (C) 2008-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -21,60 +21,60 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import logging
 
 class help(object):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.about = u"'Help' slouží pro vypisování nápovědy k příkazům KeelsBota.\nAutor: Petr Morávek"
-        self.bot.addCommand(u'help', self.handle_help, u"Nápověda", u"Pokud nebylo určeno téma, vypíše seznam dostupných příkazů a dalších možných témat nápovědy. V opačném případě vypíše nápovědu na dané téma.", u"help [téma/příkaz]")
-        self.bot.addCommand(u'commands', self.handle_commands, u"Příkazy", u"Vypíše seznam dostupných příkazů.", u"commands")
+        self.about = "'Help' slouží pro vypisování nápovědy k příkazům KeelsBota.\nAutor: Petr Morávek"
+        self.bot.addCommand("help", self.help, "Nápověda", "Pokud nebylo určeno téma, vypíše seznam dostupných příkazů a dalších možných témat nápovědy. V opačném případě vypíše nápovědu na dané téma.", "help [téma/příkaz]")
+        self.bot.addCommand("commands", self.commands, "Příkazy", "Vypíše seznam dostupných příkazů.", "commands")
 
-    def handle_commands(self, command, args, msg):
+    def commands(self, command, args, msg):
         level = self.bot.getAccessLevel(msg)
-        response = u"Dostupné příkazy:\n"
+        response = "Dostupné příkazy:\n"
         for cmd in sorted(self.bot.commands):
             if self.bot.commands[cmd]["level"] > level:
                 continue
-            response += self.bot.cmd_prefix + "%s" % (cmd)
+            response += "{0}{1}".format(self.bot.cmdPrefix, cmd)
             if self.bot.help[cmd][0] is not None:
-                response += " -- %s" % (self.bot.help[cmd][0])
+                response += " -- {0}".format(self.bot.help[cmd][0])
             response += "\n"
         return response
 
-    def handle_help(self, command, args, msg):
-        response = ''
-        if not args:
-            response += self.handle_commands(command, args, msg)
+    def help(self, command, args, msg):
+        response = ""
+        if len(args) == 0:
+            response += self.commands(command, args, msg)
             start = True
             for topic in sorted(self.bot.help):
                 if topic in self.bot.commands:
                     continue
                 if start:
-                    response += u"\nDalší dostupná témata nápovědy:\n"
+                    response += "\nDalší dostupná témata nápovědy:\n"
                     start = False
-                response += "%s" % (topic)
+                response += "{0}".format(topic)
                 if self.bot.help[topic][0] is not None:
-                    response += " -- %s" % (self.bot.help[topic][0])
+                    response += " -- {0}".format(self.bot.help[topic][0])
                 response += "\n"
-            args = 'help'
+            args = "help"
             response += "---------\n"
 
-        if args.startswith(self.bot.cmd_prefix) and len(args) > len(self.bot.cmd_prefix):
-            if len(self.bot.cmd_prefix):
-                args = args.split(self.bot.cmd_prefix, 1)[-1]
+        if args.startswith(self.bot.cmdPrefix) and len(args) > len(self.bot.cmdPrefix):
+            args = args[len(self.bot.cmdPrefix):]
 
         if args in self.bot.help:
             isCommand = False
             if args in self.bot.commands:
                 isCommand = True
-                if self.bot.getAccessLevel(msg) < self.bot.commands[args]['level']:
-                    return u"Neznám, neumím..."
-            response += "%s\n" % self.bot.help[args][0]
+                if self.bot.getAccessLevel(msg) < self.bot.commands[args]["level"]:
+                    return "Neznám, neumím..."
+
+            response += "{0}\n".format(self.bot.help[args][0])
             response += self.bot.help[args][1]
             if self.bot.help[args][2] and isCommand:
-                response += u"\n\nPoužití: %s%s" % (self.bot.cmd_prefix, self.bot.help[args][2])
+                response += "\n\nPoužití: {0}{1}".format(self.bot.cmdPrefix, self.bot.help[args][2])
         else:
-            response += u"Neznám, neumím..."
+            response += "Neznám, neumím..."
+
         return response

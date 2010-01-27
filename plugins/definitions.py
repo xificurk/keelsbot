@@ -30,9 +30,9 @@ class definitions(object):
         self.log = logging.getLogger("keelsbot.definitions")
         self.store = definitionsStore(self.bot.store)
         self.about = "'Definitions' slouží pro pamatování si definicí a jejich vypisování.\nAutor: Petr Morávek"
-        self.bot.addCommand("!", self.define, "Definice", "Uloží definici do databáze.", "! víceslovný název = [definice]")
-        self.bot.addCommand("!!", self.define, "Definice se zámkem", "Uloží definici do databáze a zamkne ji pro editaci uživateli s nižšími právy než autor.", "!! víceslovný název = [definice]")
-        self.bot.addCommand("?", self.query, "Dotaz na definici", "Vrátí požadovanou definici z databáze.", "? víceslovný název")
+        self.bot.addCommand("!", self.define, "Definice", "Uloží (příp. smaže) definici do databáze.", "! víceslovný název = [definice]")
+        self.bot.addCommand("!!", self.define, "Definice se zámkem", "Uloží (příp. smaže) definici do databáze a uzamkne ji proti editaci uživateli s nižšími právy než autor.", "!! víceslovný název = [definice]")
+        self.bot.addCommand("?", self.query, "Zobrazí definici", "Vrátí požadovanou definici z databáze.", "? víceslovný název")
 
 
     def define(self, command, args, msg):
