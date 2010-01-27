@@ -56,6 +56,13 @@
         <plugin name="mafianlife">
             <config />
         </plugin>
+        <plugin name="parrot">
+            <acl>
+                <say level="200" />
+                <tell level="200" />
+            </acl>
+            <config />
+        </plugin>
         <plugin name="uptime">
             <config />
         </plugin>
@@ -86,13 +93,6 @@
             <config />
         </plugin>
         <plugin name="oauth">
-            <config />
-        </plugin>
-        <plugin name="parrot">
-            <acl>
-                <say level="200" />
-                <tell level="200" />
-            </acl>
             <config />
         </plugin>
         <plugin name="pastebin">
