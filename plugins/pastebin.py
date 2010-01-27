@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     plugins/pastebin.py - A plugin for sending code snippets to pastebin.cz.
-    Copyright (C) 2009 Petr Morávek
+    Copyright (C) 2009-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -25,19 +25,20 @@ import urllib
 
 class pastebin(object):
     def __init__(self, bot, config):
+        self.log = logging.getLogger("keelsbot.pastebin")
         self.bot = bot
-        self.config = config
-        default = self.config.findall('default')[0]
-        self.lang = default.get('lang', 'text')
-        self.expiration = default.get('expiration', 'd')
-        self.about = u"'Pastebin' umožňuje odeslání kódu na pastebin.cz.\nAutor: Petr Morávek"
-        self.bot.addCommand(u'paste', self.handle_paste, u'Pastebin', u"Odešle kód na pastebin.cz.\nNa prvním řádku bere v libovolném pořadí oddělené mezerou platnost (d - den, w - týden, m - měsíc, y - rok; výchozí hodnota je %s), název jazyku (podle http://www.pastebin.cz/info/api, výchozí hodnota je %s), a zda odeslat vygenerovaný odkaz přímo do MUCu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek).\nNa druhém řádku je titulek (může být prázdný).\nNa všech dalších řádcích je samotný kód." % (self.expiration, self.lang), u"paste [d|w|m|y] [lang] [0|1]\nTitulek\nKód")
+        default = config.findall("default")[0]
+        self.lang = default.get("lang", "text")
+        self.expiration = default.get("expiration", "d")
+        self.about = "'Pastebin' umožňuje odeslání kódu na pastebin.cz.\nAutor: Petr Morávek"
+        self.bot.addCommand("paste", self.paste, "Pastebin", "Odešle kód na pastebin.cz.\nNa prvním řádku bere v libovolném pořadí oddělené mezerou platnost (d - den, w - týden, m - měsíc, y - rok; výchozí hodnota je {0}), název jazyku (podle http://www.pastebin.cz/info/api, výchozí hodnota je {1}), a zda odeslat vygenerovaný odkaz přímo do MUCu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek).\nNa druhém řádku je titulek (může být prázdný).\nNa všech dalších řádcích je samotný kód.".format(self.expiration, self.lang), "paste [d|w|m|y] [lang] [0|1]\nTitulek\nKód")
 
-    def handle_paste(self, command, args, msg):
+
+    def paste(self, command, args, msg):
         paste = args.split("\n", 2)
-        logging.debug(paste)
+        self.log.debug(paste)
         if len(paste) < 3:
-            return u"Neplatné zadání, mrkni na help."
+            return "Neplatné zadání, mrkni na help."
 
         sendToMUC = 0
         lang = self.lang
@@ -48,39 +49,39 @@ class pastebin(object):
 
         arguments = paste[0].split(" ")
         for param in arguments:
-            if param in ['d', 'w', 'm', 'y']:
+            if param in ["d", "w", "m", "y"]:
                 expiration = param
             elif param == "0" or param == "1":
                 sendToMUC = int(param)
-            elif param != '':
+            elif param != "":
                 lang = param
 
-        if expiration == 'd':
+        if expiration == "d":
             expiration = 1
-        elif expiration == 'w':
+        elif expiration == "w":
             expiration = 2
-        elif expiration == 'm':
+        elif expiration == "m":
             expiration = 3
         else:
             expiration = 4
 
-        if msg['type'] == 'groupchat':
-            author = msg['name']
-        elif msg.get('jid', '') in self.bot.rooms:
-            author = msg['resource']
+        if msg["type"] == "groupchat":
+            author = msg["mucnick"]
+        elif msg["from"].bare in self.bot.rooms:
+            author = msg["from"].resource
         else:
-            author = msg['jid'].split('@',1)[0]
+            author = msg["from"].user
 
-        data = {"service_id":2,"service_adapter":"remote_adapter","user_api_key":"d1e70fb6f3010769b8ea3252965aef41","text":code.encode("utf-8"),"author":author.encode("utf-8"),"expiration":expiration,"language":lang.encode("utf-8")}
-        if title != '':
-            data['title'] = title.encode("utf-8")
+        data = {"service_id":2, "service_adapter":"remote_adapter", "user_api_key":"d1e70fb6f3010769b8ea3252965aef41", "text":code, "author":author, "expiration":expiration, "language":lang}
+        if title != "":
+            data["title"] = title
 
-        response = urllib.urlopen("http://www.pastebin.cz/remote",urllib.urlencode(data))
+        response = urllib.request.urlopen("http://www.pastebin.cz/remote", urllib.parse.urlencode(data), 10)
         if response.getcode() != 201:
             return "ERROR"
-        url = response.readline()
+        url = response.readline().decode("utf-8")
 
-        if sendToMUC == 1 and msg['type'] != 'groupchat' and msg['jid'] in self.bot.rooms:
-            self.bot.sendMessage("%s" % msg['jid'], u"%s vložil %s" % (author, url), mtype='groupchat')
+        if sendToMUC == 1 and msg["type"] != "groupchat" and msg["from"].bare in self.bot.rooms:
+            self.bot.sendMessage(msg["from"].bare, "{0} vložil {1}".format(author, url), mtype="groupchat")
         else:
-            return "%s" % url
+            return str(url)

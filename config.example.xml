@@ -63,6 +63,12 @@
             </acl>
             <config />
         </plugin>
+        <plugin name="pastebin">
+            <config>
+                <!--If you want, you can change the default language (text) and expiration (d), see http://www.pastebin.cz/info/api-->
+                <default lang="php" expiration="d" />
+            </config>
+        </plugin>
         <plugin name="seen">
             <config />
         </plugin>
@@ -100,12 +106,6 @@
         </plugin>
         <plugin name="oauth">
             <config />
-        </plugin>
-        <plugin name="pastebin">
-            <config>
-                <!--If you want, you can change default language (text) and expiration (d), see http://www.pastebin.cz/info/api-->
-                <default lang="php" expiration="d" />
-            </config>
         </plugin>
         <plugin name="pingbot">
             <config />

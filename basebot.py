@@ -71,14 +71,17 @@ class basebot(object):
 
             if command in self.commands and self.commands[command]["level"] <= level:
                 # Parse arguments
-                args = message[len(command)+1:]
+                args = message[len(command):]
+                if args.startswith(" "):
+                    args = args[1:]
                 self.log.debug("Command '{0}' with args '{1}'".format(command, args))
 
                 response = self.commands[command]["pointer"](command, args, msg)
-                if msg["type"] == "groupchat":
-                    self.sendMessage(msg["mucroom"], "{0}: {1}".format(msg["mucnick"], response), mtype="groupchat")
-                else:
-                    self.sendMessage(msg["from"].full, response, mtype=msg.get("type", "chat"))
+                if response is not None and response != "":
+                    if msg["type"] == "groupchat":
+                        self.sendMessage(msg["mucroom"], "{0}: {1}".format(msg["mucnick"], response), mtype="groupchat")
+                    else:
+                        self.sendMessage(msg["from"].full, response, mtype=msg.get("type", "chat"))
 
 
     def addHelp(self, topic, title=None, body=None, usage=None):
