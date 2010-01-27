@@ -47,9 +47,9 @@ from store import store
 
 
 class keelsbot(sleekxmpp.ClientXMPP, basebot):
-    def __init__(self, configFile, jid, password, ssl=False, plugin_config={}):
+    def __init__(self, configFile, jid, password, ssl=False):
         plugin_whitelist = ["xep_0004", "xep_0030", "xep_0045", "xep_0050", "xep_0086", "xep_0092", "xep_0199"]
-        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl, plugin_config=plugin_config, plugin_whitelist=plugin_whitelist)
+        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl, plugin_whitelist=plugin_whitelist)
         basebot.__init__(self)
         self.log = logging.getLogger("keelsbot")
         self.configFile = configFile
@@ -78,6 +78,15 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         accessLevel = self.botconfig.find("/access-level")
         if accessLevel is not None:
             self.minAccessLevel = max(int(accessLevel.get("min", 0)), 0)
+
+        clientName = "KeelsBot"
+        clientVersion = __version__
+        client = config.find("/client")
+        if client is not None:
+            clientName = client.get("name", clientName)
+            clientVersion = client.get("version", clientVersion)
+        self.log.debug("Setting client to {0}-{1}.".format(clientName, clientVersion))
+        self.plugin_config["xep_0092"] = {"name": clientName, "version": clientVersion}
 
         self.parseUserGroups()
 
@@ -340,8 +349,6 @@ if __name__ == "__main__":
     if version < minVersion:
         mainlog.critical("You need at least Python {0} to run this script.".format(minVersion))
 
-    clientName = "KeelsBot"
-    clientVersion = __version__
     global shouldRestart
     shouldRestart = True
     try:
@@ -352,19 +359,9 @@ if __name__ == "__main__":
             config = ET.parse(configFile)
             auth = config.find("auth")
 
-            client = config.find("/client")
-            if client is not None:
-                clientName = client.get("name", clientName)
-                clientVersion = client.get("version", clientVersion)
-                mainlog.debug("Setting user customized Client {0}-{1}".format(clientName, clientVersion))
-
             #init
             mainlog.info("Logging in as {0}".format(auth.attrib["jid"]))
-
-            plugin_config = {}
-            plugin_config["xep_0092"] = {"name": clientName, "version": clientVersion}
-
-            bot = keelsbot(configFile, auth.attrib["jid"], auth.attrib["pass"], plugin_config=plugin_config)
+            bot = keelsbot(configFile, auth.attrib["jid"], auth.attrib["pass"])
 
             if auth.get("server", None) is None:
                 # we don't know the server, but the lib can probably figure it out
