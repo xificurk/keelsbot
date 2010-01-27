@@ -233,7 +233,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
 
 
     def del_event_handler(self, name, pointer, threaded=False, disposable=False):
-        with self.lock:
+        with self.id_lock:
             self.event_handlers[name].remove((pointer, threaded, disposable))
 
 

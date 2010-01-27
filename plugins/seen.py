@@ -2,7 +2,7 @@
 """
     plugins/seen.py - A plugin for tracking user sightings.
     Copyright (C) 2007 Kevin Smith
-    Copyright (C) 2009 Petr Morávek
+    Copyright (C) 2009-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -22,235 +22,160 @@
 """
 
 import datetime
-import time
 import logging
-
-class seenevent(object):
-    """ Represent the last know activity of a user.
-    """
-    messageType = 0
-    joinType = 1
-    partType = 2
-    presenceType = 3
-    
-    def __init__(self, nick, eventTime, muc, stanzaType, text=None):
-        """ Initialise seenevent 
-        """
-        self.nick = nick
-        self.eventTime = eventTime
-        self.muc = muc
-        self.stanzaType = stanzaType
-        self.text = text
-
-class jidevent(object):
-    """ Represent the last seen jid of a user.
-    """
-    def __init__(self, muc, nick, jid, eventTime):
-        """Create event"""
-        self.muc = muc
-        self.nick = nick
-        self.jid = jid
-        self.eventTime = eventTime
-
-class jidstore(object):
-    def __init__(self, store):
-        self.store = store
-        self.createTable()
-
-    def createTable(self):
-        db = self.store.getDb()
-        if not len(db.execute("pragma table_info('whowas')").fetchall()) > 0:
-            db.execute("""CREATE TABLE whowas (
-                       id INTEGER PRIMARY KEY AUTOINCREMENT, muc VARCHAR(256),
-                       nick VARCHAR(256), jid VARCHAR(256), eventTime DATETIME)""")
-        db.close()
-
-    def update(self, event):
-        db = self.store.getDb()
-        cur = db.cursor()
-        logging.debug("Updating whowas")
-        cur.execute('SELECT * FROM whowas WHERE nick=? AND muc=?', (event.nick,event.muc))
-        if (len(cur.fetchall()) > 0):
-            cur.execute('UPDATE whowas SET jid=?, eventTime=?', (event.jid, event.eventTime))
-            logging.debug("Updated existing whowas")
-        else:
-            cur.execute('INSERT INTO whowas(nick, muc, jid, eventTime) VALUES(?,?,?,?)',(event.nick, event.muc, event.jid, event.eventTime))
-            logging.debug("Added new whowas")
-        db.commit()
-        db.close()
+import time
 
 
-    def get(self, nick, muc):
-        db = self.store.getDb()
-        cur = db.cursor()
-        cur.execute('SELECT * FROM seen WHERE nick=? AND muc=?', (nick,muc))
-        results = cur.fetchall()
-        if len(results) == 0:
-            return None
-        return jidevent(results[0][1],results[0][2],results[0][3],datetime.datetime.strptime(results[0][4][0:19],"""%Y-%m-%d %H:%M:%S""" ))
-        db.close()
-
-    def delete(self, nick, muc):
-        db = self.store.getDb()
-        cur = db.cursor()
-        cur.execute('DELETE FROM seen WHERE nick=? AND muc=?', (nick,muc))
-        db.commit()
-        db.close()
-
-class seenstore(object):
-    def __init__(self, store):
-        #self.null = None
-        #self.data = {}
-        #self.loaddefault()
-        self.store = store
-        self.createTable()
-      
-    def createTable(self):
-        db = self.store.getDb()
-        #Yes, I know this is completely denormalised, and if it becomes more complex I'll refactor the schema
-        if not len(db.execute("pragma table_info('seen')").fetchall()) > 0:
-            db.execute("""CREATE TABLE seen (
-                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                       nick VARCHAR(256), eventTime DATETIME, muc VARCHAR(256), stanzaType INTEGER, text VARCHAR(256))""")
-        #if len(db.execute("pragma table_info('seen')").fetchall()) == 6:
-        #    db.execute("""ALTER TABLE seen ADD COLUMN fullJid VARCHAR(256)""")
-        db.close()
-    
-    def update(self, event):
-        db = self.store.getDb()
-        cur = db.cursor()
-        logging.debug("Updating seen")
-        cur.execute('SELECT * FROM seen WHERE nick=?', (event.nick,))
-        if (len(cur.fetchall()) > 0):
-            cur.execute('UPDATE seen SET nick=?, eventTime=?, muc=?, stanzaType=?, text=? WHERE nick=?', (event.nick, event.eventTime, event.muc, event.stanzaType, event.text, event.nick))
-            logging.debug("Updated existing seen")
-        else:
-            cur.execute('INSERT INTO seen(nick, eventTime, muc, stanzaType, text) VALUES(?,?,?,?,?)',(event.nick, event.eventTime, event.muc, event.stanzaType, event.text))
-            logging.debug("Added new seen")
-        db.commit()
-        db.close()
-
-        
-    def get(self, nick):
-        db = self.store.getDb()
-        cur = db.cursor()
-        cur.execute('SELECT * FROM seen WHERE nick=?', (nick,))
-        results = cur.fetchall()
-        if len(results) == 0:
-            return None
-        return seenevent(results[0][1],datetime.datetime.strptime(results[0][2][0:19],"""%Y-%m-%d %H:%M:%S""" ),results[0][3],results[0][4],results[0][5])
-        db.close()
-        
-    def delete(self, nick):
-        db = self.store.getDb()
-        cur = db.cursor()
-        cur.execute('DELETE FROM seen WHERE nick=?', (nick,))
-        db.commit()
-        db.close()
-    
 class seen(object):
     def __init__(self, bot, config):
+        self.log = logging.getLogger("keelsbot.seen")
         self.bot = bot
-        self.config = config
-        self.seenstore = seenstore(self.bot.store)
-        self.about = u"'Seen' umožňuje uživatelům ptát se, kdy naposledy byl někdo jiný iděn v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
-        self.bot.addCommand(u'seen', self.handle_seen_request, u'Naposledy viděn', u"Kdy byl zadaný uživatel naposledy spatřen?", u'seen nick')
-        self.bot.add_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
-        self.bot.add_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
+        self.store = seenStore(self.bot.store)
+        self.about = "'Seen' umožňuje uživatelům ptát se, kdy naposledy byl někdo jiný viděn v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
+        bot.addCommand("seen", self.seen, "Naposledy viděn", "Kdy byl zadaný uživatel naposledy spatřen?", "seen nick")
+        bot.add_event_handler("groupchat_presence", self.storePresence, threaded=True)
+        bot.add_event_handler("groupchat_message", self.storeMessage, threaded=True)
 
-    def handle_groupchat_presence(self, presence):
-        """ Keep track of the presences in mucs.
+
+    def storePresence(self, presence):
+        """ Keep track of the presences in MUCs.
         """
-        presence['dateTime'] = datetime.datetime.now()
-        if presence.get('type', None) == 'unavailable':
-            pType = seenevent.partType
+        if presence.get("type", None) == "unavailable":
+            pType = seenEvent.types["leave"]
         else:
-            pType = seenevent.presenceType
-        self.seenstore.update(seenevent(presence['nick'], presence['dateTime'], presence['room'], pType, presence.get('status', None)))
+            pType = seenEvent.types["presence"]
+        self.store.update(seenEvent(presence["muc"].getNick(), presence["muc"].getRoom(), pType, datetime.datetime.now(), presence.get("status", None)))
 
-    def handle_groupchat_message(self, message):
+
+    def storeMessage(self, message):
         """ Keep track of activity through messages.
         """
-        if 'message' not in message.keys():
+        if message["from"].full == message["mucroom"] or message["mucroom"] not in self.bot.rooms or self.bot.rooms[message["mucroom"]] == message["mucnick"] or "body" not in message.keys():
             return
-        message['dateTime'] = datetime.datetime.now()
-        self.seenstore.update(seenevent(message['name'], message['dateTime'], message['room'], seenevent.messageType, message['message']))
+        self.store.update(seenEvent(message["mucnick"], message["mucroom"], seenEvent.types["message"], datetime.datetime.now(), message.get("body", None)))
 
-    def getStringTime(self, time):
+
+    def seen(self, command, args, msg):
+        if args == None or args == "":
+            return "Lamo! Musíš napsat, o kom chceš informace! ;-)"
+        seenData = self.store.get(args)
+        if seenData == None:
+            return "{0}? Vůbec nevím, o kom je řeč...".format(args)
+
+        sinceTime = datetime.datetime.now() - seenData.dateTime
+        sinceTimeStr = self.formatTimeDiff(sinceTime)
+        status = ""
+        if seenData.type == seenEvent.types["message"]:
+            status = ", když psal \"{0}\"".format(seenData.text)
+        elif seenData.type == seenEvent.types["presence"] and seenData.text is not None:
+            status = " ({0})".format(seenData.text)
+        state = " v místnosti"
+        if seenData.type == seenEvent.types["leave"]:
+            state = ", jak opouští místnost"
+        return "{0} byl naposledy spatřen{1} {2} před {3}{4}.".format(args, state, seenData.muc, sinceTimeStr, status)
+
+
+    def formatTimeDiff(self, time):
         days = time.days
         seconds = time.seconds
-        
+
         months = hours = minutes = 0
         response = ""
 
-        months = days / 30
+        months = int(days / 30)
         days -= months * 30
         if months > 0:
             if months == 1:
-                months_str = u"1 měsícem"
+                monthsStr = "1 měsícem"
             else:
-                months_str = u"%d měsíci" % months
-            response += months_str
+                monthsStr = "{0} měsíci".format(months)
+            response = monthsStr
 
         if len(response) > 0 or days > 0:
             if days == 1:
-                days_str = "1 dnem"
+                daysStr = "1 dnem"
             else:
-                days_str = "%d dny" % days
+                daysStr = "{0} dny".format(days)
             if len(response) > 0:
-                return response + " a " + days_str
-            response += days_str
+                return response + " a " + daysStr
+            response = daysStr
 
-        hours = seconds / 3600
+        hours = int(seconds / 3600)
         seconds -= hours * 3600
         if len(response) > 0 or hours > 0:
             if hours == 1:
-                hours_str = "1 hodinou"
+                hoursStr = "1 hodinou"
             else:
-                hours_str = "%d hodinami" % hours
+                hoursStr = "{0} hodinami".format(hours)
             if len(response) > 0:
-                return response + " a " + hours_str
-            response += hours_str
+                return response + " a " + hoursStr
+            response = hoursStr
 
-        minutes = seconds / 60
+        minutes = int(seconds / 60)
         seconds -= minutes * 60
         if len(response) > 0 or minutes > 0:
             if minutes == 1:
-                minutes_str = "1 minutou"
+                minutesStr = "1 minutou"
             else:
-                minutes_str = "%d minutami" % minutes
+                minutesStr = "{0} minutami".format(minutes)
             if len(response) > 0:
-                return response + " a " + minutes_str
-            response += minutes_str
+                return response + " a " + minutesStr
+            response = minutesStr
 
         if len(response) > 0 or seconds > 0:
             if seconds == 1:
-                seconds_str = "1 sekundou"
+                secondsStr = "1 sekundou"
             else:
-                seconds_str = "%d sekundami" % seconds
+                secondsStr = "{0} sekundami".format(seconds)
             if len(response) > 0:
-                return response + " a " + seconds_str
-            return seconds_str
+                return response + " a " + secondsStr
+            return secondsStr
 
-    def handle_seen_request(self, command, args, msg):
-        if args == None or args == "":
-            return u"Lamo! Musíš napsat, o kom chceš informace! ;-)"
-        seenData = self.seenstore.get(args)
-        if seenData == None:
-            return args + u"? Vůbec nevím, o kom je řeč..."
-
-        sinceTime = datetime.datetime.now() - seenData.eventTime
-        sinceTimeStr = self.getStringTime(sinceTime)
-        status = ""
-        if seenData.stanzaType == seenevent.messageType:
-            status = u", když psal \"%s\"" % seenData.text
-        elif seenData.stanzaType == seenevent.presenceType and seenData.text is not None:
-            status = u" (%s)" % seenData.text
-        state = u" v místnosti"
-        if seenData.stanzaType == seenevent.partType:
-            state = u", jak opouští místnost"
-        return u"%s byl naposledy spatřen%s %s před %s%s."  %(args, state, seenData.muc, sinceTimeStr, status)
 
     def shutDown(self):
-        self.bot.del_event_handler("groupchat_presence", self.handle_groupchat_presence, threaded=True)
-        self.bot.del_event_handler("groupchat_message", self.handle_groupchat_message, threaded=True)
+        self.bot.del_event_handler("groupchat_presence", self.storePresence, threaded=True)
+        self.bot.del_event_handler("groupchat_message", self.storeMessage, threaded=True)
+
+
+
+class seenStore(object):
+    def __init__(self, store):
+        self.log = logging.getLogger("keelsbot.seen.store")
+        self.store = store
+        self.createTables()
+
+
+    def createTables(self):
+        self.store.query("""CREATE TABLE IF NOT EXISTS seen (
+                        nick VARCHAR(256) PRIMARY KEY,
+                        muc VARCHAR(256) NOT NULL,
+                        type INTEGER(1) NOT NULL,
+                        dateTime DATETIME,
+                        text VARCHAR(256))""")
+
+
+    def update(self, event):
+        self.log.debug("Updating seen record for '{0}'.".format(event.nick))
+        self.store.query("INSERT OR REPLACE INTO seen (nick, muc, type, dateTime, text) VALUES(?,?,?,?,?)", (event.nick, event.muc, event.type, event.dateTime, event.text))
+
+
+    def get(self, nick):
+        results = self.store.query("SELECT * FROM seen WHERE nick=?", (nick,))
+        if len(results) == 0:
+            return None
+        result = results[0]
+        return seenEvent(result["nick"], result["muc"], result["type"], datetime.datetime.strptime(result["dateTime"][0:19], "%Y-%m-%d %H:%M:%S"), result["text"])
+
+
+
+class seenEvent(object):
+    """ Represent the last known activity of a user.
+    """
+    types = {"message":1, "presence":2, "leave":3}
+
+    def __init__(self, nick, muc, type, dateTime, text=None):
+        self.nick = nick
+        self.muc = muc
+        self.dateTime = dateTime
+        self.type = type
+        self.text = text
