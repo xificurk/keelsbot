@@ -53,6 +53,9 @@
         <plugin name="help">
             <config />
         </plugin>
+        <plugin name="mafianlife">
+            <config />
+        </plugin>
         <plugin name="uptime">
             <config />
         </plugin>
@@ -78,9 +81,6 @@
             <config>
                 <log room="room@server.com" file="/path/to/file.log" />
             </config>
-        </plugin>
-        <plugin name="mafianlife">
-            <config />
         </plugin>
         <plugin name="muc_stability">
             <config />

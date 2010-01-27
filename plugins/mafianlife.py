@@ -2,7 +2,7 @@
 """
     plugins/mafianlife.py - A plugin for returning links to comics
     from MaFian liFe.
-    Copyright (C) 2009 Petr Morávek
+    Copyright (C) 2009-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
@@ -21,17 +21,14 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import logging
 
 class mafianlife(object):
     def __init__(self, bot, config):
-        self.bot = bot
-        self.config = config
-        self.about = u"'MafianLife' vrací odkaz na komiks z MaFian liFe.\nAutor: Petr Morávek"
-        self.bot.addCommand(u'mafian', self.handle_mafian, u'Strip MaFian liFe', u"Vrací odkaz na strip z MaFian liFe", u'mafian [číslo stripu]')
+        self.about = "'MafianLife' vrací odkaz na komiks z MaFian liFe.\nAutor: Petr Morávek"
+        bot.addCommand("mafian", self.strip, "Strip MaFian liFe", "Vrací odkaz na strip z MaFian liFe", "mafian [číslo stripu]")
 
-    def handle_mafian(self, command, args, msg):
+    def strip(self, command, args, msg):
         if args == "":
-            return u"No tak se nestyď, řekni mi číslo stripu, který chceš ;-)"
+            return "No tak se nestyď, řekni mi číslo stripu, který chceš ;-)"
         nr = int(args)
-        return "http://www-ucjf.troja.mff.cuni.cz/scheirich/comics/mff_life_%.2d.jpg" % nr
+        return "http://www-ucjf.troja.mff.cuni.cz/scheirich/comics/mff_life_{0:02d}.jpg".format(nr)
