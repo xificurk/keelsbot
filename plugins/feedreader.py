@@ -68,12 +68,17 @@ class feedreader(object):
         known = self.store.get(url)
         while not self.shuttingDown:
             parser.check()
+            sent = []
             for item in parser.items:
-                if item.get("link", "") not in known:
-                    self.log.debug("Found new ittem '{0}' in feed {1}.".format(item.get("title", ""), parser.channel["title"]))
+                link = item.get("link", "")
+                title = item.get("title", "")
+                if link not in known and title not in sent:
+                    self.log.debug("Found new ittem '{0}' in feed {1}.".format(title, parser.channel["title"]))
                     self.send(subscribers, parser.channel, item)
-                    known.append(item.get("link"))
-                    self.store.add(url, item.get("link"))
+                    self.store.add(url, link)
+                    known.append(link)
+                    sent.append(title)
+                    time.sleep(1)
             time.sleep(float(refresh)*60)
 
 
@@ -82,6 +87,8 @@ class feedreader(object):
         """
         text = "{0}: {1}\n{2}".format(channel["title"], item.get("title"), item.get("link"))
         for subscriber in subscribers:
+            if subscribers[1] == "groupchat" and subscribers[0] not in self.bot.rooms:
+                continue
             self.bot.sendMessage(subscriber[0], text, mtype=subscriber[1])
 
 

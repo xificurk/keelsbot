@@ -143,6 +143,9 @@ class chatbot(object):
     def message(self, msg):
         """ Handle message for chatbot
         """
+        if msg["type"] not in ("groupchat", "chat"):
+            return
+
         msgCounter = self.responseInit(msg)
         if msgCounter == False:
             return
