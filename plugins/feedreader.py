@@ -22,6 +22,7 @@
 """
 
 from html.parser import HTMLParser
+import datetime
 import logging
 import random
 import threading
@@ -108,16 +109,17 @@ class feedStore(object):
         self.store.query("""CREATE TABLE IF NOT EXISTS feedItems (
                         feed VARCHAR(256) NOT NULL,
                         item VARCHAR(256) NOT NULL,
+                        dateTime DATETIME NOT NULL,
                         PRIMARY KEY (feed, item))""")
 
 
     def add(self, feed, item):
         self.log.debug("Storing new item {0} in feed {1}.".format(item, feed))
-        self.store.query("INSERT OR REPLACE INTO feedItems (feed, item) VALUES(?,?)", (feed, item))
+        self.store.query("INSERT OR REPLACE INTO feedItems (feed, item, dateTime) VALUES(?,?,?)", (feed, item, datetime.datetime.now()))
 
 
     def get(self, feed):
-        for row in self.store.query("SELECT item FROM feedItems WHERE feed=? LIMIT 100, 10000", (feed,)):
+        for row in self.store.query("SELECT item FROM feedItems WHERE feed=? ORDER BY dateTime DESC LIMIT 100, 10000", (feed,)):
             self.store.query("DELETE FROM feedItems WHERE feed=? AND item=?", (feed, row["item"]))
         items = []
         for row in self.store.query("SELECT item FROM feedItems WHERE feed=?", (feed,)):
