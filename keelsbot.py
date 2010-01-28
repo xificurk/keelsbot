@@ -317,7 +317,7 @@ if __name__ == "__main__":
             return logging.getLogger("").getEffectiveLevel() <= record.levelno
 
     # Setup console output logging
-    coloredLog = console.ColorLogging(fmt="%(levelname)-8s %(name)s >> %(message)s")
+    coloredLog = console.ColorLogging(fmt="%(asctime)s %(levelname)-8s %(name)s >> %(message)s", datefmt="%Y-%m-%d %X")
     rootlog = logging.getLogger("")
     rootlog.addHandler(coloredLog)
     rootlog.addFilter(sleekxmppLogFilter())
