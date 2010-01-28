@@ -23,6 +23,7 @@
 import logging
 import urllib
 
+
 class pastebin(object):
     def __init__(self, bot, config):
         self.log = logging.getLogger("keelsbot.pastebin")

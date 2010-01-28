@@ -67,6 +67,15 @@
         <plugin name="definitions">
             <config />
         </plugin>
+        <plugin name="feedreader">
+            <config>
+                <!--Refresh is check interval in minutes-->
+                <feed url="http://example.com/feed.xml" refresh="60">
+                    <subscriber type="groupchat" jid="room@server.com" />
+                    <subscriber type="chat" jid="user@server.com" />
+                </feed>
+            </config>
+        </plugin>
         <plugin name="help">
             <config />
         </plugin>
@@ -102,16 +111,6 @@
         </plugin>
         <plugin name="uptime">
             <config />
-        </plugin>
-
-
-        <plugin name="rssbot">
-            <config>
-                <work path="/path/to/working/dir" />
-                <feed url="http://example.com/feed.xml" refresh="60">
-                    <muc room="room@server.com" />
-                </feed>
-            </config>
         </plugin>
     </plugins>
 </config>
