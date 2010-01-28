@@ -6,7 +6,7 @@ written in Python using the elegant SleekXMPP library.
 Author:
     Petr Morávek [Xificurk]
     jabber id: xificurk [at] jabber.cz
-    email: xificurk [at] centrum.cz
+    email: xificurk [at] gmail.com 
 
 KeelsBot uses a lot of code from SleekBot written by Nathan Fritz
 and Kevin Smith.
@@ -21,7 +21,5 @@ Requirements
 
 Suggested Packages
 ============================================================================
-* TLSlite (http://trevp.net/tlslite/)
-    Required for authentication on many servers.
 * PythonDNS
     You may need to specify your server in your config if you don't have this.
