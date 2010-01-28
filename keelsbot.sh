@@ -60,6 +60,6 @@ while true; do
 		echo "Updating bot from master git repository..." >> $LOGFILE
 		git pull 1>> $LOGFILE 2>> $LOGFILE
 	fi
-	$KEELSDIR/keelsbot.py -c "$CONFIGFILE" 1>> $LOGFILE 2>> $LOGFILE
+	$KEELSDIR/keelsbot.py -v -c "$CONFIGFILE" 1>> $LOGFILE 2>> $LOGFILE
 	sleep 10
 done
