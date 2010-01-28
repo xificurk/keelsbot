@@ -146,7 +146,7 @@ class seenStore(object):
 
     def createTables(self):
         self.store.query("""CREATE TABLE IF NOT EXISTS seen (
-                        nick VARCHAR(256) PRIMARY KEY,
+                        nick VARCHAR(256) NOT NULL PRIMARY KEY,
                         muc VARCHAR(256) NOT NULL,
                         type INTEGER(1) NOT NULL,
                         dateTime DATETIME,

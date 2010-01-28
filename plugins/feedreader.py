@@ -92,7 +92,7 @@ class feedreader(object):
         """
         text = "{0}: {1}\n{2}".format(channel["title"], item.get("title"), item.get("link"))
         for subscriber in subscribers:
-            if subscribers[1] == "groupchat" and subscribers[0] not in self.bot.rooms:
+            if subscriber[1] == "groupchat" and subscriber[0] not in self.bot.rooms:
                 continue
             self.bot.sendMessage(subscriber[0], text, mtype=subscriber[1])
 

@@ -85,7 +85,7 @@ class toppresenceStore(object):
 
     def createTables(self):
         self.store.query("""CREATE TABLE IF NOT EXISTS toppresence (
-                        muc VARCHAR(256) PRIMARY KEY,
+                        muc VARCHAR(256) NOT NULL PRIMARY KEY,
                         users INTEGER(3) NOT NULL,
                         dateTime DATETIME)""")
 

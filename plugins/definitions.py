@@ -78,8 +78,8 @@ class definitionsStore(object):
 
     def createTables(self):
         self.store.query("""CREATE TABLE IF NOT EXISTS definitions (
-                        name VARCHAR(256) PRIMARY KEY,
-                        description VARCHAR(256),
+                        name VARCHAR(256) NOT NULL PRIMARY KEY,
+                        description VARCHAR(256) NOT NULL,
                         level INT(4) NOT NULL)""")
 
 
