@@ -305,6 +305,13 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
                 self.plugin["xep_0045"].joinMUC(room, newRooms[room])
 
 
+    def event(self, name, eventdata={}):
+        """ Called on an event - just log it and pass down
+        """
+        self.log.debug("EVENT: {0}".format(name))
+        sleekxmpp.basexmpp.event(self, name, eventdata)
+
+
 
 if __name__ == "__main__":
     class sleekxmppLogFilter(logging.Filter):
