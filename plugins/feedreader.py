@@ -23,6 +23,7 @@
 
 from html.parser import HTMLParser
 import logging
+import random
 import threading
 import time
 import urllib.request
@@ -64,6 +65,9 @@ class feedreader(object):
         """ The main thread loop that polls an rss feed with a specified frequency
         """
         self.log.debug("Starting loop for feed {0} (refresh rate {1}min)".format(url, refresh))
+        refresh = float(refresh)*60
+        salt = random.random() * refresh / 100
+        refresh = refresh + salt
         parser = feedParser(url)
         known = self.store.get(url)
         while not self.shuttingDown:
@@ -79,7 +83,7 @@ class feedreader(object):
                     known.append(link)
                     sent.append(title)
                     time.sleep(1)
-            time.sleep(float(refresh)*60)
+            time.sleep(refresh)
 
 
     def send(self, subscribers, channel, item):
