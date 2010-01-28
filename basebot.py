@@ -60,7 +60,7 @@ class basebot(object):
             return
         message = msg.get("body", "")
         if message.startswith(self.cmdPrefix):
-            # Remove cmd_prefix from message
+            # Remove cmdPrefix from message
             message = message[len(self.cmdPrefix):]
 
             # Get command name

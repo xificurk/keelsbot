@@ -48,6 +48,22 @@
             </acl>
             <config />
         </plugin>
+        <plugin name="chatbot">
+            <acl>
+                <convreload level="300" />
+                <shut level="200" />
+                <chat level="200" />
+            </acl>
+            <config>
+                <!--If you want to debug the conversations, enter the log directory-->
+                <debug log="/path/to/log/dir" />
+                <!--Rooms, where KeelsBot is supposed to respond-->
+                <muc room="room@server.com" />
+                <muc room="room2@server2.com" disabled="disabled" />
+                <!--What dictionary KeelsBot should use-->
+                <dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
+            </config>
+        </plugin>
         <plugin name="definitions">
             <config />
         </plugin>
@@ -89,22 +105,6 @@
         </plugin>
 
 
-        <plugin name="chatbot">
-            <acl>
-                <convreload level="300" />
-                <shut level="200" />
-                <chat level="200" />
-            </acl>
-            <config>
-                <!--If you want to debug the conversations, enter the log directory-->
-                <debug log="/path/to/log/dir" />
-                <!--Rooms, where KeelsBot is supposed to respond-->
-                <muc room="room@server.com" />
-                <muc room="room2@server2.com" disabled="disabled" />
-                <!--What dictionary KeelsBot should use-->
-                <dict name="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
-            </config>
-        </plugin>
         <plugin name="rssbot">
             <config>
                 <work path="/path/to/working/dir" />

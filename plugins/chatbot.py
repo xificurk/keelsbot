@@ -2,7 +2,7 @@
 """
     plugins/chatbot.py - A plugin making a bot chat with users.
     Copyright (C) 2008 Pavel Šimerda
-    Copyright (C) 2009 Petr Morávek
+    Copyright (C) 2009-2010 Petr Morávek
     Part of the code was taken from Pavel Šimerda's Arabicus bot under
     CC-attribution license.
 
@@ -23,170 +23,60 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from xml.etree import ElementTree as ET
 import datetime
-import time
-import logging
 import glob
-import re
+import logging
+import os.path
 import random
-import thread
+import re
+import threading
+import time
+from xml.etree import ElementTree as ET
 
-class Filters(object):
-    def __init__(self, bot):
-        self.bot = bot
-
-    def common(self, msg, prefix, reply):
-        reply = reply.replace('////', "\n")
-
-        if msg['type'] == 'groupchat':
-            reply = reply.replace('//BOTNICK//', self.bot.bot.rooms[msg['room']])
-            reply = reply.replace('//NICK//', msg['name'])
-        elif msg.get('jid', '') in self.bot.rooms:
-            reply = reply.replace('//BOTNICK//', self.bot.bot.rooms[msg['jid']])
-            reply = reply.replace('//NICK//', msg['resource'])
-        return prefix, reply
-
-    def direct(self, msg, prefix, reply):
-        if msg['type'] == 'groupchat':
-            prefix = "%s: " % msg['name']
-        else:
-            prefix = ''
-        return prefix, reply
-
-    def time(self, msg, prefix, reply):
-        now = datetime.datetime.now()
-        return prefix, reply.replace('//TIME//', "%d:%.2d" % (now.hour, now.minute))
-
-    def date(self, msg, prefix, reply):
-        now = datetime.datetime.now()
-        return prefix, reply.replace('//DATE//', "%d. %d." % (now.day, now.month))
-
-class Conversations(object):
-    def __init__(self, filenames=[]):
-        self.files = []
-        self.queries = []
-        for filename in filenames:
-            self.files.extend(glob.glob(filename))
-        for file in sorted(self.files):
-            self.load(file)
-        logging.debug("%s" % self.queries)
-
-    def load(self, file):
-        logging.debug("Loading file %s" % file)
-        root = ET.parse(file)
-
-        id_map = {}
-        data = {}
-        data['queries'] = []
-        self.parseQueries(root, data, id_map)
-        self.replaceIds(id_map, data['queries'], 'replies')
-        self.queries.extend(data['queries'])
-
-    def parseQueries(self, element, context, id_map):
-        for query in element.findall('query'):
-            try:
-                item = dict(query.attrib)
-                item['scope'] = item.get('scope', 'direct')
-                item['pattern'] = re.compile(item.pop('match'),  re.I | re.U)
-                item['replies'] = []
-                if 'id' in item:
-                    id_map[item['id']] = item
-                context['queries'].append(item)
-                self.parseReplies(query, item, id_map)
-            except re.error, e:
-                logging.error('Regular expression error: %s' % repr(query.attrib['match']))
-
-    def parseReplies(self, element, context, id_map):
-        for reply in element.findall('reply'):
-            item = dict(reply.attrib)
-            item['text'] = item.get('text', '')
-            item['scope'] = item.get('scope', 'chat')
-            item['weight'] = int(item.get('weight', 1))
-            item['queries'] = []
-            if 'id' in item:
-                id_map[item['id']] = item
-            context['replies'].append(item)
-            self.parseQueries(reply, item, id_map)
-
-    def replaceIds(self, id_map, context, element):
-        for item in context:
-            if element == 'replies':
-                next = 'queries'
-            else:
-                next = 'replies'
-            self.replaceIds(id_map, item[element], next)
-            if 'extends' in item and item['extends'] in id_map:
-                item[element].extend(id_map[item['extends']][element])
-                item.pop('extends')
-
-    def getReply(self, convstate, convstate_sup, query, flags=['chat']):
-        logging.debug("Getting reply to '%s'" % query)
-        queries = []
-        queries += filter(lambda i: i['scope'] in flags, convstate)
-        queries += filter(lambda i: i['scope'] in flags, convstate_sup)
-        queries += filter(lambda i: i['scope'] in flags, self.queries)
-        for item in queries:
-            if item['pattern'].search(query):
-                reply = self.getRandomReply(item['replies'], flags)
-                filters = reply.get('filter', 'common')
-                if filters != 'common':
-                    filters = "%s common" % filters
-                return reply['text'], reply['queries'], filters.split(" ")
-        return None, None, None
-
-    def getRandomReply(self, choice, flags=['chat']):
-        replies = []
-        replies += filter(lambda i: i['scope'] in flags, choice)
-        sum = 0
-        for item in replies:
-            sum = sum + item['weight']
-
-        logging.debug('Random choice from sum %i' % sum)
-
-        select = random.randint(1,sum)
-        sum = 0
-        for item in replies:
-            sum = sum + item['weight']
-            if select <= sum:
-                return item
 
 class chatbot(object):
     def __init__(self, bot, config):
+        self.log = logging.getLogger("keelsbot.chatbot")
         self.bot = bot
         self.config = config
-        self.states_mucs = {}
-        self.states_jids = {}
+        self.statesMUC = {}
+        self.statesJID = {}
         self.messageBuffer = []
         self.rooms = {}
         self.filters = Filters(self)
-        rooms = self.config.findall('muc')
-        for room in rooms:
-            self.states_mucs[room.get('room')] = {}
-            if room.get('disabled', None) == None:
-                logging.debug('Starting to chat in room %s' % room.get('room'))
-                self.rooms[room.get('room')] = {'chatty':True, 'msgcounter':0}
+
+        rooms = config.findall("muc")
+        for element in rooms:
+            room = element.get("room")
+            self.statesMUC[room] = {}
+            if element.get("disabled") is None:
+                self.log.debug("Starting to chat in room {0}".format(room))
+                self.rooms[room] = {"chatty":True, "msgcounter":0}
             else:
-                logging.debug('NOT Starting to chat in room %s' % room.get('room'))
-                self.rooms[room.get('room')] = {'chatty':False, 'msgcounter':0}
+                self.log.debug("NOT Starting to chat in room {0}".format(room))
+                self.rooms[room] = {"chatty":False, "msgcounter":0}
+
         self.dicts = []
-        dicts = self.config.findall('dict')
+        dicts = self.config.findall("dict")
         for dict in dicts:
-            if dict.get('name', None) != None:
-                self.dicts.append(dict.get('name', None))
+            dict = dict.get("name")
+            if dict is not None:
+                self.dicts.append(dict)
         self.conversations = Conversations(self.dicts)
+
         self.logPath = None
-        debug = self.config.find('debug')
-        if debug != None and debug.get('log', None) != None:
-            self.logPath = debug.get('log')
-        self.about = u"'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM.\nAutoři: Pavel Šimerda, Petr Morávek"
-        self.bot.addCommand(u'shut', self.handle_shut, u'Vypnout chatbota v MUC', u"Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", u'shut [MUC]')
-        self.bot.addCommand(u'chat', self.handle_chat, u'Zapnout chatbota v MUC', u"Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", u'chat [MUC]')
-        self.bot.addCommand(u'convreload', self.handle_reload, u'Znovunačtení konverzací', u"Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", u'convreload')
-        self.bot.add_event_handler("groupchat_message", self.handle_message, threaded=True)
-        self.bot.add_event_handler("message", self.handle_message, threaded=True)
+        debug = self.config.find("debug")
+        if debug is not None and debug.get("log") is not None:
+            self.logPath = debug.get("log")
+
+        self.about = "'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM.\nAutoři: Pavel Šimerda, Petr Morávek"
+        self.bot.addCommand("shut", self.shut, "Vypnout chatbota v MUC", "Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", "shut [MUC]")
+        self.bot.addCommand("chat", self.chat, "Zapnout chatbota v MUC", "Bot začne odpovídat předdefinovanými odpověďmi v zadaném MUC.", "chat [MUC]")
+        self.bot.addCommand("convreload", self.reload, "Znovunačtení konverzací", "Bot znovu naparsuje XMLka s uloženými konverzacemi, aniž by při tom opustil jabber, nebo zapomněl současný stav konverzací.", "convreload")
+        self.bot.add_event_handler("message", self.message, threaded=True)
         self.running = True
-        thread.start_new(self.sender, tuple())
+        threading.Thread(target=self.sender).start()
+
 
     def sender(self):
         while self.running:
@@ -195,243 +85,422 @@ class chatbot(object):
                 self.sendResponse(message)
             time.sleep(2)
 
+
     def sendResponse(self, msg):
         """ Sends response to the room.
         """
-        prefix = msg.get('prefix', '')
-        for responseLine in self.parseMultiline(msg['message'], prefix):
-            time.sleep(random.randint(min(9,max(2,len(responseLine['reply'])/9)), min(25,max(5,len(responseLine['reply'])/6))))
-            if msg['type'] == 'groupchat':
-                self.bot.sendMessage("%s" % msg['jid'], "%s%s" % (responseLine['prefix'], responseLine['reply']), mtype='groupchat')
-            else:
-                self.bot.sendMessage("%s" % msg['jid'], "%s%s" % (responseLine['prefix'], responseLine['reply']), mtype='chat')
+        prefix = msg.get("prefix", "")
+        for responseLine in self.parseMultiline(msg["message"], prefix):
+            time.sleep(random.randint(min(9, max(2, int(len(responseLine["reply"])/9))), min(25, max(5, int(len(responseLine["reply"])/6)))))
+            self.bot.sendMessage(msg["target"], "{prefix}{reply}".format(**responseLine), mtype=msg["type"])
 
-    def parseMultiline(self, response, prefix=''):
+
+    def parseMultiline(self, response, prefix=""):
         """ Parses | out into multiple strings and actions.
         """
-        responses = response.split('|')
+        responses = response.split("|")
         for i in range(len(responses)):
-            if responses[i][0] == '/':
-                responses[i] = {'prefix':'', 'reply':'/me ' + responses[i][1:]}
+            if responses[i].startswith("/"):
+                responses[i] = {"prefix":"", "reply":"/me " + responses[i][1:]}
             else:
-                responses[i] = {'prefix':prefix, 'reply':responses[i]}
+                responses[i] = {"prefix":prefix, "reply":responses[i]}
         return responses
+
 
     def shutDown(self):
         self.running = False
-        self.bot.del_event_handler("groupchat_message", self.handle_message, threaded=True)
-        self.bot.del_event_handler("message", self.handle_message, threaded=True)
+        self.bot.del_event_handler("groupchat_message", self.message, threaded=True)
+        self.bot.del_event_handler("message", self.message, threaded=True)
 
-    def handle_chat(self, command, args, msg):
-        if args == '':
-            if msg['type'] == 'groupchat':
-                args = msg.get('room', None)
-            else:
-                args = msg.get('jid', None)
 
-        if self.rooms.get(args, None) == None:
-            return "V místnosti '%s' já vůbec nechatuju ;-)" % args
+    def chat(self, command, args, msg):
+        if args == "":
+            args = msg["from"].bare
+
+        if args in self.rooms:
+            self.rooms[args]["chatty"] = True
+            return "OK, začnu se vykecávat v místnosti {0}.".format(args)
         else:
-            self.rooms[args]['chatty'] = True
-            return 'OK, začnu se vykecávat v místnosti %s' % args
+            return "V místnosti {0} já vůbec nechatuju ;-)".format(args)
 
-    def handle_shut(self, command, args, msg):
-        if args == '':
-            if msg['type'] == 'groupchat':
-                args = msg.get('room', None)
-            else:
-                args = msg.get('jid', None)
 
-        if self.rooms.get(args, None) == None:
-            return "V místnosti '%s' já vůbec nechatuju ;-)" % args
+    def shut(self, command, args, msg):
+        if args == "":
+            args = msg["from"].bare
+
+        if args in self.rooms:
+            self.rooms[args]["chatty"] = True
+            return "OK, v místnosti {0} se už nebudu vykecávat ;-)".format(args)
         else:
-            self.rooms[args]['chatty'] = False
-            return 'OK, v místnosti %s se už nebudu vykecávat ;-)' % args
+            return "V místnosti {0} já vůbec nechatuju ;-)".format(args)
 
-    def handle_reload(self, command, args, msg):
+
+    def reload(self, command, args, msg):
         self.conversations = Conversations(self.dicts)
-        logging.info('Conversation files reloaded.')
-        return 'Tak jsem to znova načetl, šéfiku.'
+        self.log.info("Conversation files reloaded.")
+        return "Tak jsem to znova načetl, šéfiku."
 
-    def handle_message(self, msg):
+
+    def message(self, msg):
         """ Handle message for chatbot
         """
         msgCounter = self.responseInit(msg)
         if msgCounter == False:
             return
 
-        if msg.get('type') == 'groupchat':
-            message, flags, convstate, convstate_sup = self.responsePrepareMUC(msg, msgCounter)
+        if msg["type"] == "groupchat":
+            message, flags, convstate, convstateSup = self.responsePrepareMUC(msg, msgCounter)
         else:
-            flags = ['chat', 'direct', 'private']
-            if msg['jid'] in self.states_mucs:
-                message, convstate, convstate_sup = self.responsePrepareMUCPM(msg)
+            flags = ["chat", "direct", "private"]
+            if msg["from"].bare in self.statesMUC:
+                message, convstate, convstateSup = self.responsePrepareMUCPM(msg)
             else:
                 message, convstate = self.responsePreparePM(msg)
-                convstate_sup = []
+                convstateSup = []
 
-        reply, new_convstate, filters = self.conversations.getReply(convstate, convstate_sup, message, flags)
+        reply, convstateNew, filters = self.conversations.getReply(convstate, convstateSup, message, flags)
 
         self.responseLog(msg, reply)
 
-        if reply != None:
-            if msg['type'] == 'groupchat':
-                self.states_mucs[msg['room']][msg['name']]['public'] = {'msgTimer':int(time.time()), 'msgCounter':msgCounter, 'state':new_convstate}
-                if 'direct' in flags:
-                    filters.extend(['direct'])
-            elif msg.get('jid', '') in self.rooms:
-                self.states_mucs[msg['jid']][msg['resource']]['private'] = {'msgTimer':int(time.time()), 'state':new_convstate}
-                filters.extend(['no-direct'])
+        if reply is not None:
+            if msg["type"] == "groupchat":
+                room = msg["mucroom"]
+                nick = msg["mucnick"]
+                self.statesMUC[room][nick]["public"] = {"msgTimer":int(time.time()), "msgCounter":msgCounter, "state":convstateNew}
+                if "direct" in flags:
+                    filters.extend(["direct"])
+            elif msg["from"].bare in self.rooms:
+                room = msg["from"].bare
+                nick = msg["from"].resource
+                self.statesMUC[room][nick]["private"] = {"msgTimer":int(time.time()), "state":convstateNew}
+                filters.extend(["no-direct"])
             else:
-                self.states_jids[msg['jid']] = {'msgTimer':int(time.time()), 'state':new_convstate}
-                filters.extend(['no-direct'])
+                self.statesJID[msg["from"].bare] = {"msgTimer":int(time.time()), "state":convstateNew}
+                filters.extend(["no-direct"])
 
-        if reply != None and reply != '':
+        if reply is not None and reply != "":
             prefix, reply = self.responseFilters(msg, reply, filters)
 
-            if msg.get('type') == 'groupchat':
-                msgType = 'groupchat'
-                msgJid = "%s" % msg['room']
+            if msg["type"] == "groupchat":
+                msgType = "groupchat"
+                msgTarget = msg["from"].bare
             else:
-                msgType = 'chat'
-                msgJid = "%s/%s" % (msg.get('jid', ''), msg.get('resource', ''))
+                msgType = "chat"
+                msgTarget = msg["from"].full
 
-            self.messageBuffer.append({'message':reply, 'prefix':prefix, 'type':msgType, 'jid':msgJid})
+            self.messageBuffer.append({"message":reply, "prefix":prefix, "type":msgType, "target":msgTarget})
+
 
     def responseInit(self, msg):
         """ Should chatbot respond? Return msgCounter
         """
         msgCounter = None
-        if msg['type'] == 'groupchat':
-            if msg['name'] == "" or self.rooms.get(msg.get('room', ''), None) == None:
+        if msg["type"] == "groupchat":
+            room = msg["mucroom"]
+            if msg["from"].full == room or room not in self.rooms:
+                # system message
                 return False
             else:
-                self.rooms[msg['room']]['msgcounter'] = self.rooms[msg['room']]['msgcounter']+1
-                msgCounter = self.rooms[msg['room']]['msgcounter']
+                self.rooms[room]["msgcounter"] = self.rooms[room]["msgcounter"]+1
+                msgCounter = self.rooms[room]["msgcounter"]
 
-            if self.bot.rooms[msg['room']] == msg['name']:
+            if self.bot.rooms[room] == msg["mucnick"]:
+                # our message
                 return False
-            if self.rooms[msg['room']]['chatty'] == False:
+            if self.rooms[room]["chatty"] == False:
+                # shouldn't chat
                 return False
 
-        if msg.get('message', '').startswith(self.bot.cmd_prefix):
+        level = self.bot.getAccessLevel(msg)
+        if level < 0:
+            # ignore user
+            return False
+
+        message = msg.get("body", "")
+        if message.startswith(self.bot.cmdPrefix):
             respond = False
-            level = self.bot.getAccessLevel(msg)
-            if level >= 0:
-                if level < self.bot.minAccessLevel:
+            # Remove cmdPrefix from message
+            message = message[len(self.bot.cmdPrefix):]
+
+            if level < self.bot.minAccessLevel:
+                respond = True
+            else:
+                # Get command name
+                command = message.split("\n", 1)[0].split(" ", 1)[0]
+                if len(command) == 0 or command not in self.bot.commands or self.bot.commands[command]["level"] > level:
                     respond = True
-                else:
-                    command = msg.get('message', '').split("\n",1)[0].split(' ', 1)[0]
-                    if len(self.bot.cmd_prefix):
-                        command = command.split(self.bot.cmd_prefix, 1)[-1]
-                    if command not in self.bot.commands or self.bot.commands[command]['level'] > level:
-                        respond = True
-            if respond == False:
+
+            if not respond:
                 return False
 
         return msgCounter
 
+
     def responsePrepareMUC(self, msg, msgCounter):
-        """ Parses MUC message
+        """ Parse MUC public message
         """
         flags = []
-        message = msg['message']
+        message = msg.get("body", "")
+        room = msg["from"].bare
+        nick = msg["mucnick"]
+        message = message.replace(self.bot.rooms[room], "//BOTNICK//")
 
-        message = message.replace(self.bot.rooms[msg['room']], '//BOTNICK//')
-        match = re.match('^//BOTNICK//[:,>] ?(.*)$', message)
+        match = re.match("^//BOTNICK//[:,>] ?(.*)$", message)
         if match:
             message = match.group(1)
-            flags = ['chat', 'direct', 'public']
+            flags = ["chat", "direct", "public"]
         else:
-            flags = ['chat', 'global', 'public']
-        if self.states_mucs[msg['room']].get(msg['name'], None) == None:
-            self.states_mucs[msg['room']][msg['name']] = {'private':{}, 'public':{}}
-        msgCounter_old = self.states_mucs[msg['room']][msg['name']]['public'].get('msgCounter', None)
-        msgTimer_old = self.states_mucs[msg['room']][msg['name']]['public'].get('msgTimer', None)
-        convstate = []
-        if msgCounter_old != None and (msgCounter - msgCounter_old) <= 30 and msgTimer_old != None and (int(time.time()) - msgTimer_old) <= 2*3600:
-            convstate = self.states_mucs[msg['room']][msg['name']]['public'].get('state', [])
-        else:
-            self.states_mucs[msg['room']][msg['name']]['public']['state'] = []
-        convstate_sup = []
-        for name in self.states_mucs[msg['room']].keys():
-            if name == msg['name']:
-                continue
-            msgCounter_old = self.states_mucs[msg['room']][name]['public'].get('msgCounter', None)
-            msgTimer_old = self.states_mucs[msg['room']][name]['public'].get('msgTimer', None)
-            if msgCounter_old != None and (msgCounter - msgCounter_old) <= 5 and msgTimer_old != None and (int(time.time()) - msgTimer_old) <= 1800:
-                convstate_sup.extend(self.states_mucs[msg['room']][name]['public'].get('state', []))
+            flags = ["chat", "global", "public"]
 
-        return message, flags, convstate, convstate_sup
+        roomStates = self.statesMUC[room]
+        if nick not in roomStates:
+            roomStates[nick] = {"private":{}, "public":{}}
+
+        msgCounterOld = roomStates[nick]["public"].get("msgCounter", None)
+        msgTimerOld = roomStates[nick]["public"].get("msgTimer", None)
+        convstate = []
+        if msgCounterOld is not None and (msgCounter - msgCounterOld) <= 30 and msgTimerOld is not None and (int(time.time()) - msgTimerOld) <= 2*3600:
+            convstate = roomStates[nick]["public"].get("state", [])
+        else:
+            roomStates[nick]["public"]["state"] = []
+
+        convstateSup = []
+        for name in roomStates:
+            if name == nick:
+                continue
+            msgCounterOld = roomStates[name]["public"].get("msgCounter", None)
+            msgTimerOld = roomStates[name]["public"].get("msgTimer", None)
+            if msgCounterOld is not None and (msgCounter - msgCounterOld) <= 5 and msgTimerOld is not None and (int(time.time()) - msgTimerOld) <= 1800:
+                convstateSup.extend(roomStates[name]["public"].get("state", []))
+
+        return message, flags, convstate, convstateSup
+
 
     def responsePrepareMUCPM(self, msg):
-        """ Parses MUC private message
+        """ Parse MUC private message
         """
-        message = msg['message']
+        message = msg.get("body", "")
+        room = msg["from"].bare
+        nick = msg["from"].resource
 
-        if self.states_mucs[msg['jid']].get(msg['resource'], None) == None:
-            self.states_mucs[msg['jid']][msg['resource']] = {'private':{}, 'public':{}}
-        msgTimer_old = self.states_mucs[msg['jid']][msg['resource']]['private'].get('msgTimer', None)
+        roomStates = self.statesMUC[room]
+        if nick not in roomStates:
+            roomStates[nick] = {"private":{}, "public":{}}
+
+        msgTimerOld = roomStates[nick]["private"].get("msgTimer", None)
         convstate = []
-        if msgTimer_old != None and (int(time.time()) - msgTimer_old) <= 2*3600:
-            convstate = self.states_mucs[msg['jid']][msg['resource']]['private'].get('state', [])
+        if msgTimerOld is not None and (int(time.time()) - msgTimerOld) <= 2*3600:
+            convstate = roomStates[nick]["private"].get("state", [])
         else:
-            self.states_mucs[msg['jid']][msg['resource']]['private']['state'] = []
-        convstate_sup = []
-        msgTimer_old = self.states_mucs[msg['jid']][msg['resource']]['public'].get('msgTimer', None)
-        if msgTimer_old != None and (int(time.time()) - msgTimer_old) <= 1800:
-            convstate_sup.extend(self.states_mucs[msg['jid']][msg['resource']]['public'].get('state', []))
+            roomStates[nick]["private"]["state"] = []
 
-        return message, convstate, convstate_sup
+        convstateSup = []
+        msgTimerOld = roomStates[nick]["public"].get("msgTimer", None)
+        if msgTimerOld is not None and (int(time.time()) - msgTimerOld) <= 1800:
+            convstateSup.extend(roomStates[nick]["public"].get("state", []))
+
+        return message, convstate, convstateSup
+
 
     def responsePreparePM(self, msg):
-        """ Parses private message
+        """ Parse private message
         """
-        message = msg['message']
+        message = msg.get("body", "")
+        jid = msg["from"].bare
 
-        if self.states_jids.get(msg['jid'], None) == None:
-            self.states_jids[msg['jid']] = {}
-        msgTimer_old = self.states_jids[msg['jid']].get('msgTimer', None)
+        statesJID = self.statesJID
+        if jid not in statesJID:
+            statesJID[jid] = {}
+
+        msgTimerOld = statesJID[jid].get("msgTimer", None)
         convstate = []
-        if msgTimer_old != None and (int(time.time()) - msgTimer_old) <= 2*3600:
-            convstate = self.states_jids[msg['jid']].get('state', [])
+        if msgTimerOld is not None and (int(time.time()) - msgTimerOld) <= 2*3600:
+            convstate = statesJID[jid].get("state", [])
         else:
-            self.states_jids[msg['jid']]['state'] = []
+            statesJID[jid]["state"] = []
 
         return message, convstate
+
 
     def responseLog(self, msg, reply):
         """ Log response
         """
-        if self.logPath != None:
-            message = msg['message']
-            if msg['type'] == 'groupchat':
-                logFile = msg['room']
-                message = "%s\t%s" % (msg['name'], message)
-            else:
-                logFile = "%s---%s" % (msg.get('jid', '').replace("/", "-"), msg.get('resource', '').replace("/", "-"))
-            dnf = 'OK'
-            if reply == None:
-                dnf = 'DNF'
-            line = "%s\t%s\t%s\n\t\t%s\n" % (datetime.datetime.now(), dnf, message.replace("\n", "||"), reply)
-            if type(line) is unicode:
-                line = line.encode("utf-8")
-            fp = file('%s/%s.log' % (self.logPath, logFile), 'a')
+        if self.logPath is None:
+            return
+
+        message = msg.get("body", "")
+        if msg["type"] == "groupchat":
+            logFile = msg["mucroom"]
+            message = "{0}\t{1}".format(msg["mucnick"], message)
+        else:
+            logFile = "{0}---{1}".format(msg["from"].bare.replace("/", "-"), msg["from"].resource.replace("/", "-"))
+
+        dnf = "OK"
+        if reply is None:
+            dnf = "DNF"
+        else:
+            reply = reply.replace("\n", "||")
+
+        line = "{0}\t{1}\t{2}\n\t\t{3}\n".format(datetime.datetime.now(), dnf, message.replace("\n", "||"), reply)
+
+        with open(os.path.join(self.logPath, logFile), "a") as fp:
             fp.write(line)
-            fp.flush()
-            fp.close()
+
 
     def responseFilters(self, msg, reply, filters):
         """ Apply filters
         """
-        prefix = ''
+        prefix = ""
 
         for name in filters:
-            if not name.startswith('no-') and not ("no-%s" % name) in filters:
+            if not name.startswith("no-") and "no-{0}".format(name) not in filters:
                 try:
                     filt = getattr(self.filters, name)
                     prefix, reply = filt(msg, prefix, reply)
                 except:
-                    logging.error("Filter error: %s" % name)
+                    self.log.error("Filter error: {0}.".format(name))
 
         return prefix, reply
+
+
+
+class Filters(object):
+    def __init__(self, bot):
+        self.bot = bot
+
+    def common(self, msg, prefix, reply):
+        reply = reply.replace("////", "\n")
+
+        if msg["from"].bare in self.bot.rooms:
+            reply = reply.replace("//BOTNICK//", self.bot.bot.rooms[msg["from"].bare])
+            reply = reply.replace("//NICK//", msg["from"].resource)
+
+        return prefix, reply
+
+
+    def direct(self, msg, prefix, reply):
+        prefix = ""
+        if msg["type"] == "groupchat":
+            prefix = "{0}: ".format(msg["mucnick"])
+
+        return prefix, reply
+
+
+    def time(self, msg, prefix, reply):
+        now = datetime.datetime.now()
+        return prefix, reply.replace("//TIME//", "{0:d}:{1:02d}".format(now.hour, now.minute))
+
+
+    def date(self, msg, prefix, reply):
+        now = datetime.datetime.now()
+        return prefix, reply.replace("//DATE//", "{0}. {1}.".format(now.day, now.month))
+
+
+
+class Conversations(object):
+    def __init__(self, filenames=[]):
+        self.log = logging.getLogger("keelsbot.chatbot.conv")
+        self.files = []
+        self.queries = []
+        for filename in filenames:
+            self.files.extend(glob.glob(filename))
+        for file in sorted(self.files):
+            self.load(file)
+
+
+    def load(self, file):
+        self.log.debug("Loading conversation file {0}.".format(file))
+        root = ET.parse(file)
+
+        idMap = {}
+        data = {}
+        data["queries"] = []
+        self.parseQueries(root, data, idMap)
+        self.replaceIds(idMap, data["queries"], "replies")
+        self.queries.extend(data["queries"])
+
+
+    def parseQueries(self, element, context, idMap):
+        for query in element.findall("query"):
+            try:
+                item = dict(query.attrib)
+                item["scope"] = item.get("scope", "direct")
+                item["pattern"] = re.compile(item.pop("match"),  re.I | re.U)
+                item["replies"] = []
+                if "id" in item:
+                    idMap[item["id"]] = item
+                context["queries"].append(item)
+                self.parseReplies(query, item, idMap)
+            except re.error:
+                self.log.error("Regular expression error: {0}.".format(repr(query.attrib["match"])))
+
+
+    def parseReplies(self, element, context, idMap):
+        for reply in element.findall("reply"):
+            item = dict(reply.attrib)
+            item["text"] = item.get("text", "")
+            item["scope"] = item.get("scope", "chat")
+            item["weight"] = int(item.get("weight", 1))
+            item["queries"] = []
+            if "id" in item:
+                idMap[item["id"]] = item
+            context["replies"].append(item)
+            self.parseQueries(reply, item, idMap)
+
+
+    def replaceIds(self, idMap, context, element):
+        for item in context:
+            if element == "replies":
+                next = "queries"
+            else:
+                next = "replies"
+            self.replaceIds(idMap, item[element], next)
+            if "extends" in item and item["extends"] in idMap:
+                item[element].extend(idMap[item["extends"]][element])
+                item.pop("extends")
+
+
+    def getReply(self, convstate, convstateSup, query, flags=["chat"]):
+        self.log.debug("Getting reply for '{0}'.".format(query))
+        queries = []
+        queries += filter(lambda i: i["scope"] in flags, convstate)
+        queries += filter(lambda i: i["scope"] in flags, convstateSup)
+        queries += filter(lambda i: i["scope"] in flags, self.queries)
+
+        for item in queries:
+            if item["pattern"].search(query) is not None:
+                reply = self.getRandomReply(item["replies"], flags)
+                if reply is None:
+                    continue
+
+                filters = reply.get("filter", "common")
+                if filters != "common":
+                    filters = "{0} common".format(filters)
+
+                self.log.debug("Got '{0}'.".format(reply["text"]))
+                return reply["text"], reply["queries"], filters.split(" ")
+
+        return None, None, None
+
+
+    def getRandomReply(self, choice, flags=["chat"]):
+        replies = []
+        replies += filter(lambda i: i["scope"] in flags, choice)
+
+        if len(replies) == 0:
+            return None
+        elif len(replies) == 1:
+            return replies[0]
+
+        sum = 0
+        for item in replies:
+            sum = sum + item["weight"]
+
+        self.log.debug("Randomly choosing from {0} choices (weight sum {1}).".format(len(replies), sum))
+
+        select = random.randint(1, sum)
+        sum = 0
+        for item in replies:
+            sum = sum + item["weight"]
+            if select <= sum:
+                return item
