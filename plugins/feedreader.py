@@ -77,13 +77,16 @@ class feedreader(object):
             for item in parser.items:
                 link = item.get("link", "")
                 title = item.get("title", "")
-                if link not in known and title not in sent:
+                if link not in known:
                     self.log.debug("Found new ittem '{0}' in feed {1}.".format(title, parser.channel["title"]))
-                    self.send(subscribers, parser.channel, item)
+                    wait = 0
+                    if title not in sent:
+                        self.send(subscribers, parser.channel, item)
+                        sent.append(title)
+                        wait = 1
                     self.store.add(url, link)
                     known.append(link)
-                    sent.append(title)
-                    time.sleep(1)
+                    time.sleep(wait)
             time.sleep(refresh)
 
 
