@@ -128,7 +128,7 @@ class chatbot(object):
             args = msg["from"].bare
 
         if args in self.rooms:
-            self.rooms[args]["chatty"] = True
+            self.rooms[args]["chatty"] = False
             return "OK, v místnosti {0} se už nebudu vykecávat ;-)".format(args)
         else:
             return "V místnosti {0} já vůbec nechatuju ;-)".format(args)
