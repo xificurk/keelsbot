@@ -48,6 +48,17 @@
             </acl>
             <config />
         </plugin>
+        <plugin name="antispam">
+            <config>
+                <!--This should be enabled only in MUCs, where bot is moderator, you can disable banning of users-->
+                <muc room="bot.test@conf.netlab.cz" noban="noban">
+                    <!--If the 'limit' of 'type' (message or character) is reached in given 'interval' (number of seconds), take action.-->
+                    <!--First warn user and remember that for 'remember' seconds. Second, kick user and again remember that. Third time, ban user permanently.-->
+                    <message interval="10" limit="5" remember="300" />
+                    <character interval="5" limit="800" remember="60" />
+                </muc>
+            </config>
+        </plugin>
         <plugin name="chatbot">
             <acl>
                 <convreload level="300" />
