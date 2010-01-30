@@ -1,12 +1,12 @@
 About
 ============================================================================
-KeelsBot is an easily extendable Bot for XMPP (aka Jabber, Google Talk, etc) 
+KeelsBot is an easily extendable Bot for XMPP (aka Jabber, Google Talk, etc)
 written in Python using the elegant SleekXMPP library.
 
 Author:
     Petr Morávek [Xificurk]
     jabber id: xificurk [at] jabber.cz
-    email: xificurk [at] gmail.com 
+    email: xificurk [at] gmail.com
 
 KeelsBot uses a lot of code from SleekBot written by Nathan Fritz
 and Kevin Smith.

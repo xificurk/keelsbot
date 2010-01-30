@@ -1,0 +1,35 @@
+CHANGES
+============================================================================
+
+Release 0.2.1 (2010-01-31)
+--------------------------
+
+[Enhancements]
+
+  * New plugins: antispam.
+
+[Bugfixes]
+
+  * chatbot plugin: !shut not working.
+
+  * feedreader plugin: autosanitaze database.
+
+
+Release 0.2 (2010-01-28)
+--------------------------
+
+[Enhancements]
+
+  * New plugins: pastebin.
+
+  * Port the code to Python 3.1.
+
+  * A lot of code refactoring.
+
+
+Release 0.1 (2009-08-20)
+--------------------------
+
+[Enhancements]
+
+  * Initial set of plugins.
