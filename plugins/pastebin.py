@@ -28,9 +28,8 @@ class pastebin(object):
     def __init__(self, bot, config):
         self.log = logging.getLogger("keelsbot.pastebin")
         self.bot = bot
-        default = config.findall("default")[0]
-        self.lang = default.get("lang", "text")
-        self.expiration = default.get("expiration", "d")
+        self.lang = config.get("lang", "text")
+        self.expiration = config.get("expiration", "d")
         self.about = "'Pastebin' umožňuje odeslání kódu na pastebin.cz.\nAutor: Petr Morávek"
         self.bot.addCommand("paste", self.paste, "Pastebin", "Odešle kód na pastebin.cz.\nNa prvním řádku bere v libovolném pořadí oddělené mezerou platnost (d - den, w - týden, m - měsíc, y - rok; výchozí hodnota je {0}), název jazyku (podle http://www.pastebin.cz/info/api, výchozí hodnota je {1}), a zda odeslat vygenerovaný odkaz přímo do MUCu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek).\nNa druhém řádku je titulek (může být prázdný).\nNa všech dalších řádcích je samotný kód.".format(self.expiration, self.lang), "paste [d|w|m|y] [lang] [0|1]\nTitulek\nKód")
 
