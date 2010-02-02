@@ -142,7 +142,6 @@ class antispam(object):
                         self.ban(room, jid)
                 badBoys[jid] = (now, action)
 
-        # TODO: noban attr
         conf = config.get("character")
         if conf is not None:
             maxInterval = max(maxInterval, conf["interval"])
