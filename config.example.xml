@@ -79,9 +79,8 @@
                 <shut level="200" />
                 <chat level="200" />
             </acl>
-            <config>
-                <!--If you want to debug the conversations, enter the log directory-->
-                <debug log="/path/to/log/dir" />
+            <!--If you want to debug the conversations, enter the log directory-->
+            <config log="/path/to/log/dir">
                 <!--Rooms, where KeelsBot is supposed to respond-->
                 <muc room="room@server.com" />
                 <muc room="room2@server2.com" disabled="disabled" />

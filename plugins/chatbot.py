@@ -64,10 +64,7 @@ class chatbot(object):
                 self.dicts.append(dict)
         self.conversations = Conversations(self.dicts)
 
-        self.logPath = None
-        debug = self.config.find("debug")
-        if debug is not None and debug.get("log") is not None:
-            self.logPath = debug.get("log")
+        self.logPath = config.get("log")
 
         self.about = "'Chatbot' umožňuje botovi odpovídat na určité zprávy v MUC i PM.\nAutoři: Pavel Šimerda, Petr Morávek"
         self.bot.addCommand("shut", self.shut, "Vypnout chatbota v MUC", "Bot přestane odpovídat předdefinovanými odpověďmi v zadaném MUC.", "shut [MUC]")
