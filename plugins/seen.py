@@ -26,6 +26,8 @@ import logging
 
 
 class seen(object):
+    sleekDependencies = ["xep_0045"]
+
     def __init__(self, bot, config):
         self.log = logging.getLogger("keelsbot.seen")
         self.bot = bot

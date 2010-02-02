@@ -35,6 +35,8 @@ class parrot(object):
             [muc, text] = args.split(" ",1)
         else:
             return "Nedostatečný počet argumentů."
+        if muc not in self.bot.rooms:
+            return "Tam já nesedím..."
         self.bot.sendMessage(muc, text, mtype="groupchat")
         return "Odesláno."
 

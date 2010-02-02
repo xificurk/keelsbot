@@ -30,6 +30,8 @@ locale.setlocale(locale.LC_ALL, ("cs_CZ", "UTF-8"))
 
 
 class irssilogs(object):
+    sleekDependencies = ["xep_0045"]
+
     def __init__(self, bot, config):
         self.log = logging.getLogger("keelsbot.irssilogs")
         self.bot = bot

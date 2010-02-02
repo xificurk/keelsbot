@@ -2,15 +2,29 @@
     <!--Bot authorisation details-->
     <auth jid="user@server.com/Resource" pass="secreteating" priority="10" server="__optional__" />
 
-    <!--Bot client identification details - optional, do not change unless you want to mask the true nature of the bot :)-->
-    <!--<client name="KeelsBot" version="0.2" />-->
+    <!--SleekXMPP plugins and config, note: you need to completely restart bot after making changes in this section-->
+    <sleek>
+        <!--Service Discovery-->
+        <plugin name="xep_0030" />
+        <!--Software Version-->
+        <plugin name="xep_0092">
+            <!--Bot client identification details - optional, do not change unless you want to mask the true nature of the bot :)-->
+            <!--<config name="KeelsBot" version="0.2.2" />-->
+        </plugin>
+        <!--Multi User Chat-->
+        <plugin name="xep_0045">
+            <muc room="room@server.com" nick="KeelsBot" />
+        </plugin>
+        <!--Data Forms-->
+        <plugin name="xep_0004" />
+        <!--Ad-Hoc Commands-->
+        <plugin name="xep_0050" />
+        <!--XMPP Ping-->
+        <plugin name="xep_0199" />
+    </sleek>
 
     <!--Defines the minimum access level for bot to respond to commands. Default is 0 = respond to all users except banned-->
     <!--<access-level min="0" />-->
-
-    <rooms>
-        <muc room="room@server.com" nick="KeelsBot" />
-    </rooms>
 
     <!--Location of the sqlite3 database used for persistent storage.-->
     <storage file="/var/lib/scripts/keelsbot/test.sqlite" />

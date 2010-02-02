@@ -28,6 +28,8 @@ import time
 
 
 class muc_stability(object):
+    sleekDependencies = ["xep_0045"]
+
     def __init__(self, bot, config):
         self.log = logging.getLogger("keelsbot.muc_stability")
         self.bot = bot

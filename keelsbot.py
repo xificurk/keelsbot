@@ -23,7 +23,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 from imp import reload
@@ -48,8 +48,7 @@ from store import store
 
 class keelsbot(sleekxmpp.ClientXMPP, basebot):
     def __init__(self, configFile, jid, password, ssl=False):
-        plugin_whitelist = ["xep_0004", "xep_0030", "xep_0045", "xep_0050", "xep_0086", "xep_0092", "xep_0199"]
-        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl, plugin_whitelist=plugin_whitelist)
+        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl)
         basebot.__init__(self)
         self.log = logging.getLogger("keelsbot")
         self.configFile = configFile
@@ -69,6 +68,25 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         """
         self.botconfig = ET.parse(configFile)
 
+        for plugin in self.botconfig.findall("/sleek/plugin"):
+            if "name" not in plugin.keys():
+                self.log.error("Ignoring unamed SleekXMPP plugin.")
+                continue
+            self.log.debug("Registering")
+            self.plugin_whitelist.append(plugin.get("name"))
+            conf = plugin.find("config")
+            if conf is not None:
+                self.plugin_config[plugin.get("name")] = conf.attrib
+
+        if "xep_0092" in self.plugin_whitelist:
+            if "xep_0092" not in self.plugin_config:
+                self.plugin_config["xep_0092"] = {}
+            conf = self.plugin_config["xep_0092"]
+            if "name" not in conf:
+                conf["name"] = "KeelsBot"
+            if "version" not in conf:
+                conf["version"] = __version__
+
         storageXml = self.botconfig.find("/storage")
         if storageXml is not None:
             self.store = store(storageXml.attrib["file"])
@@ -78,15 +96,6 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         accessLevel = self.botconfig.find("/access-level")
         if accessLevel is not None:
             self.minAccessLevel = max(int(accessLevel.get("min", 0)), 0)
-
-        clientName = "KeelsBot"
-        clientVersion = __version__
-        client = config.find("/client")
-        if client is not None:
-            clientName = client.get("name", clientName)
-            clientVersion = client.get("version", clientVersion)
-        self.log.debug("Setting client to {0}-{1}.".format(clientName, clientVersion))
-        self.plugin_config["xep_0092"] = {"name": clientName, "version": clientVersion}
 
         self.parseUserGroups()
 
@@ -135,13 +144,26 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
             reload(globals()["plugins"].__dict__[name])
         else:
             __import__("{0}.{1}".format(globals()["plugins"].__name__, name))
-        self.botPlugin[name] = getattr(globals()["plugins"].__dict__[name], name)(self, config)
+
+        plugin = getattr(globals()["plugins"].__dict__[name], name)
+
+        if hasattr(plugin, "sleekDependencies"):
+            for sleekDep in getattr(plugin, "sleekDependencies"):
+                if sleekDep not in self.plugin:
+                    self.log.warn("Bot plugin '{0}' needs sleekXMPP plugin '{1}'.".format(name, sleekDep))
+                    return False
+
+        self.botPlugin[name] = plugin(self, config)
         return True
 
 
     def registerCommands(self):
         """ Register all ad-hoc commands with SleekXMPP.
         """
+        if "xep_0004" not in self.plugin or "xep_0050" not in self.plugin:
+            self.log.warn("Ad-hoc commands disabled.")
+            return
+
         aboutform = self.plugin["xep_0004"].makeForm("form", "O KeelsBotovi")
         aboutform.addField("about", "fixed", value="KeelsBot je upravenou verzí SleekBota, kterou napsal Petr Morávek.\nKeelsBot těží z kódu projektu SleekBot, jehož autory jsou Nathan Fritz a Kevin Smith.\nPro komunikaci používá knihovnu SleekXMPP, jejímž autorem je taktéž Nathan Fritz.\nhttp://github.com/xificurk/KeelsBot")
         self.plugin["xep_0050"].addCommand("about", "O KeelsBotovi", aboutform)
@@ -211,7 +233,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
             If the jid is in a muc and the true jid is known, that is returned.
             If the jid is in a muc and the true jid isn't known, None is returned.
         """
-        if jid.bare in self.plugin["xep_0045"].getJoinedRooms():
+        if jid.bare in self.rooms:
             self.log.debug("Checking real jid for {0}.".format(jid))
             return self.plugin["xep_0045"].getJidProperty(jid.bare, jid.resource, "jid")
         else:
@@ -288,17 +310,19 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         """ Join MUC rooms
         """
         self.log.info("Re-syncing with required channels.")
-        newRoomXml = self.botconfig.findall("/rooms/muc")
+
         newRooms = {}
-        if len(newRoomXml) > 0:
-            for room in newRoomXml:
-                newRooms[room.attrib["room"]] = room.attrib["nick"]
-        for room in self.rooms.keys():
+        for plugin in self.botconfig.findall("/sleek/plugin"):
+            if plugin.get("name") == "xep_0045":
+                for room in plugin.findall("muc"):
+                    newRooms[room.attrib["room"]] = room.attrib["nick"]
+
+        for room in self.rooms:
             if room not in newRooms.keys():
                 self.log.info("Leaving room {0}.".format(room))
                 self.plugin["xep_0045"].leaveMUC(room, self.rooms[room])
                 del self.rooms[room]
-        for room in newRooms.keys():
+        for room in newRooms:
             if room not in self.rooms.keys():
                 self.rooms[room] = newRooms[room]
                 self.log.info("Joining room {0} as {1}.".format(room, newRooms[room]))

@@ -27,6 +27,8 @@ import time
 
 
 class toppresence(object):
+    sleekDependencies = ["xep_0045"]
+
     def __init__(self, bot, config):
         self.log = logging.getLogger("keelsbot.toppresence")
         self.bot = bot

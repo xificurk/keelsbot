@@ -26,11 +26,12 @@ from xml.etree import cElementTree as ET
 
 
 class antispam(object):
+    sleekDependencies = ["xep_0045"]
+
     def __init__(self, bot, config):
         self.log = logging.getLogger("keelsbot.antispam")
         self.bot = bot
         self.about = "'Antispam' hlídá MUC proti spamu - spammera varuje, kickne, případně zabanuje.\nAutor: Petr Morávek"
-
         self.badBoys = {}
         self.history = {}
 
