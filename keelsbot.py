@@ -35,7 +35,7 @@ import platform
 import re
 import sys
 import time
-from xml.etree import ElementTree as ET
+from xml.etree import cElementTree as ET
 
 import libs.console as console
 from libs.versioning import VersionInfo

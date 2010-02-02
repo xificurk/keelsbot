@@ -31,7 +31,7 @@ import random
 import re
 import threading
 import time
-from xml.etree import ElementTree as ET
+from xml.etree import cElementTree as ET
 
 
 class chatbot(object):

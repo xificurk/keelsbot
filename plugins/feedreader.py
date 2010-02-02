@@ -28,7 +28,7 @@ import random
 import threading
 import time
 import urllib.request
-from xml.etree import ElementTree as ET
+from xml.etree import cElementTree as ET
 
 
 class feedreader(object):
