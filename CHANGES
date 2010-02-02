@@ -12,6 +12,10 @@ Release 0.2.2 (2010-02-02)
 
   * chatbot, pastebin plugins: make configuration more simple.
 
+[Bugfixes]
+
+  * chatbot plugin: add 'log' extension for debug logs.
+
 
 Release 0.2.1 (2010-01-31)
 --------------------------

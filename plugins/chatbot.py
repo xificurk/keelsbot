@@ -329,10 +329,10 @@ class chatbot(object):
 
         message = msg.get("body", "")
         if msg["type"] == "groupchat":
-            logFile = msg["mucroom"]
+            logFile = "{0}.log".format(msg["mucroom"])
             message = "{0}\t{1}".format(msg["mucnick"], message)
         else:
-            logFile = "{0}---{1}".format(msg["from"].bare.replace("/", "-"), msg["from"].resource.replace("/", "-"))
+            logFile = "{0}---{1}.log".format(msg["from"].bare.replace("/", "-"), msg["from"].resource.replace("/", "-"))
 
         dnf = "OK"
         if reply is None:
