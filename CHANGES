@@ -8,6 +8,10 @@ Release 0.2.2 (2010-02-02)
 
   * Make SleekXMPP plugins configurable.
 
+  * Replace ElementTree by cElementTree.
+
+  * chatbot, pastebin plugins: make configuration more simple.
+
 
 Release 0.2.1 (2010-01-31)
 --------------------------
