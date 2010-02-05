@@ -78,7 +78,7 @@ class pastebin(object):
 
         try:
             response = urllib.request.urlopen("http://www.pastebin.cz/remote", urllib.parse.urlencode(data), 10)
-        except:
+        except IOError:
             self.log.error("Could not fetch pastebin.")
             return "ERROR"
         if response.getcode() != 201:
