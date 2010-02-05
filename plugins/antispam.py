@@ -170,13 +170,14 @@ class antispam(object):
                     badBoys[jid] = (now, action)
 
         for row in list(history):
-            if row[0] < now - maxInterval:
+            if row[0] < (now - maxInterval):
                 history.remove(row)
             else:
                 break
         for jid in list(badBoys.keys()):
-            if badBoys[jid][0] < now - maxRemember:
+            if badBoys[jid][0] < (now - maxRemember):
                 del badBoys[jid]
+        self.log.debug("Got {0} in history and {1} badBoys.".format(len(history), len(badBoys))
 
 
     def warn(self, room, nick):
