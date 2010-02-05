@@ -177,7 +177,7 @@ class antispam(object):
         for jid in list(badBoys.keys()):
             if badBoys[jid][0] < (now - maxRemember):
                 del badBoys[jid]
-        self.log.debug("Got {0} in history and {1} badBoys.".format(len(history), len(badBoys))
+        self.log.debug("Got {0} in history and {1} badBoys.".format(len(history), len(badBoys)))
 
 
     def warn(self, room, nick):
