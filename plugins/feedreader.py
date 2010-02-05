@@ -151,7 +151,11 @@ class feedParser:
 
 
     def fetch(self):
-        response = urllib.request.urlopen(self.url, timeout=10)
+        try:
+            response = urllib.request.urlopen(self.url, timeout=10)
+        except:
+            self.log.error("Could not fetch URL {0}.".format(self.url))
+            return
         if response.getcode() != 200:
             self.log.error("Got error code {0} while fetching {1}.".format(response.getcode(), self.url))
             return

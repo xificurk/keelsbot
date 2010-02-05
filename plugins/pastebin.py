@@ -76,9 +76,15 @@ class pastebin(object):
         if title != "":
             data["title"] = title
 
-        response = urllib.request.urlopen("http://www.pastebin.cz/remote", urllib.parse.urlencode(data), 10)
-        if response.getcode() != 201:
+        try:
+            response = urllib.request.urlopen("http://www.pastebin.cz/remote", urllib.parse.urlencode(data), 10)
+        except:
+            self.log.error("Could not fetch pastebin.")
             return "ERROR"
+        if response.getcode() != 201:
+            self.log.error("Got error code {0} from pastebin.".format(response.getcode()))
+            return "ERROR"
+
         url = response.readline().decode("utf-8")
 
         if sendToMUC == 1 and msg["type"] != "groupchat" and msg["from"].bare in self.bot.rooms:
