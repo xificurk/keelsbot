@@ -134,5 +134,8 @@
         <plugin name="uptime">
             <config />
         </plugin>
+        <plugin name="vocabulary">
+            <config />
+        </plugin>
     </plugins>
 </config>
