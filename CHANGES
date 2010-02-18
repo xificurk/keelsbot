@@ -1,6 +1,14 @@
 CHANGES
 ============================================================================
 
+Release 0.2.4 (2010-02-18)
+--------------------------
+
+[Enhancements]
+
+  * New plugin: vocabulary.
+
+
 Release 0.2.3 (2010-02-05)
 --------------------------
 
@@ -30,7 +38,7 @@ Release 0.2.1 (2010-01-31)
 
 [Enhancements]
 
-  * New plugins: antispam.
+  * New plugin: antispam.
 
 [Bugfixes]
 
