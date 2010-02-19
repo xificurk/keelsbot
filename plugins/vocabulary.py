@@ -342,14 +342,18 @@ class vocabularyStore(object):
         for row in db.cursor().execute("SELECT [rowid], [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dict[0],)).fetchall():
             phrase = {"id":row["rowid"]}
             if dict[1]:
-                weight = db.cursor().execute("SELECT [right] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?", (jid, row["rowid"])).fetchone()["right"]
+                weight = db.cursor().execute("SELECT [right] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?", (jid, row["rowid"])).fetchone()
+                if weight is not None:
+                    weight = int(weight["right"])
                 phrase["answer"] = row["left_phrase"]
                 if row["right_note"] is not None:
                     phrase["query"] = "{0} ({1})".format(row["right_phrase"], row["right_note"])
                 else:
                     phrase["query"] = row["right_phrase"]
             else:
-                weight = db.cursor().execute("SELECT [left] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?", (jid, row["rowid"])).fetchone()["left"]
+                weight = db.cursor().execute("SELECT [left] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?", (jid, row["rowid"])).fetchone()
+                if weight is not None:
+                    weight = int(weight["left"])
                 phrase["answer"] = row["right_phrase"]
                 if row["left_note"] is not None:
                     phrase["query"] = "{0} ({1})".format(row["left_phrase"], row["left_note"])
@@ -357,8 +361,6 @@ class vocabularyStore(object):
                     phrase["query"] = row["left_phrase"]
             if weight is None:
                 weight = 5
-            else:
-                weight = int(weight)
             phrase["weight"] = weight
             vocabulary.append(phrase)
         db.close()
