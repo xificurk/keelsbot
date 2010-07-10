@@ -29,41 +29,31 @@ class pastebin(object):
         self.log = logging.getLogger("keelsbot.pastebin")
         self.bot = bot
         self.lang = config.get("lang", "text")
-        self.expiration = config.get("expiration", "d")
-        self.about = "'Pastebin' umožňuje odeslání kódu na pastebin.cz.\nAutor: Petr Morávek"
-        self.bot.addCommand("paste", self.paste, "Pastebin", "Odešle kód na pastebin.cz.\nNa prvním řádku bere v libovolném pořadí oddělené mezerou platnost (d - den, w - týden, m - měsíc, y - rok; výchozí hodnota je {0}), název jazyku (podle http://www.pastebin.cz/info/api, výchozí hodnota je {1}), a zda odeslat vygenerovaný odkaz přímo do MUCu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek).\nNa druhém řádku je titulek (může být prázdný).\nNa všech dalších řádcích je samotný kód.".format(self.expiration, self.lang), "paste [d|w|m|y] [lang] [0|1]\nTitulek\nKód")
+        self.expiration = config.get("expiration", "1D")
+        self.about = "'Pastebin' umožňuje odeslání kódu na pastebin.com.\nAutor: Petr Morávek"
+        self.bot.addCommand("paste", self.paste, "Pastebin", "Odešle kód na pastebin.com.\nNa prvním řádku bere v libovolném pořadí oddělené mezerou platnost (10M = 10 minut, 1H = 1 hodina, 1D = 1 den, 1M = 1 měsíc, N = navždy; výchozí hodnota je {0}), název jazyku (podle http://pastebin.com/api.php, výchozí hodnota je {1}), a zda odeslat vygenerovaný odkaz přímo do MUCu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek).\nNa všech dalších řádcích je samotný kód.".format(self.expiration, self.lang), "paste [10M|1H|1D|1M|N] [lang] [0|1]\nKód")
 
 
     def paste(self, command, args, msg):
-        paste = args.split("\n", 2)
+        paste = args.split("\n", 1)
         self.log.debug(paste)
-        if len(paste) < 3:
+        if len(paste) < 2:
             return "Neplatné zadání, mrkni na help."
 
         sendToMUC = 0
         lang = self.lang
         expiration = self.expiration
 
-        title = paste[1]
-        code = paste[2]
+        code = paste[1]
 
         arguments = paste[0].split(" ")
         for param in arguments:
-            if param in ["d", "w", "m", "y"]:
-                expiration = param
+            if param.upper() in ["10M", "1H", "1D", "1M", "N"]:
+                expiration = param.upper()
             elif param == "0" or param == "1":
                 sendToMUC = int(param)
             elif param != "":
                 lang = param
-
-        if expiration == "d":
-            expiration = 1
-        elif expiration == "w":
-            expiration = 2
-        elif expiration == "m":
-            expiration = 3
-        else:
-            expiration = 4
 
         if msg["type"] == "groupchat":
             author = msg["mucnick"]
@@ -72,18 +62,17 @@ class pastebin(object):
         else:
             author = msg["from"].user
 
-        data = {"service_id":2, "service_adapter":"remote_adapter", "user_api_key":"d1e70fb6f3010769b8ea3252965aef41", "text":code, "author":author, "expiration":expiration, "language":lang}
-        if title != "":
-            data["title"] = title
+        data = {"paste_code":code, "paste_name":author, "paste_expire_date":expiration, "paste_format":lang}
+        self.log.debug(data)
 
         try:
-            response = urllib.request.urlopen("http://www.pastebin.cz/remote", urllib.parse.urlencode(data), 10)
+            response = urllib.request.urlopen("http://pastebin.com/api_public.php", urllib.parse.urlencode(data), 10)
         except IOError:
             self.log.error("Could not fetch pastebin.")
             return "ERROR"
-        if response.getcode() != 201:
+        if response.getcode() != 200:
             self.log.error("Got error code {0} from pastebin.".format(response.getcode()))
-            return "ERROR"
+            return "ERROR {0}".format(response.getcode())
 
         url = response.readline().decode("utf-8")
 

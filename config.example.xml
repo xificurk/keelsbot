@@ -122,8 +122,8 @@
             <config />
         </plugin>
         <plugin name="pastebin">
-            <!--If you want, you can change the default language (text) and expiration (d), see http://www.pastebin.cz/info/api-->
-            <config lang="php" expiration="d" />
+            <!--If you want, you can change the default language (text) and expiration (1D), see http://pastebin.com/api.php-->
+            <config lang="php" expiration="1D" />
         </plugin>
         <plugin name="seen">
             <config />
