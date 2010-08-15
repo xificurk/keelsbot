@@ -71,7 +71,7 @@
 		<reply text="to záleží na tom... jak se to jenom jmenuje?|už jsem si vzpomněl - konfigurační soubor ;-)"/>
 	</query>
 
-	<query match="^\b(ba|mlu)v[íi]m se s [čc]lov[ěe]kem\?">
+	<query match="^\b(bav[íi]m se|mlu[íi]m) s [čc]lov[ěe]kem\?">
 		<reply text="Co myslíš? :-)" />
 		<reply text="S člověkem? Že se nestydíš, takhle mě urážet... :D"/>
 	</query>
