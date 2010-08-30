@@ -1,3 +1,10 @@
+"""
+    SleekXMPP: The Sleek XMPP Library
+    Copyright (C) 2010  Nathanael C. Fritz
+    This file is part of SleekXMPP.
+
+    See the file license.txt for copying permission.
+"""
 from .. xmlstream.stanzabase import StanzaBase
 from xml.etree import cElementTree as ET
 from . error import Error
@@ -8,6 +15,7 @@ class Message(RootStanza):
 	types = set((None, 'normal', 'chat', 'headline', 'error', 'groupchat'))
 	sub_interfaces = set(('body', 'subject'))
 	name = 'message'
+	plugin_attrib = name
 	namespace = 'jabber:client'
 
 	def getType(self):

@@ -1,3 +1,11 @@
+"""
+    SleekXMPP: The Sleek XMPP Library
+    Copyright (C) 2010  Nathanael C. Fritz
+    This file is part of SleekXMPP.
+
+    See the file license.txt for copying permission.
+"""
+
 from __future__ import with_statement, unicode_literals
 try:
 	import queue
@@ -45,7 +53,7 @@ class XMLStream(object):
 		self.ssl_support = ssl_support
 		self.escape_quotes = escape_quotes
 		self.state = statemachine.StateMachine()
-		self.state.addStates({'connected':False, 'is client':False, 'ssl':False, 'tls':False, 'reconnect':True, 'processing':False}) #set initial states
+		self.state.addStates({'connected':False, 'is client':False, 'ssl':False, 'tls':False, 'reconnect':True, 'processing':False, 'disconnecting':False}) #set initial states
 
 		self.setSocket(socket)
 		self.address = (host, int(port))
@@ -66,6 +74,7 @@ class XMLStream(object):
 		self.stream_footer = "</stream>"
 
 		self.eventqueue = queue.Queue()
+		self.sendqueue = queue.Queue()
 
 		self.namespace_map = {}
 
@@ -139,22 +148,27 @@ class XMLStream(object):
 		for t in range(0, HANDLER_THREADS):
 			self.__thread['eventhandle%s' % t] = threading.Thread(name='eventhandle%s' % t, target=self._eventRunner)
 			self.__thread['eventhandle%s' % t].start()
+		self.__thread['sendthread'] = threading.Thread(name='sendthread', target=self._sendThread)
+		self.__thread['sendthread'].start()
 		if threaded:
 			self.__thread['process'] = threading.Thread(name='process', target=self._process)
 			self.__thread['process'].start()
 		else:
 			self._process()
 	
+	def schedule(self, seconds, handler, args=None):
+		threading.Timer(seconds, handler, args).start()
+	
 	def _process(self):
 		"Start processing the socket."
 		firstrun = True
-		while firstrun or self.state['reconnect']:
+		while self.run and (firstrun or self.state['reconnect']):
 			self.state.set('processing', True)
 			firstrun = False
 			try:
 				if self.state['is client']:
 					self.sendRaw(self.stream_header)
-				while self.__readXML():
+				while self.run and self.__readXML():
 					if self.state['is client']:
 						self.sendRaw(self.stream_header)
 			except KeyboardInterrupt:
@@ -208,6 +222,7 @@ class XMLStream(object):
 			if event == b'end':
 				edepth += -1
 				if edepth == 0 and event == b'end':
+					self.disconnect(reconnect=self.state['reconnect'])
 					return False
 				elif edepth == 1:
 					#self.xmlin.put(xmlobj)
@@ -222,25 +237,37 @@ class XMLStream(object):
 			if event == b'start':
 				edepth += 1
 	
+	def _sendThread(self):
+		while self.run:
+			data = self.sendqueue.get(True)
+			logging.debug("SEND: %s" % data)
+			try:
+				self.socket.send(data.encode('utf-8'))
+				#self.socket.send(bytes(data, "utf-8"))
+				#except socket.error,(errno, strerror):
+			except:
+				logging.warning("Failed to send %s" % data)
+				self.state.set('connected', False)
+				if self.state.reconnect:
+					logging.error("Disconnected. Socket Error.")
+					traceback.print_exc()
+					self.disconnect(reconnect=True)
+	
 	def sendRaw(self, data):
-		logging.debug("SEND: %s" % data)
-		try:
-			self.socket.send(data.encode('utf-8'))
-			#self.socket.send(bytes(data, "utf-8"))
-			#except socket.error,(errno, strerror):
-		except:
-			self.state.set('connected', False)
-			if self.state.reconnect:
-				logging.error("Disconnected. Socket Error.")
-				traceback.print_exc()
-				self.disconnect(reconnect=True)
-			return False
+		self.sendqueue.put(data)
 		return True
 	
 	def disconnect(self, reconnect=False):
 		self.state.set('reconnect', reconnect)
+		if self.state['disconnecting']:
+			return
+		if not self.state['reconnect']:
+			logging.debug("Disconnecting...")
+			self.state.set('disconnecting', True)
+			self.run = False
 		if self.state['connected']:
 			self.sendRaw(self.stream_footer)
+			time.sleep(1)
 			#send end of stream
 			#wait for end of stream back
 		try:

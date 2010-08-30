@@ -1,23 +1,11 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python2.6
 
 """
     SleekXMPP: The Sleek XMPP Library
-    Copyright (C) 2007  Nathanael C. Fritz
+    Copyright (C) 2010  Nathanael C. Fritz
     This file is part of SleekXMPP.
 
-    SleekXMPP is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    SleekXMPP is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with SleekXMPP; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    See the file license.txt for copying permission.
 """
 from __future__ import absolute_import
 from . basexmpp import basexmpp
@@ -66,6 +54,16 @@ class ComponentXMPP(basexmpp, XMLStream):
 		self.secret = secret
 		self.registerHandler(Callback('Handshake', MatchXPath('{jabber:component:accept}handshake'), self._handleHandshake))
 	
+	def __getitem__(self, key):
+		if key in self.plugin:
+			return self.plugin[key]
+		else:
+			logging.warning("""Plugin "%s" is not loaded.""" % key)
+			return False
+	
+	def get(self, key, default):
+		return self.plugin.get(key, default)
+	
 	def incoming_filter(self, xmlobj):
 		if xmlobj.tag.startswith('{jabber:client}'):
 			xmlobj.tag = xmlobj.tag.replace('jabber:client', self.default_ns)
@@ -76,7 +74,10 @@ class ComponentXMPP(basexmpp, XMLStream):
 	def start_stream_handler(self, xml):
 		sid = xml.get('id', '')
 		handshake = ET.Element('{jabber:component:accept}handshake')
-		handshake.text = hashlib.sha1(bytes("%s%s" % (sid, self.secret), 'utf-8')).hexdigest().lower()
+		if sys.version_info < (3,0):
+			handshake.text = hashlib.sha1("%s%s" % (sid, self.secret)).hexdigest().lower()
+		else:
+			handshake.text = hashlib.sha1(bytes("%s%s" % (sid, self.secret), 'utf-8')).hexdigest().lower()
 		self.sendXML(handshake)
 	
 	def _handleHandshake(self, xml):

@@ -93,10 +93,10 @@ class MUCPresence(ElementBase):
 		return self
 	
 	def getNick(self):
-		return self.parent['from'].resource
+		return self.parent()['from'].resource
 	
 	def getRoom(self):
-		return self.parent['from'].bare
+		return self.parent()['from'].bare
 	
 	def setNick(self, value):
 		logging.warning("Cannot set nick through mucpresence plugin.")
@@ -146,7 +146,14 @@ class xep_0045(base.base_plugin):
 		""" Handle a message event in a muc.
 		"""
 		self.xmpp.event('groupchat_message', msg)
-	
+		       
+	def jidInRoom(self, room, jid):
+		for nick in self.rooms[room]:
+			entry = self.rooms[room][nick]
+			if entry is not None and entry['jid'].full == jid:
+				return True
+		return False
+
 	def getRoomForm(self, room, ifrom=None):
 		iq = self.xmpp.makeIqGet()
 		iq['to'] = room
@@ -175,7 +182,6 @@ class xep_0045(base.base_plugin):
 		form = form.getXML('submit')
 		query.append(form)
 		iq.append(query)
-		#result = self.xmpp.send(iq, self.xmpp.makeIq(iq.get('id')))
 		result = iq.send()
 		if result['type'] == 'error':
 			return False
@@ -217,7 +223,6 @@ class xep_0045(base.base_plugin):
 		destroy.append(xreason)
 		query.append(destroy)
 		iq.append(query)
-		#r = self.xmpp.send(iq, self.xmpp.makeIq(iq.get('id')))
 		r = iq.send()
 		if r is False or r['type'] == 'error':
 			return False

@@ -2,22 +2,10 @@
 
 """
     SleekXMPP: The Sleek XMPP Library
-    Copyright (C) 2007  Nathanael C. Fritz
+    Copyright (C) 2010  Nathanael C. Fritz
     This file is part of SleekXMPP.
 
-    SleekXMPP is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    SleekXMPP is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with SleekXMPP; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    See the file license.txt for copying permission.
 """
 from __future__ import absolute_import, unicode_literals
 from . basexmpp import basexmpp
@@ -80,7 +68,7 @@ class ClientXMPP(basexmpp, XMLStream):
 		self.sessionstarted = False
 		self.registerHandler(Callback('Stream Features', MatchXPath('{http://etherx.jabber.org/streams}features'), self._handleStreamFeatures, thread=True))
 		self.registerHandler(Callback('Roster Update', MatchXPath('{%s}iq/{jabber:iq:roster}query' % self.default_ns), self._handleRoster, thread=True))
-		self.registerHandler(Callback('Roster Update', MatchXMLMask("<presence xmlns='%s' type='subscribe' />" % self.default_ns), self._handlePresenceSubscribe, thread=True))
+		#self.registerHandler(Callback('Roster Update', MatchXMLMask("<presence xmlns='%s' type='subscribe' />" % self.default_ns), self._handlePresenceSubscribe, thread=True))
 		self.registerFeature("<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls' />", self.handler_starttls, True)
 		self.registerFeature("<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl' />", self.handler_sasl_auth, True)
 		self.registerFeature("<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind' />", self.handler_bind_resource)
@@ -108,7 +96,7 @@ class ClientXMPP(basexmpp, XMLStream):
 			else:
 				logging.debug("Since no address is supplied, attempting SRV lookup.")
 				try:
-					answers = dns.resolver.query("_xmpp-client._tcp.%s" % self.server, "SRV")
+					answers = dns.resolver.query("_xmpp-client._tcp.%s" % self.server, dns.rdatatype.SRV)
 				except dns.resolver.NXDOMAIN:
 					logging.debug("No appropriate SRV record found.  Using JID server name.")
 				else:
@@ -163,7 +151,8 @@ class ClientXMPP(basexmpp, XMLStream):
 	
 	def getRoster(self):
 		"""Request the roster be sent."""
-		self.Iq().setValues({'type': 'get'}).enable('roster').send()
+		iq = self.Iq().setValues({'type': 'get'}).enable('roster').send()
+		self._handleRoster(iq, request=True)
 	
 	def _handleStreamFeatures(self, features):
 		self.features = []
@@ -240,16 +229,18 @@ class ClientXMPP(basexmpp, XMLStream):
 	
 	def handler_start_session(self, xml):
 		if self.authenticated:
-			response = self.send(self.makeIqSet(xml), self.makeIq(self.getId()))
+			iq = self.makeIqSet(xml)
+			response = iq.send()
 			logging.debug("Established Session")
 			self.sessionstarted = True
 			self.event("session_start")
 	
-	def _handleRoster(self, iq):
-		for jid in iq['roster']['items']:
-			if not jid.bare in self.roster:
-				self.roster[jid.bare] = {'groups': [], 'name': '', 'subscription': 'none', 'presence': {}, 'in_roster': True}
-			self.roster[jid.bare].update(iq['roster']['jid'])
-		if iq['type'] == 'set':
-			self.send(self.Iq().setValues({'type': 'result', 'id': iq['id']}).enable('roster'))
+	def _handleRoster(self, iq, request=False):
+		if iq['type'] == 'set' or (iq['type'] == 'result' and request):
+			for jid in iq['roster']['items']:
+				if not jid in self.roster:
+					self.roster[jid] = {'groups': [], 'name': '', 'subscription': 'none', 'presence': {}, 'in_roster': True}
+				self.roster[jid].update(iq['roster']['items'][jid])
+			if iq['type'] == 'set':
+				self.send(self.Iq().setValues({'type': 'result', 'id': iq['id']}).enable('roster'))
 		self.event("roster_update", iq)

@@ -1,3 +1,10 @@
+"""
+    SleekXMPP: The Sleek XMPP Library
+    Copyright (C) 2010  Nathanael C. Fritz
+    This file is part of SleekXMPP.
+
+    See the file license.txt for copying permission.
+"""
 from .. xmlstream.stanzabase import StanzaBase
 from xml.etree import cElementTree as ET
 from . error import Error
@@ -9,6 +16,7 @@ class Iq(RootStanza):
 	interfaces = set(('type', 'to', 'from', 'id','query'))
 	types = set(('get', 'result', 'set', 'error'))
 	name = 'iq'
+	plugin_attrib = name
 	namespace = 'jabber:client'
 
 	def __init__(self, *args, **kwargs):
@@ -26,26 +34,10 @@ class Iq(RootStanza):
 			self['error']['text'] = 'No handlers registered for this request.'
 			self.send()
 	
-	def result(self):
-		self['type'] = 'result'
-		return self
-	
-	def set(self):
-		self['type'] = 'set'
-		return self
-	
-	def error(self):
-		#TODO add error payloads
-		self['type'] = 'error'
-		return self
-	
-	def get(self):
-		self['type'] = 'get'
-		return self
-	
 	def setPayload(self, value):
 		self.clear()
 		StanzaBase.setPayload(self, value)
+		return self
 	
 	def setQuery(self, value):
 		query = self.xml.find("{%s}query" % value)

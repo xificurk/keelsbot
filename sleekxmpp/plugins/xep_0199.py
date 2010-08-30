@@ -35,7 +35,8 @@ class xep_0199(base.base_plugin):
 			#self.xmpp.add_event_handler('session_start', self.handler_pingserver, threaded=True)
 	
 	def post_init(self):
-		self.xmpp['xep_0030'].add_feature('http://www.xmpp.org/extensions/xep-0199.html#ns')
+		base.base_plugin.post_init(self)
+		self.xmpp.plugin['xep_0030'].add_feature('http://www.xmpp.org/extensions/xep-0199.html#ns')
 	
 	def handler_pingserver(self, xml):
 		if not self.running:
@@ -62,7 +63,8 @@ class xep_0199(base.base_plugin):
 		ping = ET.Element('{http://www.xmpp.org/extensions/xep-0199.html#ns}ping')
 		iq.append(ping)
 		startTime = time.clock()
-		pingresult = self.xmpp.send(iq, self.xmpp.makeIq(id), timeout)
+		#pingresult = self.xmpp.send(iq, self.xmpp.makeIq(id), timeout)
+		pingresult = iq.send()
 		endTime = time.clock()
 		if pingresult == False:
 			#self.xmpp.disconnect(reconnect=True)

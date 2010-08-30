@@ -33,7 +33,8 @@ class xep_0092(base.base_plugin):
 		self.xmpp.add_handler("<iq type='get' xmlns='%s'><query xmlns='jabber:iq:version' /></iq>" % self.xmpp.default_ns, self.report_version)
 	
 	def post_init(self):
-		self.xmpp['xep_0030'].add_feature('jabber:iq:version')
+		base.base_plugin.post_init(self)
+		self.xmpp.plugin['xep_0030'].add_feature('jabber:iq:version')
 	
 	def report_version(self, xml):
 		iq = self.xmpp.makeIqResult(xml.get('id', 'unknown'))
@@ -55,7 +56,7 @@ class xep_0092(base.base_plugin):
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
 		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq xmlns='%s' id='%s'/>" % (self.xmpp.default_ns, id))
+		result = iq.send()
 		if result and result is not None and result.get('type', 'error') != 'error':
 			qry = result.find('{jabber:iq:version}query')
 			version = {}

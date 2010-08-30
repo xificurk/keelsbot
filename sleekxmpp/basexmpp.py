@@ -1,21 +1,9 @@
 """
     SleekXMPP: The Sleek XMPP Library
-    Copyright (C) 2007  Nathanael C. Fritz
+    Copyright (C) 2010  Nathanael C. Fritz
     This file is part of SleekXMPP.
 
-    SleekXMPP is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    SleekXMPP is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with SleekXMPP; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    See the file license.txt for copying permission.
 """
 from __future__ import with_statement, unicode_literals
 
@@ -26,6 +14,7 @@ from . xmlstream.matcher.xmlmask import MatchXMLMask
 from . xmlstream.matcher.many import MatchMany
 from . xmlstream.handler.xmlcallback import XMLCallback
 from . xmlstream.handler.xmlwaiter import XMLWaiter
+from . xmlstream.handler.waiter import Waiter
 from . xmlstream.handler.callback import Callback
 from . import plugins
 from . stanza.message import Message
@@ -38,6 +27,13 @@ from . stanza.error import Error
 
 import logging
 import threading
+
+import sys
+
+if sys.version_info < (3,0):
+	reload(sys)
+	sys.setdefaultencoding('utf8')
+
 
 def stanzaPlugin(stanza, plugin):
 	stanza.plugin_attrib_map[plugin.plugin_attrib] = plugin
@@ -89,6 +85,11 @@ class basexmpp(object):
 		self.jid = self.getjidbare(jid)
 		self.username = jid.split('@', 1)[0]
 		self.server = jid.split('@',1)[-1].split('/', 1)[0]
+	
+	def process(self, *args, **kwargs):
+		for idx in self.plugin:
+			if not self.plugin[idx].post_inited: self.plugin[idx].post_init()
+		return super(basexmpp, self).process(*args, **kwargs)
 		
 	def registerPlugin(self, plugin, pconfig = {}):
 		"""Register a plugin not in plugins.__init__.__all__ but in the plugins
@@ -113,7 +114,7 @@ class basexmpp(object):
 			plugin_list = plugins.__all__
 		for plugin in plugin_list:
 			if plugin in plugins.__all__:
-				self.registerPlugin(plugin, self.plugin_config.get(plugin, {}))
+				self.registerPlugin(plugin, self.plugin_config.get(plugin, {}), False)
 			else:
 				raise NameError("No plugin by the name of %s listed in plugins.__all__." % plugin)
 		# run post_init() for cross-plugin interaction
@@ -143,7 +144,8 @@ class basexmpp(object):
 			mask = mask.xml
 		data = str(data)
 		if mask is not None:
-			waitfor = XMLWaiter('SendWait_%s' % self.getNewId(), MatchXMLMask(mask))
+			logging.warning("Use of send mask waiters is deprecated")
+			waitfor = Waiter('SendWait_%s' % self.getNewId(), MatchXMLMask(mask))
 			self.registerHandler(waitfor)
 		self.sendRaw(data)
 		if mask is not None:
@@ -188,6 +190,19 @@ class basexmpp(object):
 			self.event_handlers[name] = []
 		self.event_handlers[name].append((pointer, threaded, disposable))
 
+	def del_event_handler(self, name, pointer):
+		"""Remove a handler for an event."""
+		if not name in self.event_handlers:
+			return
+		
+		# Need to keep handlers that do not use
+		# the given function pointer
+		def filter_pointers(handler):
+			return handler[0] != pointer
+
+		self.event_handlers[name] = filter(filter_pointers, 
+						   self.event_handlers[name])
+
 	def event(self, name, eventdata = {}): # called on an event
 		for handler in self.event_handlers.get(name, []):
 			if handler[1]: #if threaded
@@ -205,7 +220,7 @@ class basexmpp(object):
 		message['body'] = mbody
 		message['subject'] = msubject
 		if mnick is not None: message['nick'] = mnick
-		if mhtml is not None: message['html'] = mhtml
+		if mhtml is not None: message['html']['html'] = mhtml
 		return message
 	
 	def makePresence(self, pshow=None, pstatus=None, ppriority=None, pto=None, ptype=None, pfrom=None):
@@ -252,7 +267,7 @@ class basexmpp(object):
 		if presence['type'] in ('subscribe', 'subscribed', 'unsubscribe', 'unsubscribed'):
 			self.event('changed_subscription', presence)
 			return
-		elif not presence['type'] in ('available', 'unavailable'):
+		elif not presence['type'] in ('available', 'unavailable') and not presence['type'] in presence.showtypes:
 			return
 		jid = presence['from'].bare
 		resource = presence['from'].resource
@@ -264,24 +279,24 @@ class basexmpp(object):
 		if not presence['from'].bare in self.roster:
 			self.roster[jid] = {'groups': [], 'name': '', 'subscription': 'none', 'presence': {}, 'in_roster': False}
 		if not resource in self.roster[jid]['presence']:
+			if (show == 'available' or show in presence.showtypes):
+				self.event("got_online", presence)
 			wasoffline = True
-			self.roster[jid]['presence'][resource] = {'show': show, 'status': status, 'priority': priority}
-		else:
-			if self.roster[jid]['presence'][resource].get('show', None) == 'unavailable':
-				wasoffline = True
-			self.roster[jid]['presence'][resource] = {'show': show, 'status': status}
-			self.roster[jid]['presence'][resource]['priority'] = priority
+			self.roster[jid]['presence'][resource] = {}
+		if self.roster[jid]['presence'][resource].get('show', 'unavailable') == 'unavailable':
+			wasoffline = True
+		self.roster[jid]['presence'][resource] = {'show': show, 'status': status, 'priority': priority}
 		name = self.roster[jid].get('name', '')
-		if wasoffline and show in ('available', 'away', 'xa', 'na', 'ffc'):
-			self.event("got_online", presence)
-		elif not wasoffline and show == 'unavailable':
-			self.event("got_offline", presence)
-			if len(self.roster[jid]['presence']) > 1:
-				del self.roster[jid]['presence'][resource]
-			else:
+		if show == 'unavailable':
+			logging.debug("%s %s got offline" % (jid, resource))
+			del self.roster[jid]['presence'][resource]
+			if len(self.roster[jid]['presence']) == 0 and not self.roster[jid]['in_roster']:
 				del self.roster[jid]
-		elif oldroster != self.roster.get(jid, {'presence': {}})['presence'].get(resource, {}) and show != 'unavailable':
-			self.event("changed_status", presence)
+			if not wasoffline:
+				self.event("got_offline", presence)
+			else:
+				return False
+		self.event("changed_status", presence)
 		name = ''
 		if name:
 			name = "(%s) " % name

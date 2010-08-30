@@ -3,6 +3,7 @@ from . import base
 import logging
 #from xml.etree import cElementTree as ET
 from .. xmlstream.stanzabase import ElementBase, ET
+from . import stanza_pubsub
 
 class xep_0060(base.base_plugin):
 	"""
@@ -43,9 +44,9 @@ class xep_0060(base.base_plugin):
 		iq = self.xmpp.makeIqSet(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is False or result is None or result.get('type') == 'error': return False
+		id = iq['id']
+		result = iq.send()
+		if result is False or result is None or result['type'] == 'error': return False
 		return True
 	
 	def subscribe(self, jid, node, bare=True, subscribee=None):
@@ -63,9 +64,9 @@ class xep_0060(base.base_plugin):
 		iq = self.xmpp.makeIqSet(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is False or result is None or result.get('type') == 'error': return False
+		id = iq['id']
+		result = iq.send()
+		if result is False or result is None or result['type'] == 'error': return False
 		return True
 	
 	def unsubscribe(self, jid, node, bare=True, subscribee=None):
@@ -83,9 +84,9 @@ class xep_0060(base.base_plugin):
 		iq = self.xmpp.makeIqSet(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is False or result is None or result.get('type') == 'error': return False
+		id = iq['id']
+		result = iq.send()
+		if result is False or result is None or result['type'] == 'error': return False
 		return True
 	
 	def getNodeConfig(self, jid, node=None): # if no node, then grab default
@@ -101,10 +102,10 @@ class xep_0060(base.base_plugin):
 		iq.append(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
+		id = iq['id']
 		#self.xmpp.add_handler("<iq id='%s'/>" % id, self.handlerCreateNodeResponse)
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is None or result == False or result.get('type') == 'error':
+		result = iq.send()
+		if result is None or result == False or result['type'] == 'error':
 			logging.warning("got error instead of config")
 			return False
 		if node is not None:
@@ -125,9 +126,9 @@ class xep_0060(base.base_plugin):
 		iq.append(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is None or result == False or result.get('type') == 'error':
+		id = iq['id']
+		result = iq.send()
+		if result is None or result == False or result['type'] == 'error':
 			logging.warning("got error instead of config")
 			return False
 		else:
@@ -148,9 +149,9 @@ class xep_0060(base.base_plugin):
 		iq.append(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is None or result == False or result.get('type') == 'error':
+		id = iq['id']
+		result = iq.send()
+		if result is None or result == False or result['type'] == 'error':
 			logging.warning("got error instead of config")
 			return False
 		else:
@@ -171,9 +172,8 @@ class xep_0060(base.base_plugin):
 		iq.append(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is not None and result is not False and result.attrib.get('type', 'error') != 'error':
+		result = iq.send()
+		if result is not None and result is not False and result['type'] != 'error':
 			return True
 		else:
 			return False
@@ -189,9 +189,9 @@ class xep_0060(base.base_plugin):
 		iq = self.xmpp.makeIqSet(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is None or result.get('type') == 'error': 
+		id = iq['id']
+		result = iq.send()
+		if result is None or result['type'] == 'error': 
 			return False
 		return True
 	
@@ -210,11 +210,14 @@ class xep_0060(base.base_plugin):
 		iq = self.xmpp.makeIqSet(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is None or result is False or result.get('type') == 'error': return False
+		id = iq['id']
+		result = iq.send()
+		if result is None or result is False or result['type'] == 'error': return False
 		return True
 	
+	def addItem(self, jid, node, items=[]):
+		return self.setItem(jid, node, items)
+
 	def deleteItem(self, jid, node, item):
 		pubsub = ET.Element('{http://jabber.org/protocol/pubsub}pubsub')
 		retract = ET.Element('retract')
@@ -226,13 +229,10 @@ class xep_0060(base.base_plugin):
 		iq = self.xmpp.makeIqSet(pubsub)
 		iq.attrib['to'] = jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is None or result is False or result.get('type') == 'error': return False
+		id = iq['id']
+		result = iq.send()
+		if result is None or result is False or result['type'] == 'error': return False
 		return True
-	
-	def addItem(self, jid, node, items=[]):
-		return setItem(jid, node, items)
 	
 	def getNodes(self, jid):
 		response = self.xmpp.plugin['xep_0030'].getItems(jid)
@@ -280,9 +280,9 @@ class xep_0060(base.base_plugin):
 		iq = self.xmpp.makeIqSet(pubsub)
 		iq.attrib['to'] = ps_jid
 		iq.attrib['from'] = self.xmpp.fulljid
-		id = iq.get('id')
-		result = self.xmpp.send(iq, "<iq id='%s'/>" % id)
-		if result is None or result is False or result.get('type') == 'error':
+		id = iq['id']
+		result = iq.send()
+		if result is None or result is False or result['type'] == 'error':
 		    return False
 		return True
 
