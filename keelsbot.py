@@ -405,8 +405,9 @@ class keelsbot(sleekxmpp.ClientXMPP):
                 response = self.commands[command]["pointer"](command, args, msg)
                 if response is not None and response != "":
                     if msg["type"] == "groupchat":
-                        response = "{0}: {1}".format(msg["mucnick"], response)
-                    msg.reply(response).send()
+                        self.sendMessage(msg["mucroom"], "{0}: {1}".format(msg["mucnick"], response), mtype="groupchat")
+                    else:
+                        self.sendMessage(msg["from"].full, response, mtype=msg["type"])
 
 
     def addHelp(self, topic, title=None, body=None, usage=None):
