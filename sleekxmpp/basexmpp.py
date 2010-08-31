@@ -114,7 +114,7 @@ class basexmpp(object):
 			plugin_list = plugins.__all__
 		for plugin in plugin_list:
 			if plugin in plugins.__all__:
-				self.registerPlugin(plugin, self.plugin_config.get(plugin, {}), False)
+				self.registerPlugin(plugin, self.plugin_config.get(plugin, {}))
 			else:
 				raise NameError("No plugin by the name of %s listed in plugins.__all__." % plugin)
 		# run post_init() for cross-plugin interaction
