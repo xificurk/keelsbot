@@ -32,7 +32,7 @@ class parrot(object):
 
     def say(self, command, args, msg):
         if args.count(" ") >= 1:
-            [muc, text] = args.split(" ",1)
+            muc, text = args.split(" ", 1)
         else:
             return "Nedostatečný počet argumentů."
         if muc not in self.bot.rooms:
@@ -43,7 +43,7 @@ class parrot(object):
 
     def tell(self, command, args, msg):
         if args.count(" ") >= 1:
-            [jid, text] = args.split(" ",1)
+            jid, text = args.split(" ", 1)
         else:
             return "Nedostatečný počet argumentů."
         self.bot.sendMessage(jid, text, mtype="chat")
