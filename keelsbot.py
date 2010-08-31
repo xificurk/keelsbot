@@ -23,7 +23,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-__version__ = "0.2.4"
+__version__ = "0.3"
 
 
 from imp import reload
@@ -34,40 +34,60 @@ import os.path
 import platform
 import re
 import sys
-import time
+from time import sleep
 from xml.etree import cElementTree as ET
 
 import libs.console as console
 from libs.versioning import VersionInfo
 
-from basebot import basebot
 import plugins
 import sleekxmpp
 from store import store
 
 
-class keelsbot(sleekxmpp.ClientXMPP, basebot):
-    def __init__(self, configFile, jid, password, ssl=False):
-        sleekxmpp.ClientXMPP.__init__(self, jid, password, ssl)
-        basebot.__init__(self)
+class keelsbot(sleekxmpp.ClientXMPP):
+    def __init__(self, configFile):
         self.log = logging.getLogger("keelsbot")
+        self.cmdPrefix = "!"
+
+        self.clearCommands()
+        self.plugin_whitelist = []
+        self.plugin_config = {}
+
         self.configFile = configFile
         self.loadConfig(configFile)
 
-        self.rooms = {}
-        self.botPlugin = {}
+        auth = self.botconfig.find("auth")
+        self.log.info("Logging in as {0}".format(auth.attrib["jid"]))
+        sleekxmpp.ClientXMPP.__init__(self, auth.attrib["jid"], auth.attrib["pass"], ssl=False, plugin_config=self.plugin_config, plugin_whitelist=self.plugin_whitelist)
 
         self.add_event_handler("session_start", self.start, threaded=True)
+        self.add_event_handler("message", self.handleMessageEvent, threaded=True)
+        self.rooms = {}
+        self.botPlugin = {}
         self.register_plugins()
         self.registerBotPlugins()
         self.registerCommands()
 
 
+    def clearCommands(self):
+        self.commands = {}
+        self.help = {}
+
+
     def loadConfig(self, configFile):
-        """ Load the specified config. Does not attempt to make changes based upon config.
+        """ Load config file.
         """
         self.botconfig = ET.parse(configFile)
+        self.configSleekPlugins()
+        self.configIdentification()
+        self.configStorage()
+        self.configAcl()
 
+
+    def configSleekPlugins(self):
+        """ Configure Sleek plugins.
+        """
         for plugin in self.botconfig.findall("/sleek/plugin"):
             if "name" not in plugin.keys():
                 self.log.error("Ignoring unamed SleekXMPP plugin.")
@@ -78,6 +98,10 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
             if conf is not None:
                 self.plugin_config[plugin.get("name")] = conf.attrib
 
+
+    def configIdentification(self):
+        """ Configure identification of the bot.
+        """
         if "xep_0092" in self.plugin_whitelist:
             if "xep_0092" not in self.plugin_config:
                 self.plugin_config["xep_0092"] = {}
@@ -87,22 +111,28 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
             if "version" not in conf:
                 conf["version"] = __version__
 
+
+    def configStorage(self):
+        """ Configure persistent storage.
+        """
         storageXml = self.botconfig.find("/storage")
         if storageXml is not None:
             self.store = store(storageXml.attrib["file"])
         else:
             self.log.warn("No storage element found in config file - proceeding with no persistent storage, plugin behaviour may be undefined.")
 
+
+    def configAcl(self):
+        """ Configure ACLs.
+        """
+        # Min access level
         accessLevel = self.botconfig.find("/access-level")
         if accessLevel is not None:
             self.minAccessLevel = max(int(accessLevel.get("min", 0)), 0)
+        else:
+            self.minAccessLevel = 0
 
-        self.parseUserGroups()
-
-
-    def parseUserGroups(self):
-        """ Parse user groups for ACLs.
-        """
+        # User groups
         self.acl = {}
         groups = self.botconfig.findall("/users/group")
         if len(groups) > 0:
@@ -123,7 +153,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
 
 
     def registerBotPlugins(self):
-        """ Registers all bot plugins required by botconfig.
+        """ Register all bot plugins.
         """
         plugins = self.botconfig.findall("/plugins/plugin")
         if len(plugins) > 0:
@@ -136,7 +166,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
 
 
     def registerBotPlugin(self, name, config):
-        """ Registers a bot plugin name is the file and class name,
+        """ Register a bot plugin - name is the file and class name,
         and config is an xml element passed to the plugin. Will reload the plugin module,
         so previously loaded plugins can be updated.
         """
@@ -155,6 +185,23 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
 
         self.botPlugin[name] = plugin(self, config)
         return True
+
+
+    def deregisterBotPlugins(self):
+        """ Unregister all loaded bot plugins.
+        """
+        for plugin in list(self.botPlugin.keys()):
+            self.deregisterBotPlugin(plugin)
+
+
+    def deregisterBotPlugin(self, name):
+        """ Unregister a bot plugin.
+        """
+        self.log.info("Unloading plugin {0}.".format(name))
+        if hasattr(self.botPlugin[name], "shutDown"):
+            self.log.debug("Plugin has a shutDown() method, so calling that.")
+            self.botPlugin[name].shutDown()
+        del self.botPlugin[name]
 
 
     def registerCommands(self):
@@ -205,10 +252,14 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         """ Returns access level of the sender of the event (negative value means bot should ignore this).
             Override this to get better access control.
         """
-        if event["type"] == "groupchat":
-            if event["from"].full == event["mucroom"] or event["mucroom"] not in self.rooms or self.rooms[event["mucroom"]] == event["mucnick"]:
-                #system, error, or own message
+        if isinstance(event, sleekxmpp.stanza.message.Message):
+            # Ignore errors and headlines
+            if event["type"] in ("error", "headline"):
                 return -666
+            elif event["type"] == "groupchat":
+                if event["from"].full == event["mucroom"] or event["mucroom"] not in self.rooms or self.rooms[event["mucroom"]] == event["mucnick"]:
+                    #system, error, or own message
+                    return -666
 
         level = 0
         jid = self.getRealJid(event["from"])
@@ -240,26 +291,36 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
             return jid
 
 
-    def deregisterBotPlugins(self):
-        """ Unregister all loaded bot plugins.
+    def joinRooms(self):
+        """ Join MUC rooms
         """
-        for plugin in list(self.botPlugin.keys()):
-            self.deregisterBotPlugin(plugin)
+        self.log.info("Re-syncing with required channels.")
+
+        newRooms = {}
+        for plugin in self.botconfig.findall("/sleek/plugin"):
+            if plugin.get("name") == "xep_0045":
+                for room in plugin.findall("muc"):
+                    newRooms[room.attrib["room"]] = room.attrib["nick"]
+
+        for room in self.rooms:
+            if room not in newRooms.keys():
+                self.log.info("Leaving room {0}.".format(room))
+                self.plugin["xep_0045"].leaveMUC(room, self.rooms[room])
+                del self.rooms[room]
+        for room in newRooms:
+            if room not in self.rooms.keys():
+                self.rooms[room] = newRooms[room]
+                self.log.info("Joining room {0} as {1}.".format(room, newRooms[room]))
+                self.plugin["xep_0045"].joinMUC(room, newRooms[room])
 
 
-    def deregisterBotPlugin(self, name):
-        """ Unregisters a bot plugin.
-        """
-        self.log.info("Unloading plugin {0}.".format(name))
-        if hasattr(self.botPlugin[name], "shutDown"):
-            self.log.debug("Plugin has a shutDown() method, so calling that.")
-            self.botPlugin[name].shutDown()
-        del self.botPlugin[name]
-
-
-    def del_event_handler(self, name, pointer, threaded=False, disposable=False):
-        with self.id_lock:
-            self.event_handlers[name].remove((pointer, threaded, disposable))
+    def connect(self):
+        auth = self.botconfig.find("auth")
+        if auth.get("server", None) is None:
+            # we don't know the server, but the lib can probably figure it out
+            return sleekxmpp.ClientXMPP.connect(self)
+        else:
+            return sleekxmpp.ClientXMPP.connect(self, (auth.attrib["server"], 5222))
 
 
     def start(self, event):
@@ -289,7 +350,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
 
 
     def restart(self):
-        """ Cause the bot to be completely restarted (will reconnect etc.)
+        """ Completely restart the bot.
         """
         global shouldRestart
         shouldRestart = True
@@ -298,7 +359,7 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
 
 
     def die(self):
-        """ Kills the bot.
+        """ Shutdown the bot.
         """
         self.deregisterBotPlugins()
         self.rooms = {}
@@ -306,34 +367,60 @@ class keelsbot(sleekxmpp.ClientXMPP, basebot):
         self.disconnect()
 
 
-    def joinRooms(self):
-        """ Join MUC rooms
-        """
-        self.log.info("Re-syncing with required channels.")
-
-        newRooms = {}
-        for plugin in self.botconfig.findall("/sleek/plugin"):
-            if plugin.get("name") == "xep_0045":
-                for room in plugin.findall("muc"):
-                    newRooms[room.attrib["room"]] = room.attrib["nick"]
-
-        for room in self.rooms:
-            if room not in newRooms.keys():
-                self.log.info("Leaving room {0}.".format(room))
-                self.plugin["xep_0045"].leaveMUC(room, self.rooms[room])
-                del self.rooms[room]
-        for room in newRooms:
-            if room not in self.rooms.keys():
-                self.rooms[room] = newRooms[room]
-                self.log.info("Joining room {0} as {1}.".format(room, newRooms[room]))
-                self.plugin["xep_0045"].joinMUC(room, newRooms[room])
-
-
     def event(self, name, eventdata={}):
         """ Called on an event - just log it and pass down
         """
         self.log.debug("EVENT: {0}".format(name))
         sleekxmpp.basexmpp.event(self, name, eventdata)
+
+
+    def handleMessageEvent(self, msg):
+        """ Parse message event and run the command
+        """
+        self.log.debug(msg)
+        level = self.getAccessLevel(msg)
+        self.log.debug("User lvl: {0}, MinAclLevel: {1}".format(level, self.minAccessLevel))
+        if level < self.minAccessLevel or level < 0:
+            # Ignore the message
+            return
+
+        message = msg["body"]
+        if message.startswith(self.cmdPrefix):
+            # Remove cmdPrefix from message
+            message = message[len(self.cmdPrefix):]
+
+            # Get command name
+            command = message.split("\n", 1)[0].split(" ", 1)[0]
+            if len(command) == 0:
+                # No command name -> return
+                return
+
+            if command in self.commands and self.commands[command]["level"] <= level:
+                # Parse arguments
+                args = message[len(command):]
+                if args.startswith(" "):
+                    args = args[1:]
+                self.log.debug("Command '{0}' with args '{1}'".format(command, args))
+
+                response = self.commands[command]["pointer"](command, args, msg)
+                if response is not None and response != "":
+                    if msg["type"] == "groupchat":
+                        response = "{0}: {1}".format(msg["mucnick"], response)
+                    msg.reply(response).send()
+
+
+    def addHelp(self, topic, title=None, body=None, usage=None):
+        """ Add help text
+        """
+        self.help[topic] = (title, body, usage)
+
+
+    def addCommand(self, command, pointer, helpTitle=None, helpBody=None, helpUsage=None):
+        """ Add command with (optionally) help topic
+        """
+        self.addHelp(command, helpTitle, helpBody, helpUsage)
+        level = self.getCommandAccessLevel(command)
+        self.commands[command] = {"pointer":pointer, "level":level}
 
 
 
@@ -385,27 +472,20 @@ if __name__ == "__main__":
     try:
         while shouldRestart:
             shouldRestart = False
-            #load xml config
-            mainlog.info("Loading config file: {0}".format(configFile))
-            config = ET.parse(configFile)
-            auth = config.find("auth")
-
-            #init
-            mainlog.info("Logging in as {0}".format(auth.attrib["jid"]))
-            bot = keelsbot(configFile, auth.attrib["jid"], auth.attrib["pass"])
-
-            if auth.get("server", None) is None:
-                # we don't know the server, but the lib can probably figure it out
-                bot.connect()
-            else:
-                bot.connect((auth.attrib["server"], 5222))
+            bot = keelsbot(configFile)
+            while not bot.connect():
+                sleep(10)
             bot.process()
-
-            while bot.state["connected"]:
-                time.sleep(1)
+            while bot.run:
+                sleep(1)
         raise SystemExit
-
     except KeyboardInterrupt:
         bot.die()
-        time.sleep(2)
+        sleep(2)
+        raise SystemExit
+    except Exception as e:
+        print(e)
+        mainlog.error("Unexpected error... killing the bot.")
+        bot.die()
+        sleep(2)
         raise SystemExit
