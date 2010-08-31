@@ -200,8 +200,8 @@ class basexmpp(object):
 		def filter_pointers(handler):
 			return handler[0] != pointer
 
-		self.event_handlers[name] = filter(filter_pointers, 
-						   self.event_handlers[name])
+		self.event_handlers[name] = list(filter(filter_pointers, 
+						   self.event_handlers[name]))
 
 	def event(self, name, eventdata = {}): # called on an event
 		for handler in self.event_handlers.get(name, []):
