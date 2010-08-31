@@ -41,17 +41,21 @@ class seen(object):
     def storePresence(self, presence):
         """ Keep track of the presences in MUCs.
         """
-        if presence.get("type", None) == "unavailable":
+        if presence["type"] in ("error", "probe"):
+            return
+        if presence["type"] == "unavailable":
             pType = seenEvent.types["leave"]
         else:
             pType = seenEvent.types["presence"]
-        self.store.update(seenEvent(presence["muc"].getNick(), presence["muc"].getRoom(), pType, datetime.datetime.now(), presence.get("status", None)))
+        self.store.update(seenEvent(presence["muc"]["nick"], presence["muc"]["room"], pType, datetime.datetime.now(), presence["status"]))
 
 
     def storeMessage(self, message):
         """ Keep track of activity through messages.
         """
-        if message["from"].full == message["mucroom"] or message["mucroom"] not in self.bot.rooms or self.bot.rooms[message["mucroom"]] == message["mucnick"] or "body" not in message.keys():
+        if message["type"] in ("error", "headline"):
+            return
+        if message["from"].full == message["mucroom"] or message["mucroom"] not in self.bot.rooms:
             return
         self.store.update(seenEvent(message["mucnick"], message["mucroom"], seenEvent.types["message"], datetime.datetime.now(), message.get("body", None)))
 
@@ -134,8 +138,8 @@ class seen(object):
 
 
     def shutDown(self):
-        self.bot.del_event_handler("groupchat_presence", self.storePresence, threaded=True)
-        self.bot.del_event_handler("groupchat_message", self.storeMessage, threaded=True)
+        self.bot.del_event_handler("groupchat_presence", self.storePresence)
+        self.bot.del_event_handler("groupchat_message", self.storeMessage)
 
 
 
@@ -157,7 +161,7 @@ class seenStore(object):
 
     def update(self, event):
         self.log.debug("Updating seen record for '{0}'.".format(event.nick))
-        self.store.query("INSERT OR REPLACE INTO seen (nick, muc, type, dateTime, text) VALUES(?,?,?,?,?)", (event.nick, event.muc, event.type, event.dateTime, event.text))
+        self.store.query("INSERT OR REPLACE INTO seen (nick, muc, type, dateTime, text) VALUES(?,?,?,?,?)", (event.nick, event.muc, event.type, event.dateTime.strftime("%Y-%m-%d %H:%M:%S"), event.text))
 
 
     def get(self, nick):
