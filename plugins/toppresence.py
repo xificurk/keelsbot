@@ -42,7 +42,9 @@ class toppresence(object):
     def storePresence(self, presence):
         """ Keep track of the presences in MUCs.
         """
-        muc = presence["muc"].getRoom()
+        if presence["type"] in ("error", "probe", "unavailable"):
+            return
+        muc = presence["muc"]["room"]
         if muc == None or muc not in self.bot.rooms:
             return
         self.log.debug(self.bot.plugin["xep_0045"].getRoster(muc))
@@ -74,7 +76,7 @@ class toppresence(object):
 
 
     def shutDown(self):
-        self.bot.del_event_handler("groupchat_presence", self.storePresence, threaded=True)
+        self.bot.del_event_handler("groupchat_presence", self.storePresence)
 
 
 
@@ -94,7 +96,7 @@ class toppresenceStore(object):
 
     def update(self, muc, number):
         self.log.debug("Updating toppresnece record for '{0}'.".format(muc))
-        self.store.query("INSERT OR REPLACE INTO toppresence (muc, users, dateTime) VALUES(?,?,?)", (muc, number, datetime.datetime.now()))
+        self.store.query("INSERT OR REPLACE INTO toppresence (muc, users, dateTime) VALUES(?,?,?)", (muc, number, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
 
     def get(self, muc):
@@ -102,4 +104,5 @@ class toppresenceStore(object):
         if len(results) == 0:
             return (0, "kdysi dávno")
         result = results[0]
+        self.log.debug(result["dateTime"])
         return (result["users"], datetime.datetime.strptime(result["dateTime"][0:19], "%Y-%m-%d %H:%M:%S"))
