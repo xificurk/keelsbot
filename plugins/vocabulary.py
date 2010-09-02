@@ -65,7 +65,7 @@ class vocabulary(object):
 
 
     def shutdown(self):
-        self.bot.del_event_handler("message", self.message, threaded=True)
+        self.bot.del_event_handler("message", self.message)
 
 
     def parseDict(self, args):
