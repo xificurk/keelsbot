@@ -87,6 +87,9 @@ class antispam(object):
     def checkSpam(self, message):
         """ Keep track of activity through messages.
         """
+        if message["type"] != "groupchat":
+            return
+
         room = message["mucroom"]
         nick = message["mucnick"]
 
@@ -106,7 +109,6 @@ class antispam(object):
             # Power user
             return
 
-        self.log.debug("Testing message.")
         jid = str(self.bot.plugin["xep_0045"].getJidProperty(room, nick, "jid"))
         now = int(time.time())
         config = self.config[room]
@@ -226,4 +228,4 @@ class antispam(object):
 
 
     def shutDown(self):
-        self.bot.del_event_handler("groupchat_message", self.checkSpam, threaded=False)
+        self.bot.del_event_handler("groupchat_message", self.checkSpam)
