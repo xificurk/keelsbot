@@ -106,7 +106,7 @@ class chatbot(object):
 
     def shutDown(self):
         self.running = False
-        self.bot.del_event_handler("message", self.message, threaded=True)
+        self.bot.del_event_handler("message", self.message)
 
 
     def chat(self, command, args, msg):
