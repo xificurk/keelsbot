@@ -26,6 +26,9 @@ import locale
 import logging
 import re
 
+from sleekxmpp.xmlstream.handler.callback import Callback
+from sleekxmpp.xmlstream.matcher.xmlmask import MatchXMLMask
+
 locale.setlocale(locale.LC_ALL, ("cs_CZ", "UTF-8"))
 
 
@@ -39,7 +42,7 @@ class irssilogs(object):
         self.about = "'Irssilogs' slouží pro logování dění v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
         self.bot.add_event_handler("groupchat_presence", self.logPresence, threaded=True)
         self.bot.add_event_handler("groupchat_message", self.logMessage, threaded=True)
-        self.bot.add_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.logTopic, threaded=True)
+        self.bot.registerHandler(Callback("keelsbot.irssilogs.subject", MatchXMLMask("<message xmlns='jabber:client' type='groupchat'><subject/></message>"), self.logTopic))
         self.lastdate = datetime.datetime.now()
         self.roomLogFiles = {}
         self.roomMembers = {}
@@ -111,25 +114,25 @@ class irssilogs(object):
     def logTopic(self, event):
         """ Handle a message event without body element in a muc.
         """
-        if event.find("{jabber:client}body") is not None:
+        if event["body"] != "":
             return
 
         message = {}
         message["dateTime"] = datetime.datetime.now()
         self.checkDateChange(message["dateTime"])
 
-        if self.bot.getjidbare(event.get("from")) in self.roomLogFiles:
+        if event["mucroom"] in self.roomLogFiles:
+            message["room"] = event["mucroom"]
             message["message"] = ""
-            message["room"] = self.bot.getjidbare(event.get("from"))
-            message["nick"] = self.bot.getjidresource(event.get("from"))
-            message["subject"] = event.find("{jabber:client}subject").text
+            message["nick"] = event["mucnick"]
+            message["subject"] = event["subject"]
             self.roomLogFiles[message["room"]].logMessage(message)
 
 
     def shutDown(self):
-        self.bot.del_event_handler("groupchat_presence", self.logPresence, threaded=True)
-        self.bot.del_event_handler("groupchat_message", self.logMessage, threaded=True)
-        #self.bot.del_handler("<message xmlns='jabber:client' type='groupchat'><subject/></message>", self.handle_groupchat_topic)
+        self.bot.del_event_handler("groupchat_presence", self.logPresence)
+        self.bot.del_event_handler("groupchat_message", self.logMessage)
+        self.bot.removeHandler("keelsbot.irssilogs.subject")
 
 
 
