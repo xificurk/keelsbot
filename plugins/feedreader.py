@@ -67,27 +67,32 @@ class feedreader(object):
         """
         self.log.debug("Starting loop for feed {0} (refresh rate {1}min)".format(url, refresh))
         refresh = float(refresh)*60
-        salt = random.random() * refresh / 100
-        refresh = refresh + salt
+        refresh += random.random() * refresh / 60 #salt
+        refresh = datetime.timedelta(seconds=refresh)
         parser = feedParser(url)
         known = self.store.get(url)
+        nextCheck = datetime.datetime.now() + refresh
         while not self.shuttingDown:
-            parser.check()
-            sent = []
-            for item in parser.items:
-                link = item.get("link", "")
-                title = item.get("title", "")
-                if link not in known:
-                    self.log.debug("Found new ittem '{0}' in feed {1}.".format(title, parser.channel["title"]))
-                    wait = 0
-                    if title not in sent:
-                        self.send(subscribers, parser.channel, item)
-                        sent.append(title)
-                        wait = 1
-                    self.store.add(url, link)
-                    known.append(link)
-                    time.sleep(wait)
-            time.sleep(refresh)
+            self.log.debug("Next cycle")
+            if datetime.datetime.now() >= nextCheck:
+                self.log.debug("Checking feed {0}.".format(parser.channel["title"]))
+                nextCheck = datetime.datetime.now() + refresh
+                parser.check()
+                sent = []
+                for item in parser.items:
+                    link = item.get("link", "")
+                    title = item.get("title", "")
+                    if link not in known:
+                        self.log.debug("Found new ittem '{0}' in feed {1}.".format(title, parser.channel["title"]))
+                        wait = 0
+                        if title not in sent:
+                            self.send(subscribers, parser.channel, item)
+                            sent.append(title)
+                            wait = 1
+                        self.store.add(url, link)
+                        known.append(link)
+                        time.sleep(wait)
+            time.sleep(10)
 
 
     def send(self, subscribers, channel, item):
@@ -118,11 +123,11 @@ class feedStore(object):
 
     def add(self, feed, item):
         self.log.debug("Storing new item {0} in feed {1}.".format(item, feed))
-        self.store.query("INSERT OR REPLACE INTO feedItems (feed, item, dateTime) VALUES(?,?,?)", (feed, item, datetime.datetime.now()))
+        self.store.query("INSERT OR REPLACE INTO feedItems (feed, item, dateTime) VALUES(?,?,?)", (feed, item, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
 
     def get(self, feed):
-        for row in self.store.query("SELECT item FROM feedItems WHERE feed=? ORDER BY dateTime DESC LIMIT 100, 10000", (feed,)):
+        for row in self.store.query("SELECT item FROM feedItems WHERE feed=? ORDER BY dateTime DESC LIMIT 200, 10000", (feed,)):
             self.store.query("DELETE FROM feedItems WHERE feed=? AND item=?", (feed, row["item"]))
         items = []
         for row in self.store.query("SELECT item FROM feedItems WHERE feed=?", (feed,)):
