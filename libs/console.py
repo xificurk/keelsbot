@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-    console.py - colored console output, menu&prompt helpers.
-    Copyright (C) 2009 Petr Morávek
+    console.py - colored console output, menu & prompt helpers.
+    Copyright (C) 2009-2010 Petr Morávek
 
     This file is part of KeelsBot.
 
-    Keelsbot is free software; you can redistribute it and/or modify
+    KeelsBot is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
@@ -20,12 +20,13 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-__version__ = "0.2.1"
-__all__ = ["ColorLogging"]
+__version__ = "0.3.1"
+__all__ = ["ColorLogging", "prompt", "menu", "color"]
 
 
 import logging
 import platform
+import re
 import sys
 
 if platform.system() == "Windows":
@@ -113,12 +114,6 @@ else:
 
 colors = {}
 colors["reset"] = color("RGB", False, "")
-colors["notset"] = color("GB", False, "")
-colors["debug"] = color("RB", False, "")
-colors["info"] = color("RGB", True, "")
-colors["warn"] = color("RG", True, "")
-colors["error"] = color("R", True, "")
-colors["critical"] = color("RG", True, "R")
 
 
 def writeln(message, color, stream=sys.stdout):
@@ -154,12 +149,32 @@ def prompt(question, padding=0, default=None, validate=None):
         error = None
         if isinstance(validate, list):
             if value not in validate:
-                error = _("You have to input a value from {0}.").format(", ".join(validate))
+                error = _("Please, input a value from {0}.").format(", ".join(validate))
         elif hasattr(validate, "__call__"):
             error = validate(value)
+        elif validate == "BOOLEAN":
+            if value.lower() in (_("y"), _("yes")):
+                value = True
+            elif value.lower() in (_("n"), _("no")):
+                value = False
+            else:
+                error = _("Please, answer yes/no (y/n).")
+        elif validate == "INTEGER":
+            if value.isdigit():
+                value = int(value)
+            else:
+                error = _("Use only digits, please.")
+        elif validate == "DECIMAL":
+            if re.match("^-?[0-9]+\.?[0-9]*$", value) is not None:
+                value = float(value)
+            else:
+                error = _("Please, input a decimal number.")
+        elif validate == "ALNUM":
+            if not value.isalnum():
+                error = _("Please, use only alpha-numeric characters.")
         elif validate is not None:
             if len(value) == 0:
-                error = _("You have to input a non-empty string.")
+                error = _("Please, input a non-empty string.")
 
         if error is not None:
             writeln("{0}{1}: {2}".format("  "*padding, _("ERROR"), error), color("R", False, ""))
@@ -169,13 +184,13 @@ def prompt(question, padding=0, default=None, validate=None):
 
 
 def menuValidator(choices, value):
-    if (not value.isdigit() or int(value) < 1 or int(value) > len(choices)) and value not in choices:
-        return _("You have to chose from the list. Please input a number, or full text of desired option.")
+    if not (value in choices or (value.isdigit() and int(value) >= 1 and int(value) <= len(choices))):
+        return _("Please, chose an option from the list - input a number, or a full text of the desired option.")
 
 
 def menu(header, choices, padding=0, default=None):
     writeln("{0}{1}".format("  "*padding, header), color("RGB", True, ""))
-    for i in range(0,len(choices)):
+    for i in range(len(choices)):
         print("{0}{1:2d}) {2}".format("  "*(padding+1), i+1, choices[i]))
     value = prompt(_("Select") + ":", padding+1, default, lambda val: menuValidator(choices, val))
     if value.isdigit() and int(value) >= 1 and int(value) <= len(choices):
@@ -186,25 +201,42 @@ def menu(header, choices, padding=0, default=None):
 
 
 class ColorLogging(logging.StreamHandler):
-    def __init__(self, useColor=True, fmt="%(levelname)-8s %(name)-15s %(message)s", datefmt=None):
+    colors = {}
+    colors["notset"] = color("GB", False, "")
+    colors["debug"] = color("RB", False, "")
+    colors["info"] = color("RGB", True, "")
+    colors["warning"] = color("RG", True, "")
+    colors["error"] = color("R", True, "")
+    colors["critical"] = color("RG", True, "R")
+
+    def __init__(self, useColor=True, fmt="%(levelname)-8s %(name)-15s %(message)s", datefmt=None, colors={}):
+        self.colors.update(colors)
         logging.StreamHandler.__init__(self)
         useColor = useColor
         self.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
 
 
-    def emit(self, record):
-        if record.levelno >= 50:
-            color = colors["critical"]
+    def getColor(self, record):
+        if self.colors.get(record.levelname.lower()) is not None:
+            return self.colors.get(record.levelname.lower())
+        elif record.levelno >= 50:
+            return self.colors["critical"]
         elif record.levelno >= 40:
-            color = colors["error"]
+            return self.colors["error"]
         elif record.levelno >= 30:
-            color = colors["warn"]
+            return self.colors["warn"]
         elif record.levelno >= 20:
-            color = colors["info"]
+            return self.colors["info"]
         elif record.levelno >= 10:
-            color = colors["debug"]
+            return self.colors["debug"]
         else:
-            color = colors["notset"]
+            return self.colors["notset"]
+
+
+    def emit(self, record):
+        color = colors["reset"]
+        if useColor:
+            color = self.getColor(record)
 
         try:
             msg = self.format(record)
