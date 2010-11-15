@@ -127,7 +127,7 @@ class feedStore(object):
 
 
     def get(self, feed):
-        for row in self.store.query("SELECT item FROM feedItems WHERE feed=? ORDER BY dateTime DESC LIMIT 200, 10000", (feed,)):
+        for row in self.store.query("SELECT item FROM feedItems WHERE feed=? ORDER BY dateTime DESC LIMIT 500, 10000", (feed,)):
             self.store.query("DELETE FROM feedItems WHERE feed=? AND item=?", (feed, row["item"]))
         items = []
         for row in self.store.query("SELECT item FROM feedItems WHERE feed=?", (feed,)):
