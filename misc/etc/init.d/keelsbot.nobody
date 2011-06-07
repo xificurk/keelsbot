@@ -1,0 +1,52 @@
+#!/sbin/runscript
+# Copyright (c) 2008-2011 Petr Morávek (xificurk@gmail.com)
+# Distributed under the terms of the GNU General Public License v3
+# Basic init script for gentoo, create symlinks as keelsbot.name to start the bot with configuration 'name'.
+# $Header: $
+
+
+depend() {
+	need net
+}
+
+
+start() {
+	getname
+
+	# Do not start, if name is not specified
+	if [[ ${NAME} == "nobody" ]] ; then
+		return 1
+	fi
+
+	# Display a message to the user
+	ebegin "Starting $NAME KeelsBot"
+
+	# Start the process as a daemon under user keelsbot and record the pid number
+	start-stop-daemon --start -c keelsbot -b --pidfile "/var/run/keelsbot.$NAME.pid" --make-pidfile --exec /opt/keelsbot/keelsbot.sh -- $NAME
+
+	# Output success or failure
+	eend $?
+}
+
+
+stop() {
+	getname
+
+	# Do not stop, if name is not specified
+	if [[ ${NAME} == "nobody" ]] ; then
+		return 1
+	fi
+
+	# Display a message to the user
+	ebegin "Stopping $NAME KeelsBot"
+	# Stop the daemon using the pid recorded from the start() function
+	start-stop-daemon --stop --pidfile "/var/run/keelsbot.$NAME.pid"
+	# Ooutput success or failure
+	eend $?
+}
+
+
+getname() {
+	# Get name of the bot's configuration
+	NAME="${SVCNAME#*.}"
+}

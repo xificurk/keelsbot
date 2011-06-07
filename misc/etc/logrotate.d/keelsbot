@@ -1,0 +1,27 @@
+# Copyright (c) 2008-2011 Petr Morávek (xificurk@gmail.com)
+# Distributed under the terms of the GNU General Public License v3
+# logrotate KeelsBot logs
+
+/var/log/keelsbot/*.log {
+	missingok
+	notifempty
+	copytruncate
+}
+
+/var/log/keelsbot/chatbot-*/*.log {
+	missingok
+	ifempty
+	nocreate
+	sharedscripts
+	postrotate
+		find /var/log/keelsbot/chatbot-*/* -maxdepth 1 -mtime +30 -exec rm -f '{}' \+
+	endscript
+}
+
+/var/log/keelsbot/muc_logs/*.log {
+	monthly
+	rotate 24
+	missingok
+	notifempty
+	copytruncate
+}
