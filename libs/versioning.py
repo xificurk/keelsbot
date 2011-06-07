@@ -1,91 +1,149 @@
 # -*- coding: utf-8 -*-
 """
-    versioning.py - interface for version comparison.
-    Based on http://code.activestate.com/recipes/521888/
-    Copyright (C) 2007 Alexander Belchenko
-    Copyright (C) 2009 Petr Morávek
+Storing and comparing version strings.
 
-    This file is part of KeelsBot.
+Functions:
+    python_version  --- Return VersionInfo instance with Python version.
 
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+Classes:
+    VersionInfo     --- Version string container with comparison methods.
 
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-__version__ = "0.1"
-__all__ = ["VersionInfo"]
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = "Copyright (C) 2009-2010 Petr Morávek"
+__license__ = "LGPL 3.0"
 
-class VersionInfo(object):
-    """Version info container and comparator"""
+__version__ = "0.9.0"
 
-    __slots__ = ["major", "minor", "release", "build"]
+from platform import python_version as _python_version
+import re
 
-    def __init__(self, v):
-        if isinstance(v, str):
-            # convert string to list
-            v = [int(i) for i in v.split(".")]
+__all__ = ["python_version",
+           "VersionInfo"]
+
+
+def python_version():
+    return VersionInfo(_python_version())
+
+
+class VersionInfo:
+    """
+    Version string container with comparison methods.
+
+    Implements methods for comparison with another VersionInfo instance, or str.
+
+    Attributes:
+        version         --- List of integers containing version numbers.
+        suffix          --- Additional suffix after version numbers (str).
+        suffix_version  --- Version number corresponding to the suffix parsed
+                            according to VersionInfo._suffix_types.
+        major           --- Major version (first value from version attribute).
+        minor           --- Minor version (second value from version attribute).
+
+    """
+
+    _version_re = (re.compile("^([0-9]+(\.[0-9]+)*)([^0-9].*)?$"), 1, 3)
+    """ (version regular expression, group with version numbers, group with suffix) """
+
+    _suffix_types = [(re.compile("[_.-]?dev(elop)?([0-9]+)?", re.I), 2, -500),
+                     (re.compile("[_.-]?a(lpha)?([0-9]+)?", re.I), 2, -400),
+                     (re.compile("[_.-]?b(eta)?([0-9]+)?", re.I), 2, -300),
+                     (re.compile("[_.-]?pre(view)?([0-9]+)?", re.I), 2, -200),
+                     (re.compile("[_.-]?rc([0-9]+)?", re.I), 1, -100),
+                     (re.compile("[_.-]?r([0-9]+)?", re.I), 1, 0)]
+    """ list of (suffix regular expression, group with version number, base version number) """
+
+    def __init__(self, version):
+        """
+        Create VersionInfo instance from version string.
+
+        Raise ValueError for an invalid version string.
+
+        Arguments:
+            version     --- Version string - should match regular expression
+                            contained in VersionInfo._version_re.
+
+        """
+        self.version, self.suffix_version, self.suffix = self._parse(version)
+
+    def _parse(self, version):
+        version = str(version).strip()
+        match = self._version_re[0].match(version)
+        if match is None:
+            raise ValueError("Invalid version info '{0}'.".format(version))
         else:
-            v = list(v)
-        # build from sequence
-        size = len(v)
-        if size > 4:
-            raise ValueError("Incorrect version info format. "
-                             "Accepted max 4 numbers")
-        if size < 4:
-            v += [0] * (4-size)
+            version = []
+            for part in match.group(self._version_re[1]).split("."):
+                version.append(int(part))
+            suffix = ""
+            suffix_version = 0
+            if match.group(self._version_re[2]) is not None:
+                suffix = match.group(self._version_re[2])
+                for suffix_type in self._suffix_types:
+                    match = suffix_type[0].match(suffix)
+                    if match is not None:
+                        suffix_version = suffix_type[2]
+                        if match.group(suffix_type[1]) is not None:
+                            suffix_version += int(match.group(suffix_type[1]))
+                        break
+        return version, suffix_version, suffix
 
-        for ix, name in enumerate(self.__slots__):
-            num = int(v[ix])
-            setattr(self, name, num)
+    @property
+    def major(self):
+        return self.version[0]
 
-    def __getitem__(self, name):
-        return getattr(self, name)
+    @property
+    def minor(self):
+        if len(self.version) > 1:
+            return self.version[1]
+        else:
+            return 0
+
+    def __format__(self, format_spec):
+        return format_spec.format(*self.version, suffix=self.suffix)
 
     def __repr__(self):
-        return ('VersionInfo("{major:d}.{minor:d}.{release:d}.{build:d}")'.format(**self._dict()))
-
-    def _dict(self):
-        dict = {}
-        for name in self.__slots__:
-            dict[name] = self[name]
-        return dict
+        return "VersionInfo('" + str(self) + "')"
 
     def __str__(self):
-        if self.build > 0:
-            fmt = "{major:d}.{minor:d}.{release:d}.{build:d}"
-        elif self.release > 0:
-            fmt = "{major:d}.{minor:d}.{release:d}"
-        else:
-            fmt = "{major:d}.{minor:d}"
-        return fmt.format(**self._dict())
+        return ".".join((str(part) for part in self.version)) + self.suffix
 
     def __cmp__(self, other):
-        """Called for objects comparison.
-        Return a negative integer if self < other,
-        zero if self == other,
-        a positive integer if self > other.
+        """
+        Compare self with other VersionInfo instance or str.
+
+        Return a negative integer if self < other.
+        Return zero if self == other.
+        Return a positive integer if self > other.
+
+        Arguments:
+            other       --- VersionInfo instance or str.
+
         """
         if not isinstance(other, VersionInfo):
-            other = VersionInfo(other)
-        res = 0
-        for name in self.__slots__:
-            res = getattr(self, name) - getattr(other, name)
-            if res != 0:
-                break
-        return res
+            try:
+                other_version, other_suffix_version, other_suffix = self._parse(other)
+            except ValueError:
+                return NotImplemented
+        else:
+            other_version = other.version
+            other_suffix_version = other.suffix_version
+        # Prepare version lists
+        self_version = self.version + [0] * max(0, len(other_version) - len(self.version)) + [self.suffix_version]
+        other_version = other_version + [0] * max(0, len(self.version) - len(other_version)) + [other_suffix_version]
+        # And compare them
+        for i in range(0, len(self_version)):
+            result = self_version[i] - other_version[i]
+            if result != 0:
+                return result
+        return 0
 
     def __eq__(self, other):
         return self.__cmp__(other) == 0
+
+    def __neq__(self, other):
+        return self.__cmp__(other) != 0
 
     def __lt__(self, other):
         return self.__cmp__(other) < 0
