@@ -1,75 +1,34 @@
 CHANGES
 ============================================================================
 
+  [CHG] Change license to GPL3.
+  [CHG] Update external libraries, SleekXMPP 1.0-Beta4.
+
 Release 0.3 (2010-09-05)
---------------------------
-
-[Enhancements]
-
-  * SleekXMPP update: adjust plugins and keelsbot class.
-
+  [CHG] SleekXMPP update: adjust plugins and keelsbot class.
 
 Release 0.2.4 (2010-02-18)
---------------------------
-
-[Enhancements]
-
-  * New plugin: vocabulary.
-
+  [ADD] New plugin: vocabulary.
 
 Release 0.2.3 (2010-02-05)
---------------------------
-
-[Bugfixes]
-
-  * feedreader, pastebin: Catch errors while fetching page.
-
+  [ADD] feedreader, pastebin plugins: Catch errors while fetching page.
 
 Release 0.2.2 (2010-02-02)
---------------------------
-
-[Enhancements]
-
-  * Make SleekXMPP plugins configurable.
-
-  * Replace ElementTree by cElementTree.
-
-  * chatbot, pastebin plugins: make configuration more simple.
-
-[Bugfixes]
-
-  * chatbot plugin: add 'log' extension for debug logs.
-
+  [ADD] Make SleekXMPP plugins configurable.
+  [CHG] Replace ElementTree by cElementTree.
+  [CHG] chatbot, pastebin plugins: make configuration more simple.
+  [ADD] chatbot plugin: add 'log' extension for debug logs.
 
 Release 0.2.1 (2010-01-31)
---------------------------
-
-[Enhancements]
-
-  * New plugin: antispam.
-
-[Bugfixes]
-
-  * chatbot plugin: !shut not working.
-
-  * feedreader plugin: autosanitaze database.
+  [ADD] New plugin: antispam.
+  [FIX] chatbot plugin: !shut not working.
+  [FIX] feedreader plugin: autosanitaze database.
 
 
 Release 0.2 (2010-01-28)
---------------------------
-
-[Enhancements]
-
-  * New plugins: pastebin.
-
-  * Port the code to Python 3.1.
-
-  * A lot of code refactoring.
-
+  [ADD] New plugins: pastebin.
+  [CHG] Port the code to Python 3.1.
+  [CHG] A lot of code refactoring.
 
 Release 0.1 (2009-08-20)
---------------------------
-
-[Enhancements]
-
-  * Initial set of plugins.
+  [ADD] Initial set of plugins.
