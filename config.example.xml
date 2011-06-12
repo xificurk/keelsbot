@@ -63,7 +63,7 @@
          Level attribute (default 0): Minimum access level that the user must have to use this command. -->
     <permissions level="0">
         <!-- plugin: admin -->
-        <command level="100">rehash</command>
+        <command level="100">reload</command>
         <command level="100">restart</command>
         <command level="100">die</command>
         <command level="100">loglevel</command>

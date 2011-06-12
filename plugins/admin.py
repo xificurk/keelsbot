@@ -1,63 +1,64 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/admin.py - A plugin for administering the bot.
-    Copyright (C) 2007 Kevin Smith
-    Copyright (C) 2008-2010 Petr Morávek
+admin plugin: Basic administration of the bot.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2007 Kevin Smith",
+                 "Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
+
 
 import logging
 
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
 
-class admin(object):
+
+class admin:
+    loglevels = {"ALL":0, "DEBUG":10, "INFO":20, "WARNING":30, "ERROR":40, "CRITICAL":50}
+
     def __init__(self, bot, config):
         self.bot = bot
-        self.loglevels = {"ALL":0, "DEBUG":10, "INFO":20, "WARNING":30, "ERROR":40, "CRITICAL":50}
-        self.about = "'Admin' umožňuje administrátorům bota provádět akce jako restart bota vzdáleně.\nAutoři: Kevin Smith, Petr Morávek"
-        bot.addCommand("rehash", self.rehash, "Rehash", "Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu.", "rehash")
-        bot.addCommand("restart", self.restart, "Restart", "Restartovat bota a znovu připojit...", "restart")
-        bot.addCommand("die", self.die, "Die", "Killnout bota.", "die")
-        bot.addCommand("loglevel", self.loglevel, "Log level", "Nastavit úroveň logování.", "loglevel <0-50|{0}>".format("|".join(sorted(self.loglevels, key=self.loglevels.get))))
+        self.gettext = self.bot.gettext
+        self.ngettext = self.bot.ngettext
 
-    def rehash(self, command, args, msg):
-        self.bot.rehash()
-        return "Rehashnuto, šéfiku."
+        bot.add_command("reload", self.reload, __("Reload"), __("Reload the bot configuration and apply changes without disconnecting."))
+        bot.add_command("restart", self.restart, __("Restart"), __("Completely restart the bot."))
+        bot.add_command("die", self.die, __("Die"), __("Kill the bot."), "die")
+        bot.add_command("loglevel", self.loglevel, __("Log level"), __("Set the level of logging."), "<0-50|{}>".format("|".join(sorted(self.loglevels.keys()))))
+        bot.add_command("level", self.level, __("User level"), __("Display user's access level."))
 
-    def restart(self, command, args, msg):
+    def reload(self, command, args, msg, uc):
+        self.bot.reload()
+        return self.gettext("Reloaded, boss.", uc.lang)
+
+    def restart(self, command, args, msg, uc):
         self.bot.restart()
-        return "Restartováno, šéfiku."
+        return self.gettext("Restarted, boss.", uc.lang)
 
-    def die(self, command, args, msg):
+    def die(self, command, args, msg, uc):
         self.bot.die()
-        return "Umírám..."
+        return self.gettext("Dying...", uc.lang)
 
-    def loglevel(self, command, args, msg):
-        if not args.isdigit():
+    def loglevel(self, command, args, msg, uc):
+        if args.isdigit():
+            args = int(args)
+        else:
             args = args.upper()
             if args in self.loglevels:
                 args = self.loglevels[args]
             else:
-                return "Musíš zadat číslo v rozmezí 0-50, nebo jednu z hodnot {0}.".format(", ".join(sorted(self.loglevels, key=self.loglevels.get)))
-        else:
-            args = int(args)
+                return self.gettext("You must input the number in range 0-50, or one of the values {}.", uc.lang).format(", ".join(sorted(self.loglevels.keys())))
 
         if args < 0 or args > 50:
-            return "Musíš zadat číslo v rozmezí 0-50, nebo jednu z hodnot {0}.".format(", ".join(sorted(self.loglevels, key=self.loglevels.get)))
+            return self.gettext("You must input the number in range 0-50, or one of the values {}.", uc.lang).format(", ".join(sorted(self.loglevels.keys())))
 
         logging.getLogger("").setLevel(args)
-        return "Nastaveno."
+        return self.gettext("Log level changed...", uc.lang)
+
+    def level(self, command, args, msg, uc):
+        return self.gettext("You're on level {}.", uc.lang).format(uc.level)
