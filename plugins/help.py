@@ -1,79 +1,76 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/help.py - A plugin for displaying help for commands and other 
-    topics.
-    Copyright (C) 2008-2010 Petr Morávek
+help plugin: Displays help and other topics.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
 
-class help(object):
+__version__ = "0.5.0"
+
+
+import logging
+
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
+
+
+class help:
     def __init__(self, bot, config):
         self.bot = bot
-        self.about = "'Help' slouží pro vypisování nápovědy k příkazům KeelsBota.\nAutor: Petr Morávek"
-        bot.addCommand("help", self.help, "Nápověda", "Pokud nebylo určeno téma, vypíše seznam dostupných příkazů a dalších možných témat nápovědy. V opačném případě vypíše nápovědu na dané téma.", "help [téma/příkaz]")
-        bot.addCommand("commands", self.commands, "Příkazy", "Vypíše seznam dostupných příkazů.", "commands")
+        self.gettext = self.bot.gettext
+        self.ngettext = self.bot.ngettext
 
-    def commands(self, command, args, msg):
-        level = self.bot.getAccessLevel(msg)
-        response = "Dostupné příkazy:\n"
-        for cmd in sorted(self.bot.commands):
-            if self.bot.commands[cmd]["level"] > level:
+        bot.add_command("help", self.help, __("Help"), __("If no topic was given, display the list of available commands and other help topics. Otherwise display the help for a given topic."), __("[command/topic]"))
+        bot.add_command("commands", self.commands, __("Commands"), __("Display list of available commands."))
+
+    def commands(self, command, args, msg, uc):
+        response = self.gettext("Available commands", uc.lang) + ":\n"
+        for cmd in sorted(self.bot.commands.keys()):
+            if self.bot.permissions["command:"+cmd] > uc.level:
                 continue
-            response += "{0}{1}".format(self.bot.cmdPrefix, cmd)
-            if self.bot.help[cmd][0] is not None:
-                response += " -- {0}".format(self.bot.help[cmd][0])
+            response += self.bot.cmd_prefix + cmd
+            if self.bot.help_topics[cmd].title is not None:
+                response += " -- " + self.gettext(self.bot.help_topics[cmd].title, uc.lang)
             response += "\n"
+        response = response.strip("\n")
         return response
 
-    def help(self, command, args, msg):
+    def help(self, command, args, msg, uc):
         response = ""
         if len(args) == 0:
-            response += self.commands(command, args, msg)
+            response += self.commands(command, args, msg, uc) + "\n"
             start = True
-            for topic in sorted(self.bot.help):
+            for topic in sorted(self.bot.help_topics.keys()):
                 if topic in self.bot.commands:
                     continue
                 if start:
-                    response += "\nDalší dostupná témata nápovědy:\n"
+                    response += "\n" + self.gettext("Other available help topics", uc.lang) + ":\n"
                     start = False
-                response += "{0}".format(topic)
-                if self.bot.help[topic][0] is not None:
-                    response += " -- {0}".format(self.bot.help[topic][0])
+                response += topic
+                if self.bot.help_topics[topic].title is not None:
+                    response += " -- " + self.gettext(self.bot.help_topics[topic].title, uc.lang)
                 response += "\n"
             args = "help"
             response += "---------\n"
 
-        if args.startswith(self.bot.cmdPrefix) and len(args) > len(self.bot.cmdPrefix):
-            args = args[len(self.bot.cmdPrefix):]
+        if args.startswith(self.bot.cmd_prefix) and len(args) > len(self.bot.cmd_prefix):
+            args = args[len(self.bot.cmd_prefix):]
 
-        if args in self.bot.help:
-            isCommand = False
-            if args in self.bot.commands:
-                isCommand = True
-                if self.bot.getAccessLevel(msg) < self.bot.commands[args]["level"]:
-                    return "Neznám, neumím..."
+        if args not in self.bot.help_topics or (args in self.bot.commands and uc.level < self.bot.permissions["command:"+args]):
+            return self.gettext("Don't know...", uc.lang)
 
-            response += "{0}\n".format(self.bot.help[args][0])
-            response += self.bot.help[args][1]
-            if self.bot.help[args][2] and isCommand:
-                response += "\n\nPoužití: {0}{1}".format(self.bot.cmdPrefix, self.bot.help[args][2])
-        else:
-            response += "Neznám, neumím..."
+        help_topic = self.bot.help_topics[args]
+        if help_topic.title is not None:
+            response += self.gettext(help_topic.title, uc.lang) + "\n"
+        if help_topic.body is not None:
+            body = help_topic.body
+            if isinstance(body, str):
+                body = [body]
+            for part in body:
+                response += self.gettext(part, uc.lang)
+        response = response.strip("\n")
 
         return response
