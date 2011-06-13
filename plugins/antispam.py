@@ -1,231 +1,168 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/antispam.py - MUC antispam plugin.
-    Copyright (C) 2010 Petr Morávek
+antispam plugin: MUC spam protection.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
+
 
 import logging
 import time
 from xml.etree import cElementTree as ET
 
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
 
-class antispam(object):
-    sleekDependencies = ["xep_0045"]
+
+class antispam:
+    sleek_plugins = ("xep_0045",)
+    limit_types = {}
+    rooms = {}
 
     def __init__(self, bot, config):
-        self.log = logging.getLogger("keelsbot.antispam")
         self.bot = bot
-        self.about = "'Antispam' hlídá MUC proti spamu - spammera varuje, kickne, případně zabanuje.\nAutor: Petr Morávek"
-        self.badBoys = {}
-        self.history = {}
+        self.gettext = self.bot.gettext
+        self.ngettext = self.bot.ngettext
 
-        self.config = {}
-        for muc in config.findall("muc"):
-            room = muc.get("room")
-            if room is None:
-                self.log.error("Configuration error - room attribute required.")
+        self.limit_types["message"] = self.limit_message
+        self.limit_types["character"] = self.limit_character
+
+        for muc in config.get("muc", []):
+            for limit in muc.get("limit", []):
+                if limit.get("type") not in self.limit_types:
+                    log.error(_("Configuration error - type attribute of limit required."))
+                    muc["limit"].remove(limit)
+                    continue
+                try:
+                    for attr in ("interval", "limit", "expiration"):
+                        limit[attr] = int(limit[attr])
+                except:
+                    log.error(_("Configuration error - {} attribute of limit required and must be digit.").format(attr))
+                    muc["limit"].remove(limit)
+                    continue
+
+            if len(muc.get("limit", [])) == 0:
+                log.error(_("Configuration error - no limits given."))
                 continue
 
-            noban = False
-            if muc.get("noban") is not None:
-                noban = True
+            if "room" not in muc:
+                log.error(_("Configuration error - room attribute of muc required."))
+                continue
 
-            message = muc.find("message")
-            if message is not None:
-                interval = message.get("interval")
-                limit = message.get("limit")
-                remember = message.get("remember")
-                if interval is None or limit is None or remember is None:
-                    self.log.error("Configuration error (message limit).")
-                    message = None
-                else:
-                    message = {"interval":int(interval), "limit":int(limit), "remember":int(remember)}
+            conf = self.rooms[muc["room"]] = {}
+            conf["noban"] = "noban" in muc
+            conf["limits"] = list(muc["limit"])
+            conf["spammers"] = {}
+            conf["history"] = {}
+            log.info(_("Enabling spam protection in room {}.").format(muc["room"]))
+            bot.add_event_handler("muc::{}::message".format(muc["room"]), self.check_spam, threaded=False)
 
-            character = muc.find("character")
-            if character is not None:
-                interval = character.get("interval")
-                limit = character.get("limit")
-                remember = character.get("remember")
-                if interval is None or limit is None or remember is None:
-                    self.log.error("Configuration error (character limit).")
-                    character = None
-                else:
-                    character = {"interval":int(interval), "limit":int(limit), "remember":int(remember)}
+    def shutdown(self, bot):
+        for room in self.rooms:
+            bot.del_event_handler("muc::{}::message".format(room), self.check_spam)
 
-            if message is None and character is None:
-                self.log.error("Configuration error - no limits given.")
-            else:
-                self.log.info("Enabling spam protection in romm {0}.".format(room))
-                self.config[room] = {"noban":noban}
-                self.badBoys[room] = {}
-                self.history[room] = []
+    def limit_message(self, item):
+        return 1
 
-            if message is not None:
-                self.config[room]["message"] = message
-            if character is not None:
-                self.config[room]["character"] = character
+    def limit_character(self, item):
+        return len(item[1])
 
-        bot.add_event_handler("groupchat_message", self.checkSpam, threaded=False)
+    def check_spam(self, msg):
+        """ Keep track of users activity. """
+        room = msg["mucroom"]
+        nick = msg["mucnick"]
 
-
-    def checkSpam(self, message):
-        """ Keep track of activity through messages.
-        """
-        if message["type"] != "groupchat":
+        bot_nick = self.xep_0045.ourNicks.get(room, "")
+        if nick in ("", bot_nick) or room not in self.xep_0045.getJoinedRooms() or "body" not in msg.keys():
+            # system msg, own msg, or invalid
             return
 
-        room = message["mucroom"]
-        nick = message["mucnick"]
-
-        if room not in self.config or message["from"].full == room or room not in self.bot.rooms or self.bot.rooms[room] == nick or "body" not in message.keys():
-            # no antispam, system msg, not joined, own msg, or invalid
-            return
-
-        botRole = self.bot.plugin["xep_0045"].getJidProperty(room, self.bot.rooms[room], "role")
-        if botRole != "moderator":
+        bot_role = self.xep_0045.getJidProperty(room, bot_nick, "role")
+        if bot_role != "moderator":
             # We don't have rights
             return
 
-        nickRole = self.bot.plugin["xep_0045"].getJidProperty(room, nick, "role")
-        botAffiliation = self.bot.plugin["xep_0045"].getJidProperty(room, self.bot.rooms[room], "affiliation")
-        nickAffiliation = self.bot.plugin["xep_0045"].getJidProperty(room, nick, "affiliation")
-        if nickAffiliation == "owner" or (nickAffiliation == "admin" and botAffiliation != "owner") or (nickRole == "moderator" and botAffiliation not in ("admin", "owner")):
+        nick_role = self.xep_0045.getJidProperty(room, nick, "role")
+        bot_affiliation = self.xep_0045.getJidProperty(room, bot_nick, "affiliation")
+        nick_affiliation = self.xep_0045.getJidProperty(room, nick, "affiliation")
+        if nick_affiliation == "owner" or (nick_affiliation == "admin" and bot_affiliation != "owner") or (nick_role == "moderator" and bot_affiliation not in ("admin", "owner")):
             # Power user
             return
 
-        jid = str(self.bot.plugin["xep_0045"].getJidProperty(room, nick, "jid"))
+        jid = str(self.xep_0045.getJidProperty(room, nick, "jid"))
         now = int(time.time())
-        config = self.config[room]
-        history = self.history[room]
-        badBoys = self.badBoys[room]
-        history.append((now, jid, len(message.get("body", ""))))
+        noban = self.rooms[room]["noban"]
+        limits = self.rooms[room]["limits"]
+        spammers = self.rooms[room]["spammers"]
+        history = self.rooms[room]["history"]
+        if jid not in history:
+            history[jid] = []
+        history[jid].append((now, msg.get("body", "")))
 
-        maxInterval = 0
-        maxRemember = 0
+        max_interval = 0
+        max_expiration = 0
         action = None
-
-        conf = config.get("message")
-        if conf is not None:
-            maxInterval = max(maxInterval, conf["interval"])
-            maxRemember = max(maxRemember, conf["remember"])
+        for limit in limits:
+            max_interval = max(limit["interval"], max_interval)
+            max_expiration = max(limit["expiration"], max_expiration)
+            if action is not None:
+                # We have already taken some action -> ignore the remaining limits
+                continue
+            age = now - limit["interval"]
             count = 0
-            age = now - conf["interval"]
-            for row in history:
-                if row[1] == jid and row[0] >= age:
-                    count = count + 1
-            if count >= conf["limit"]:
-                age = now - conf["remember"]
-                if jid not in badBoys or badBoys[jid][0] < age:
+            callback = self.limit_types[limit["type"]]
+            for item in history[jid]:
+                if item[0] >= age:
+                    count += callback(item)
+            if count >= limit["limit"]:
+                age = now - limit["expiration"]
+                if jid not in spammers or spammers[jid][0] < age:
                     action = "warn"
                     self.warn(room, nick)
-                elif badBoys[jid][1] == "warn":
+                elif spammers[jid][1] == "warn":
                     action = "kick"
                     self.kick(room, jid)
                 else:
                     action = "ban"
-                    if config["noban"]:
+                    if noban or bot_affiliation not in ("admin", "owner"):
                         self.kick(room, jid)
                     else:
                         self.ban(room, jid)
-                badBoys[jid] = (now, action)
+                spammers[jid] = (now, action)
 
-        conf = config.get("character")
-        if conf is not None:
-            maxInterval = max(maxInterval, conf["interval"])
-            maxRemember = max(maxRemember, conf["remember"])
-            if action is None:
-                count = 0
-                age = now - conf["interval"]
-                for row in history:
-                    if row[1] == jid and row[0] >= age:
-                        count = count + row[2]
-                if count >= conf["limit"]:
-                    age = now - conf["remember"]
-                    if jid not in badBoys or badBoys[jid][0] < age:
-                        action = "warn"
-                        self.warn(room, nick)
-                    elif badBoys[jid][1] == "warn":
-                        action = "kick"
-                        self.kick(room, jid)
-                    else:
-                        action = "ban"
-                        if config["noban"]:
-                            self.kick(room, jid)
-                        else:
-                            self.ban(room, jid)
-                    badBoys[jid] = (now, action)
-
-        for row in list(history):
-            if row[0] < (now - maxInterval):
-                history.remove(row)
+        # Cleanup
+        age = now - max_interval
+        for jid in history:
+            if history[jid][-1][0] < age:
+                del history[jid]
             else:
-                break
-        for jid in list(badBoys.keys()):
-            if badBoys[jid][0] < (now - maxRemember):
-                del badBoys[jid]
-        self.log.debug("Got {0} in history and {1} badBoys.".format(len(history), len(badBoys)))
+                while len(history[jid]) > 0 and history[jid][0][0] < age:
+                    del history[jid][0]
+        age = now - max_expiration
+        for jid in spammers:
+            if spammers[jid][0] < age:
+                del spammers[jid]
 
+        log.debug(_("Got {} users in history and {} in spammers.").format(len(history), len(spammers)))
 
     def warn(self, room, nick):
-        """ Warn user not to spam.
-        """
-        self.log.info("Warning '{0}' in room {1}.".format(nick, room))
-        self.bot.sendMessage(room, "{0}: Nespamuj!".format(nick), mtype="groupchat")
+        """ Warn the nick not to spam. """
+        log.info(_("Warning {!r} in room {}.").format(nick, room))
+        uc = self.bot.get_user_config(room + "/" + nick)
+        self.bot.send_message(room, nick + ": " + self.gettext("Stop spamming!", uc.lang), mtype="groupchat")
         return True
-
 
     def kick(self, room, jid):
-        """ Kick a nick from a room.
-        """
-        self.log.info("Kicking '{0}' from room {1}.".format(jid, room))
-        query = ET.Element("{http://jabber.org/protocol/muc#admin}query")
-        item = ET.Element("item", {"role":"none", "jid":jid})
-        reason = ET.Element("reason")
-        reason.text = "spam"
-        item.append(reason)
-        query.append(item)
-        iq = self.bot.makeIqSet(query)
-        iq["to"] = room
-        result = iq.send()
-        return True
-
+        """ Kick the user from the room. """
+        log.info(_("Kicking {!r} from room {}.").format(jid, room))
+        return self.xep_0045.setRole(room, jid=jid, role="none", reason="spam")
 
     def ban(self, room, jid):
-        """ Ban a nick from a room.
-        """
-        botAffiliation = self.bot.plugin["xep_0045"].getJidProperty(room, self.bot.rooms[room], "affiliation")
-        if botAffiliation not in ("admin", "owner"):
-            # We don't have rights, so just kick the bastard
-            self.kick(room, jid)
-
-        self.log.warn("Banning '{0}' from room {1}.".format(jid, room))
-        query = ET.Element("{http://jabber.org/protocol/muc#admin}query")
-        item = ET.Element("item", {"affiliation":"outcast", "jid":jid})
-        reason = ET.Element("reason")
-        reason.text = "spam"
-        item.append(reason)
-        query.append(item)
-        iq = self.bot.makeIqSet(query)
-        iq["to"] = room
-        result = iq.send()
-        return True
-
-
-    def shutDown(self):
-        self.bot.del_event_handler("groupchat_message", self.checkSpam)
+        """ Ban the user from the room. """
+        log.warn(_("Banning {!r} from room {}.").format(jid, room))
+        return self.xep_0045.setAffiliation(room, jid=jid, affiliation="outcast", reason="spam")
