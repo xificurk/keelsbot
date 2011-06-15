@@ -1,100 +1,88 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/definitions.py - A plugin for remembering definitions.
-    Copyright (C) 2008-2010 Petr Morávek
+definitions plugin: remember definitions.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
+
 
 import logging
 
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
 
-class definitions(object):
+
+class definitions:
     def __init__(self, bot, config):
-        self.bot = bot
-        self.log = logging.getLogger("keelsbot.definitions")
-        self.store = definitionsStore(self.bot.store)
-        self.about = "'Definitions' slouží pro pamatování si definicí a jejich vypisování.\nAutor: Petr Morávek"
-        bot.addCommand("!", self.define, "Definice", "Uloží (příp. smaže) definici do databáze.", "! víceslovný název = [definice]")
-        bot.addCommand("!!", self.define, "Definice se zámkem", "Uloží (příp. smaže) definici do databáze a uzamkne ji proti editaci uživateli s nižšími právy než autor.", "!! víceslovný název = [definice]")
-        bot.addCommand("?", self.query, "Zobrazí definici", "Vrátí požadovanou definici z databáze.", "? víceslovný název")
+        self.gettext = bot.gettext
+        self.ngettext = bot.ngettext
+        self.store = Storage(bot.store)
 
+        bot.add_command("!", self.define, __("Definition"), __("Stores (or deletes) the definition in database."), __("multiword expression = [definition]"))
+        bot.add_command("!!", self.define, __("Definition with lock"), __("Stores (or deletes) the definition in database and locks the definition against change by users with lower privileges than the author."), __("multiword expression = [definition]"))
+        bot.add_command("?", self.query, __("Display definition"), __("Display the definition stored in database"), __("multiword expression"))
 
-    def define(self, command, args, msg):
-        level = 0
-        if command == "!!":
-            level = self.bot.getAccessLevel(msg)
-
-        name = None
-        description = None
+    def define(self, command, args, msg, uc):
         if args.count("=") > 0:
-            [name, description] = args.split("=", 1)
+            name, description = args.split("=", 1)
         else:
-            return "Něco ti tam chybí, šéfiku!"
+            return self.gettext("Didn't you forget something?", uc.lang)
 
         name = name.strip()
         description = description.strip()
-        if name is None or name == "":
-            return "Musíš zadat, co chceš definovat!"
+        if name == "":
+            return self.gettext("You must specify what term you want to define!", uc.lang)
 
-        storedLevel = self.store.get(name)[1]
-        self.log.debug("DEFINITION: stored {0}, user {1}".format(storedLevel, level))
-        if storedLevel > level:
-            return "Sorry, ale na tuhle editaci nemáš právo."
+        stored_description, stored_level = self.store.get(name)
+        if stored_level > uc.level:
+            return self.gettext("Sorry, you don't have permission to edit this definition.", uc.lang)
 
-        if description is None or description == "":
+        if description == "":
             self.store.delete(name)
-            return "Smazáno (pokud to tam teda bylo ;-))"
+            return self.gettext("Deleted (if there even was something ;-))", uc.lang)
         else:
+            if command == "!!":
+                level = uc.level
+            else:
+                level = 0
             self.store.update(name, description, level)
-            return "{0} == {1}".format(name, description)
+            return name + " == " + description
+
+    def query(self, command, args, msg, uc):
+        name = args.strip()
+        description, level = self.store.get(name)
+        if description is None:
+            return self.gettext("I have no idea, who or what is {}.", uc.lang).format(name)
+        else:
+            return name + " == " + description
 
 
-    def query(self, command, args, msg):
-        return self.store.get(args.strip())[0]
-
-
-
-class definitionsStore(object):
+class Storage:
     def __init__(self, store):
-        self.log = logging.getLogger("keelsbot.definitions.store")
         self.store = store
-        self.createTables()
+        self.create_tables()
 
-
-    def createTables(self):
+    def create_tables(self):
         self.store.query("""CREATE TABLE IF NOT EXISTS definitions (
-                        name VARCHAR(256) NOT NULL PRIMARY KEY,
-                        description VARCHAR(256) NOT NULL,
-                        level INT(4) NOT NULL)""")
-
-
-    def update(self, name, description, level=0):
-        self.log.debug("Updating definiton of '{0}' with level {1}.".format(name, level))
-        self.store.query("INSERT OR REPLACE INTO definitions (name, description, level) VALUES(?,?,?)", (name.lower(), description, level))
-
+                            name VARCHAR(256) NOT NULL PRIMARY KEY,
+                            description VARCHAR(256) NOT NULL,
+                            level INT(4) NOT NULL)""")
 
     def get(self, name):
         result = self.store.query("SELECT description, level FROM definitions WHERE name=?", (name.lower(),))
         if len(result) == 0:
-            return ("Vůbec netuším, kdo nebo co je {0}.".format(name), 0)
-        return ("{0} == {1}".format(name, result[0]["description"]), result[0]["level"])
+            return None, 0
+        return result[0]["description"], result[0]["level"]
 
+    def update(self, name, description, level=0):
+        log.debug(_("Updating definiton of {!r} with level {}.").format(name, level))
+        self.store.query("INSERT OR REPLACE INTO definitions (name, description, level) VALUES(?,?,?)", (name.lower(), description, level))
 
     def delete(self, name):
-        self.log.debug("Deleting definition of '{0}'.".format(name))
+        log.debug(_("Deleting definition of {!r}.").format(name))
         self.store.query("DELETE FROM definitions WHERE name=?", (name.lower(),))
