@@ -1,194 +1,225 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/feedreader.py -  A plugin for streaming feed entries (RSS etc.)
-    into a MUC.
-    Copyright (C) 2010 Petr Morávek
+feedreader plugin: Displays help and other topics.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
+
+
 from html.parser import HTMLParser
-import datetime
 import logging
-import random
+import queue
 import threading
 import time
 import urllib.request
 from xml.etree import cElementTree as ET
 
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
 
-class feedreader(object):
+
+class feedreader:
+    _loop_interval = 4
+    _msg_interval = 1.5
+    feeds = {}
+    run = False
+    threads = []
+
     def __init__(self, bot, config):
-        self.log = logging.getLogger("keelsbot.feedreader")
         self.bot = bot
-        self.about = "'FeedReader' umožňuje posílat do MUCu, nebo zadaným JID odkazy na nové položky z vybraných RSS kanálů.\nAutor: Petr Morávek"
-        self.store = feedStore(self.bot.store)
-        self.shuttingDown = False
-        for feed in config.findall("feed"):
-            url = feed.get("url")
-            if url is None:
-                self.log.error("No feed url given.")
+        self.store = Storage(bot.store)
+        self.lock = threading.RLock()
+        self.queue = queue.Queue()
+
+        for feed in config.get("feed", []):
+            for subscriber in feed.get("subscriber", []):
+                if "jid" not in subscriber:
+                    log.error(_("Configuration error - jid attribute of subscriber required."))
+                    feed["subscriber"].remove(subscriber)
+                    continue
+                subscriber["type"] = subscriber.get("type", "groupchat")
+
+            if len(feed.get("subscriber", [])) == 0:
+                log.error(_("Configuration error - no subscribers given."))
                 continue
 
-            refresh = feed.get("refresh", 60)
+            if "url" not in feed:
+                log.error(_("Configuration error - url attribute of feed required."))
+                continue
 
-            subscribers = []
-            for subscriber in feed.findall("subscriber"):
-                jid = subscriber.get("jid")
-                if jid is None:
-                    self.log.error("Subscriber element missing jid attribute.")
+            url = feed["url"]
+            interval = float(feed.get("interval", 60))
+            log.info(_("Scheduling {!r} feed check every {} minutes.").format(url, interval))
+            self.feeds[url] = {"interval":interval*60, "subscribers":list(feed["subscriber"])}
+
+        bot.add_event_handler("session_start", self.handle_session_start, threaded=True)
+        bot.add_event_handler("disconnected", self.handle_disconnected, threaded=True)
+        with self.lock:
+             if bot.state.ensure("connected") and bot.session_started_event.isSet():
+                 # In case we're already connected, start right away
+                self.handle_session_start()
+
+    def handle_session_start(self, data=None):
+        with self.lock:
+            if self.run:
+                # Loops are already started
+                return
+            self.run = True
+            feed_thread = threading.Thread(target=self.feed_loop)
+            message_thread = threading.Thread(target=self.message_loop)
+            feed_thread.daemon = True
+            message_thread.daemon = True
+            self.threads.append(feed_thread)
+            self.threads.append(message_thread)
+            feed_thread.start()
+            message_thread.start()
+
+    def handle_disconnected(self, data=None):
+        with self.lock:
+            self.run = False
+            # Join threads
+            for thread in self.threads:
+                thread.join()
+            # Clear message queue
+            while not self.queue.empty():
+                self.queue.get()
+                self.queue.task_done()
+
+    def shutdown(self, bot):
+        with self.lock:
+            bot.del_event_handler("session_start", self.handle_session_start)
+            bot.del_event_handler("disconnected", self.handle_disconnected)
+            self.handle_disconnected()
+
+    def feed_loop(self):
+        """ The loop that periodically checks feeds """
+        log.debug(_("Entering feed loop."))
+
+        for url, feed in self.feeds.items():
+            # Initialize feed data
+            feed["next_check"] = time.time() + 15
+            feed["parser"] = Parser(url)
+            feed["items"] = self.store.get(url)
+
+        while self.run:
+            now = time.time()
+            for url, feed in self.feeds.items():
+                if feed["next_check"] > now:
                     continue
-                type = subscriber.get("type", "groupchat")
-                subscribers.append((jid, type))
-
-            threading.Thread(target=self.loop, args=(url, refresh, subscribers)).start()
-
-
-    def shutDown(self):
-        self.shuttingDown = True
-
-
-    def loop(self, url, refresh, subscribers):
-        """ The main thread loop that polls an rss feed with a specified frequency
-        """
-        self.log.debug("Starting loop for feed {0} (refresh rate {1}min)".format(url, refresh))
-        refresh = float(refresh)*60
-        refresh += random.random() * refresh / 60 #salt
-        refresh = datetime.timedelta(seconds=refresh)
-        parser = feedParser(url)
-        known = self.store.get(url)
-        nextCheck = datetime.datetime.now() + refresh
-        while not self.shuttingDown:
-            self.log.debug("Next cycle")
-            if datetime.datetime.now() >= nextCheck:
-                self.log.debug("Checking feed {0}.".format(parser.channel["title"]))
-                nextCheck = datetime.datetime.now() + refresh
-                parser.check()
+                log.debug(_("Checking feed {}.").format(url))
+                if not feed["parser"].check():
+                    # Error occured
+                    feed["next_check"] = now + 300
+                    continue
                 sent = []
-                for item in parser.items:
+                for item in feed["parser"].items:
                     link = item.get("link", "")
                     title = item.get("title", "")
-                    if link not in known:
-                        self.log.debug("Found new ittem '{0}' in feed {1}.".format(title, parser.channel["title"]))
-                        wait = 0
-                        if title not in sent:
-                            self.send(subscribers, parser.channel, item)
-                            sent.append(title)
-                            wait = 1
+                    if link in feed["items"]:
+                        continue
+                    elif title in sent:
+                        feed["items"].append(link)
                         self.store.add(url, link)
-                        known.append(link)
-                        time.sleep(wait)
-            time.sleep(10)
+                        continue
+                    log.debug(_("Found new item {!r} in feed {}.").format(title, url))
+                    sent.append(title)
+                    self.queue.put((url, item))
+                feed["next_check"] = now + feed["interval"]
+            time.sleep(self._loop_interval)
+
+        log.debug(_("Exiting feed loop."))
+
+    def message_loop(self):
+        """ The loop that sends out alerts about new feed items """
+        log.debug(_("Entering message loop."))
+
+        msg_times = {}
+
+        while self.run:
+            try:
+                url, item = self.queue.get(block=False)
+                feed = self.feeds[url]
+                link = item.get("link", "")
+                title = item.get("title", "")
+                text = "{}: {}\n{}".format(feed["parser"].channel["title"], title, link)
+                subscribers = sorted(feed["subscribers"], key=lambda x: msg_times.get(x["jid"], 0), reverse=True)
+                while self.run and len(subscribers) > 0:
+                    subscriber = subscribers.pop()
+                    jid = subscriber["jid"]
+                    if subscriber["type"] == "groupchat" and ("xep_0045" not in self.bot.plugin or jid not in self.bot.plugin["xep_0045"].getJoinedRooms()):
+                        log.error(_("Cannot send feed alert, the bot is not in room {!r}.").format(jid))
+                        continue
+                    time.sleep(max(0, msg_times.get(jid, 0) - time.time()))
+                    msg_times[jid] = time.time() + self._msg_interval
+                    self.bot.send_message(jid, text, mtype=subscriber["type"])
+                if len(subscribers) == 0:
+                    # All alerts were sent out
+                    feed["items"].append(link)
+                    self.store.add(url, link)
+            except queue.Empty:
+                time.sleep(self._loop_interval)
+
+        log.debug(_("Exiting message loop."))
 
 
-    def send(self, subscribers, channel, item):
-        """ Sends a summary of an feed item to a specified JID.
-        """
-        text = "{0}: {1}\n{2}".format(channel["title"], item.get("title"), item.get("link"))
-        for subscriber in subscribers:
-            if subscriber[1] == "groupchat" and subscriber[0] not in self.bot.rooms:
-                continue
-            self.bot.sendMessage(subscriber[0], text, mtype=subscriber[1])
-
-
-
-class feedStore(object):
+class Storage:
     def __init__(self, store):
-        self.log = logging.getLogger("keelsbot.feedreader.store")
         self.store = store
-        self.createTables()
+        self.create_tables()
 
-
-    def createTables(self):
-        self.store.query("""CREATE TABLE IF NOT EXISTS feedItems (
-                        feed VARCHAR(256) NOT NULL,
-                        item VARCHAR(256) NOT NULL,
-                        dateTime DATETIME NOT NULL,
-                        PRIMARY KEY (feed, item))""")
-
+    def create_tables(self):
+        self.store.query("""CREATE TABLE IF NOT EXISTS feeds (
+                            feed VARCHAR(256) NOT NULL,
+                            item VARCHAR(256) NOT NULL,
+                            timestamp INT NOT NULL,
+                            PRIMARY KEY (feed, item))""")
 
     def add(self, feed, item):
-        self.log.debug("Storing new item {0} in feed {1}.".format(item, feed))
-        self.store.query("INSERT OR REPLACE INTO feedItems (feed, item, dateTime) VALUES(?,?,?)", (feed, item, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-
+        log.debug(_("Storing new item {} in feed {}.").format(item, feed))
+        self.store.query("INSERT OR REPLACE INTO feeds (feed, item, timestamp) VALUES(?,?,?)", (feed, item, int(time.time())))
 
     def get(self, feed):
-        for row in self.store.query("SELECT item FROM feedItems WHERE feed=? ORDER BY dateTime DESC LIMIT 500, 10000", (feed,)):
-            self.store.query("DELETE FROM feedItems WHERE feed=? AND item=?", (feed, row["item"]))
+        for row in self.store.query("SELECT item FROM feeds WHERE feed=? ORDER BY timestamp DESC LIMIT 500, 10000", (feed,)):
+            self.store.query("DELETE FROM feeds WHERE feed=? AND item=?", (feed, row["item"]))
         items = []
-        for row in self.store.query("SELECT item FROM feedItems WHERE feed=?", (feed,)):
+        for row in self.store.query("SELECT item FROM feeds WHERE feed=?", (feed,)):
             items.append(row["item"])
         return items
 
 
-
-class feedParser:
+class Parser:
+    """ Simple feed parser """
     __unescape = HTMLParser().unescape
+    items = []
 
     def __init__(self, url):
-        self.log = logging.getLogger("keelsbot.feedreader.parser")
-
         self.url = url
-        self.data = None
-        self.xml = None
-
         self.channel = {"title":"", "description":"", "link":self.url}
-        self.items = []
-
 
     def check(self):
-        self.fetch()
-        self.parse()
-
-
-    def fetch(self):
         try:
             response = urllib.request.urlopen(self.url, timeout=10)
-        except IOError:
-            self.log.error("Could not fetch URL {0}.".format(self.url))
-            return
-        if response.getcode() != 200:
-            self.log.error("Got error code {0} while fetching {1}.".format(response.getcode(), self.url))
-            return
-        self.data = response
+            xml = ET.parse(response).find("/channel")
+            self.items = []
+            for element in xml:
+                if element.tag == "item":
+                    item = {}
+                    for item_element in element:
+                        item[item_element.tag] = self._unescape(item_element.text).strip()
+                    self.items.append(item)
+                else:
+                    self.channel[element.tag] = self._unescape(element.text).strip()
+            return True
+        except Exception:
+            log.exception(_("Error occured while checking feed {}.").format(self.url))
+            return False
 
-
-    def parse(self):
-        if self.data is None:
-            self.log.error("No data to parse from feed {0}.".format(self.url))
-            return
-
-        xml = ET.parse(self.data).find("/channel")
-        self.xml = xml
-
-        for element in xml.getchildren():
-            if element.tag != "item":
-                self.channel[element.tag] = self.unescape(element.text).strip()
-
-        self.items = []
-        for item in xml.findall("item"):
-            values = {}
-            for element in item.getchildren():
-                values[element.tag] = self.unescape(element.text).strip()
-            self.items.append(values)
-
-
-    def unescape(self, text):
-        """Unescape HTML entities"""
+    def _unescape(self, text):
         if text is None:
             return ""
         return self.__unescape(text)
