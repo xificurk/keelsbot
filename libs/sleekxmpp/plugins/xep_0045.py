@@ -142,7 +142,10 @@ class xep_0045(base.base_plugin):
         entry['status'] = pr['status']
         if pr['type'] == 'unavailable':
             if entry['nick'] in self.rooms[entry['room']]:
-                del self.rooms[entry['room']][entry['nick']]
+                if entry['nick'] == self.ourNicks[entry['room']]:
+                    del self.rooms[entry['room']]
+                else:
+                    del self.rooms[entry['room']][entry['nick']]
             got_offline = True
         else:
             if entry['nick'] not in self.rooms[entry['room']]:
@@ -167,6 +170,7 @@ class xep_0045(base.base_plugin):
         a change of subject (or announcing it when joining the room)
         """
         self.xmpp.event('groupchat_subject', msg)
+        self.xmpp.event("muc::%s::subject" % msg['from'].bare, msg)
 
     def jidInRoom(self, room, jid):
         for nick in self.rooms[room]:
@@ -259,22 +263,54 @@ class xep_0045(base.base_plugin):
             return False
         return True
 
-    def setAffiliation(self, room, jid=None, nick=None, affiliation='member'):
+    def setAffiliation(self, room, jid=None, nick=None, affiliation='member', reason=None):
         """ Change room affiliation."""
         if affiliation not in ('outcast', 'member', 'admin', 'owner', 'none'):
             raise TypeError
-        query = ET.Element('{http://jabber.org/protocol/muc#admin}query')
+        item_attribs = {"affiliation": affiliation}
         if nick is not None:
-            item = ET.Element('item', {'affiliation':affiliation, 'nick':nick})
+            item_attribs["nick"] = nick
+        elif jid is not None:
+            item_attribs["jid"] = str(jid)
         else:
-            item = ET.Element('item', {'affiliation':affiliation, 'jid':jid})
+            raise ValueError
+        try:
+            self.adminQuery(room, item_attribs, reason)
+        except:
+            return False
+        return True
+
+    def setRole(self, room, jid=None, nick=None, role='participant', reason=None):
+        """ Change room affiliation."""
+        if role not in ('moderator', 'none', 'participant', 'visitor'):
+            raise TypeError
+        item_attribs = {"role": role}
+        if nick is not None:
+            item_attribs["nick"] = nick
+        elif jid is not None:
+            item_attribs["jid"] = str(jid)
+        else:
+            raise ValueError
+        try:
+            self.adminQuery(room, item_attribs, reason)
+        except:
+            return False
+        return True
+
+    def adminQuery(self, room, item_attribs, reason=None):
+        """ Admin query. """
+        item = ET.Element('item', item_attribs)
+        if reason is not None:
+            xreason = ET.Element("reason")
+            xreason.text = reason
+            item.append(xreason)
+        query = ET.Element('{http://jabber.org/protocol/muc#admin}query')
         query.append(item)
         iq = self.xmpp.makeIqSet(query)
         iq['to'] = room
         result = iq.send()
         if result is False or result['type'] != 'result':
             raise ValueError
-        return True
 
     def invite(self, room, jid, reason='', mfrom=''):
         """ Invite a jid to a room."""
@@ -298,6 +334,7 @@ class xep_0045(base.base_plugin):
         else:
             self.xmpp.sendPresence(pshow='unavailable', pto="%s/%s" % (room, nick))
         del self.rooms[room]
+        del self.ourNicks[room]
 
     def getRoomConfig(self, room, ifrom=''):
         iq = self.xmpp.makeIqGet('http://jabber.org/protocol/muc#owner')
