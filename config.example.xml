@@ -111,7 +111,6 @@
         <plugin name="irssilogs">
             <log room="room@server.com" file="/path/to/file.log" />
         </plugin>
-        <plugin name="mafianlife" />
         <plugin name="muc_stability" />
         <plugin name="parrot" />
         <plugin name="pastebin">
