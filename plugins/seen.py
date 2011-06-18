@@ -1,186 +1,146 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/seen.py - A plugin for tracking user sightings.
-    Copyright (C) 2007 Kevin Smith
-    Copyright (C) 2009-2010 Petr Morávek
+seen plugin: Traks user sightings in MUC.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import datetime
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2007 Kevin Smith",
+                 "Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
+
+
 import logging
+import time
+
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
 
 
-class seen(object):
-    sleekDependencies = ["xep_0045"]
+class seen:
+    sleek_plugins = ("xep_0045",)
 
     def __init__(self, bot, config):
-        self.log = logging.getLogger("keelsbot.seen")
         self.bot = bot
-        self.store = seenStore(self.bot.store)
-        self.about = "'Seen' umožňuje uživatelům ptát se, kdy naposledy byl někdo jiný viděn v MUCu.\nAutoři: Kevin Smith, Petr Morávek"
-        bot.addCommand("seen", self.seen, "Naposledy viděn", "Kdy byl zadaný uživatel naposledy spatřen?", "seen nick")
-        bot.add_event_handler("groupchat_presence", self.storePresence, threaded=True)
-        bot.add_event_handler("groupchat_message", self.storeMessage, threaded=True)
+        self.gettext = bot.gettext
+        self.ngettext = bot.ngettext
+        self.store = Storage(bot.store)
 
+        bot.add_command("seen", self.seen, __("Last seen user"), __("Displays the last sighting of the user."), __("nick"))
+        bot.add_event_handler("groupchat_presence", self.handle_presence, threaded=True)
+        bot.add_event_handler("groupchat_message", self.handle_message, threaded=True)
 
-    def storePresence(self, presence):
-        """ Keep track of the presences in MUCs.
-        """
-        if presence["type"] in ("error", "probe"):
+    def shutdown(self, bot):
+        bot.del_event_handler("groupchat_presence", self.handle_presence)
+        bot.del_event_handler("groupchat_message", self.handle_message)
+
+    def handle_presence(self, pr):
+        """ Keep track of the user's presences. """
+        if pr["type"] in ("error", "probe"):
             return
-        if presence["type"] == "unavailable":
-            pType = seenEvent.types["leave"]
+        room = pr["muc"]["room"]
+        if room not in self.bot.muc_nicks or pr["muc"]["nick"] in ("", self.bot.muc_nicks[room]):
+            return
+        if pr["type"] == "unavailable":
+            event = "leave"
         else:
-            pType = seenEvent.types["presence"]
-        self.store.update(seenEvent(presence["muc"]["nick"], presence["muc"]["room"], pType, datetime.datetime.now(), presence["status"]))
+            event = "presence"
+        self.store.update(pr["muc"]["nick"], room, event, pr.get("status"))
 
-
-    def storeMessage(self, message):
-        """ Keep track of activity through messages.
-        """
-        if message["type"] in ("error", "headline"):
+    def handle_message(self, msg):
+        """ Keep track of user's messages. """
+        if msg["type"] in ("error", "headline"):
             return
-        if message["from"].full == message["mucroom"] or message["mucroom"] not in self.bot.rooms:
+        room = msg["mucroom"]
+        if room not in self.bot.muc_nicks or msg["mucnick"] in ("", self.bot.muc_nicks[room]):
             return
-        self.store.update(seenEvent(message["mucnick"], message["mucroom"], seenEvent.types["message"], datetime.datetime.now(), message.get("body", None)))
+        self.store.update(msg["mucnick"], room, "message", msg.get("body", ""))
 
+    def seen(self, command, args, msg, uc):
+        if args == "":
+            return self.gettext("You have to tell me about whom you want information!", uc.lang)
 
-    def seen(self, command, args, msg):
-        if args == None or args == "":
-            return "Lamo! Musíš napsat, o kom chceš informace! ;-)"
-        seenData = self.store.get(args)
-        if seenData == None:
-            return "{0}? Vůbec nevím, o kom je řeč...".format(args)
+        seen = self.store.get(args)
+        if seen == None:
+            return self.gettext("{}? I have no idea about whom you're talking...", uc.lang).format(args)
 
-        sinceTime = datetime.datetime.now() - seenData.dateTime
-        sinceTimeStr = self.formatTimeDiff(sinceTime)
+        delta = self.format_timedelta(time.time() - seen[0], uc.lang)
+
         status = ""
-        if seenData.type == seenEvent.types["message"]:
-            status = ", když psal \"{0}\"".format(seenData.text)
-        elif seenData.type == seenEvent.types["presence"] and seenData.text is not None:
-            status = " ({0})".format(seenData.text)
-        state = " v místnosti"
-        if seenData.type == seenEvent.types["leave"]:
-            state = ", jak opouští místnost"
-        return "{0} byl naposledy spatřen{1} {2} před {3}{4}.".format(args, state, seenData.muc, sinceTimeStr, status)
+        if seen[2] == "message":
+            status = self.gettext(" writing \"{}\"", uc.lang).format(seen[3] or "")
+        elif seen[3] is not None:
+            status = " ({})".format(seen[3])
 
+        if seen[2] == "leave":
+            state = self.gettext(" leaving room", uc.lang)
+        else:
+            state = self.gettext(" in room", uc.lang)
 
-    def formatTimeDiff(self, time):
-        days = time.days
-        seconds = time.seconds
+        return self.gettext("{} was last seen{} {} before {}{}", uc.lang).format(args, state, seen[1], delta, status)
 
-        months = hours = minutes = 0
-        response = ""
+    def format_timedelta(self, delta, lang):
+        parts = []
 
-        months = int(days / 30)
-        days -= months * 30
+        months = int(delta/3600/24/30)
         if months > 0:
-            if months == 1:
-                monthsStr = "1 měsícem"
-            else:
-                monthsStr = "{0} měsíci".format(months)
-            response = monthsStr
+            delta -= months*3600*24*30
+            parts.append(self.ngettext("{} month", "{} months", months, lang).format(months))
 
-        if len(response) > 0 or days > 0:
-            if days == 1:
-                daysStr = "1 dnem"
-            else:
-                daysStr = "{0} dny".format(days)
-            if len(response) > 0:
-                return response + " a " + daysStr
-            response = daysStr
+        days = int(delta/3600/24)
+        if days > 0 or len(parts) > 0:
+            delta -= days*3600*24
+            parts.append(self.ngettext("{} day", "{} days", days, lang).format(days))
+        if len(parts) > 1:
+            return self.gettext(" and ", lang).join(parts)
 
-        hours = int(seconds / 3600)
-        seconds -= hours * 3600
-        if len(response) > 0 or hours > 0:
-            if hours == 1:
-                hoursStr = "1 hodinou"
-            else:
-                hoursStr = "{0} hodinami".format(hours)
-            if len(response) > 0:
-                return response + " a " + hoursStr
-            response = hoursStr
+        hours = int(delta/3600)
+        if hours > 0 or len(parts) > 0:
+            delta -= hours*3600
+            parts.append(self.ngettext("{} hour", "{} hours", hours, lang).format(hours))
+        if len(parts) > 1:
+            return self.gettext(" and ", lang).join(parts)
 
-        minutes = int(seconds / 60)
-        seconds -= minutes * 60
-        if len(response) > 0 or minutes > 0:
-            if minutes == 1:
-                minutesStr = "1 minutou"
-            else:
-                minutesStr = "{0} minutami".format(minutes)
-            if len(response) > 0:
-                return response + " a " + minutesStr
-            response = minutesStr
+        minutes = int(delta/60)
+        if minutes > 0 or len(parts) > 0:
+            delta -= minutes*60
+            parts.append(self.ngettext("{} minute", "{} minutes", minutes, lang).format(minutes))
+        if len(parts) > 1:
+            return self.gettext(" and ", lang).join(parts)
 
-        if len(response) > 0 or seconds > 0:
-            if seconds == 1:
-                secondsStr = "1 sekundou"
-            else:
-                secondsStr = "{0} sekundami".format(seconds)
-            if len(response) > 0:
-                return response + " a " + secondsStr
-            return secondsStr
+        seconds = int(delta)
+        parts.append(self.ngettext("{} second", "{} seconds", seconds, lang).format(seconds))
+        return self.gettext(" and ", lang).join(parts)
 
 
-    def shutDown(self):
-        self.bot.del_event_handler("groupchat_presence", self.storePresence)
-        self.bot.del_event_handler("groupchat_message", self.storeMessage)
+class Storage:
+    events = ("message", "presence", "leave")
 
-
-
-class seenStore(object):
     def __init__(self, store):
-        self.log = logging.getLogger("keelsbot.seen.store")
         self.store = store
-        self.createTables()
+        self.create_tables()
 
-
-    def createTables(self):
+    def create_tables(self):
         self.store.query("""CREATE TABLE IF NOT EXISTS seen (
-                        nick VARCHAR(256) NOT NULL PRIMARY KEY,
-                        muc VARCHAR(256) NOT NULL,
-                        type INTEGER(1) NOT NULL,
-                        dateTime DATETIME,
-                        text VARCHAR(256))""")
+                            nick VARCHAR(256) NOT NULL PRIMARY KEY,
+                            room VARCHAR(256) NOT NULL,
+                            event INTEGER(1) NOT NULL,
+                            timestamp INT NOT NULL,
+                            text VARCHAR(256))""")
 
-
-    def update(self, event):
-        self.log.debug("Updating seen record for '{0}'.".format(event.nick))
-        self.store.query("INSERT OR REPLACE INTO seen (nick, muc, type, dateTime, text) VALUES(?,?,?,?,?)", (event.nick, event.muc, event.type, event.dateTime.strftime("%Y-%m-%d %H:%M:%S"), event.text))
-
+    def update(self, nick, room, event, text=None):
+        if event not in self.events:
+            raise ValueError
+        else:
+            event = self.events.index(event)
+        log.debug(_("Updating seen record for {!r}.").format(nick))
+        self.store.query("INSERT OR REPLACE INTO seen (nick, room, event, timestamp, text) VALUES(?,?,?,?,?)", (nick, room, event, int(time.time()), text))
 
     def get(self, nick):
-        results = self.store.query("SELECT * FROM seen WHERE nick=?", (nick,))
-        if len(results) == 0:
+        result = self.store.query("SELECT * FROM seen WHERE nick=?", (nick,))
+        if len(result) == 0:
             return None
-        result = results[0]
-        return seenEvent(result["nick"], result["muc"], result["type"], datetime.datetime.strptime(result["dateTime"][0:19], "%Y-%m-%d %H:%M:%S"), result["text"])
-
-
-
-class seenEvent(object):
-    """ Represent the last known activity of a user.
-    """
-    types = {"message":1, "presence":2, "leave":3}
-
-    def __init__(self, nick, muc, type, dateTime, text=None):
-        self.nick = nick
-        self.muc = muc
-        self.dateTime = dateTime
-        self.type = type
-        self.text = text
+        result = result[0]
+        return (int(result["timestamp"]), result["room"], self.events[int(result["event"])], result["text"])
