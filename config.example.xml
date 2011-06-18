@@ -111,6 +111,7 @@
         <plugin name="muc_log">
             <log room="room@server.com" file="/path/to/file.log" />
         </plugin>
+        <plugin name="muc_presence" />
         <plugin name="muc_stability" />
         <plugin name="parrot" />
         <plugin name="pastebin">
@@ -119,7 +120,6 @@
         </plugin>
         <plugin name="seen" />
         <plugin name="texy" />
-        <plugin name="toppresence" />
         <plugin name="uptime" />
         <plugin name="vocabulary" />
     </keels>
