@@ -1,73 +1,100 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/muc_stability.py - A plugin for keeping a bot in MUC channels
-    it joins.
-    Copyright (C) 2008 Kevin Smith
-    Copyright (C) 2009-2010 Petr Morávek
+muc_stability plugin: Keeps the bot connected to MUC channels.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2008 Kevin Smith",
+                 "Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
+
 
 import logging
 import threading
 import time
-
 from sleekxmpp.xmlstream.handler.callback import Callback
-from sleekxmpp.xmlstream.matcher.xmlmask import MatchXMLMask
+from sleekxmpp.xmlstream.matcher.stanzapath import StanzaPath
 
-class muc_stability(object):
-    sleekDependencies = ["xep_0045"]
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
+
+
+class muc_stability:
+    sleek_plugins = ("xep_0045",)
+    _loop_interval = 4
+    _check_interval = 600
+    run = False
 
     def __init__(self, bot, config):
-        self.log = logging.getLogger("keelsbot.muc_stability")
         self.bot = bot
-        self.about = "'MUC_stability' se snaží udržet KeelsBota v kanále.\nAutoři: Kevin Smith, Petr Morávek"
-        self.shuttingDown = False
-        threading.Thread(target=self.loop).start()
-        self.bot.registerHandler(Callback("keelsbot.muc_stability", MatchXMLMask("<message xmlns='jabber:client' type='error'><error type='modify' code='406' ><not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></message>"), self.messageError))
+        self.lock = threading.RLock()
 
+        bot.register_handler(Callback(
+            "keelsbot.muc_stability.handle_error",
+            StanzaPath("{{{}}}message@type=error/error@type=modify@code=406@condition=not-acceptable".format(bot.default_ns)),
+            self.handle_error))
+        bot.add_event_handler("session_start", self.handle_session_start, threaded=True)
+        bot.add_event_handler("disconnected", self.handle_disconnected, threaded=True)
+        with self.lock:
+             if bot.state.ensure("connected") and bot.session_started_event.isSet():
+                 # In case we're already connected, start right away
+                self.handle_session_start()
+
+    def handle_session_start(self, data=None):
+        with self.lock:
+            if self.run:
+                # Loops are already started
+                return
+            self.run = True
+            thread = threading.Thread(target=self.loop)
+            thread.daemon = True
+            self.thread = thread
+            thread.start()
+
+    def handle_disconnected(self, data=None):
+        with self.lock:
+            self.run = False
+            # Join thread
+            self.thread.join()
+
+    def shutdown(self, bot):
+        with self.lock:
+            bot.remove_handler("keelsbot.muc_stability.handle_error")
+            bot.del_event_handler("session_start", self.handle_session_start)
+            bot.del_event_handler("disconnected", self.handle_disconnected)
+            self.handle_disconnected()
+
+    def handle_error(self, msg):
+        """ Check if error message comes from MUC and rejoin. """
+        room = msg["from"].bare
+        if room not in self.bot.muc_nicks:
+            return
+        nick = self.bot.muc_nicks[room]
+        log.info(_("Rejoining the room {} as {!r}.").format(room, nick))
+        self.xep_0045.joinMUC(room, nick)
 
     def loop(self):
-        """ Perform the MUC checking.
-        """
-        time.sleep(20)
-        while not self.shuttingDown:
-            if self.bot.plugin["xep_0045"]:
-                for muc in self.bot.plugin["xep_0045"].getJoinedRooms():
-                    jid = self.bot.plugin["xep_0045"].getOurJidInRoom(muc)
-                    self.bot.sendMessage(jid, None, mtype="chat")
-            for i in range(60):
-                if self.shuttingDown:
-                    break
-                time.sleep(10)
+        """ The loop that periodically checks joined MUCs. """
+        log.debug(_("Entering the loop."))
 
+        while self.run:
+            wait = 0
+            while self.run and wait < self._check_interval:
+                wait += self._loop_interval
+                time.sleep(self._loop_interval)
 
-    def messageError(self, message):
-        """ On error messages, see if it's from a muc, and rejoin the muc if so.
-        """
-        room = message["from"].bare
-        if room not in self.bot.rooms:
-            return
-        nick = self.bot.rooms[room]
-        self.log.debug("Error from {0}, rejoining as {1}.".format(room, nick))
-        self.bot.plugin["xep_0045"].joinMUC(room, nick)
+            if not self.run:
+                break
 
+            for room, nick in self.bot.muc_nicks.items():
+                if room not in self.xep_0045.getJoinedRooms():
+                    log.info(_("Rejoining the room {} as {!r}.").format(room, nick))
+                    self.xep_0045.joinMUC(room, nick)
+                else:
+                    jid = "{}/{}".format(room, nick)
+                    self.bot.send_message(jid, None, mtype="chat")
 
-    def shutDown(self):
-        self.shuttingDown = True
-        self.bot.removeHandler("keelsbot.muc_stability")
-
+        log.debug(_("Exiting the loop."))
