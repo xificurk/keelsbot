@@ -1,99 +1,66 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/uptime.py - A plugin for displaying bot's uptime.
-    Copyright (C) 2009-2010 Petr Morávek
-    This code was inspired by similar plugin for SleekBot.
+uptime plugin: Displays the bot's uptime.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import datetime
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
 
 
-class uptime(object):
+import logging
+import time
+
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
+
+
+class uptime:
     def __init__(self, bot, config):
-        self.about = "'Uptime' umožňuje vypisuje uptime bota.\nAutor: Petr Morávek"
-        bot.addCommand("uptime", self.uptime, "Uptime bota", "Jak dlouho už bot běží?", "uptime")
-        self.started = datetime.datetime.now()
+        self.gettext = bot.gettext
+        self.ngettext = bot.ngettext
+        self.started = time.time()
 
+        bot.add_command("uptime", self.uptime, __("Bot's uptime"), __("Time since the last bot reload."))
 
-    def uptime(self, command, args, msg):
-        diff = datetime.datetime.now() - self.started
-        return "Jsem vzhůru už {0}.".format(self.formatTimeDiff(diff))
+    def uptime(self, command, args, msg, uc):
+        delta = self.format_timedelta(time.time() - self.started, uc.lang)
+        log.debug(delta)
+        log.debug("I'm up {}.".format(delta))
+        return self.gettext("I'm up {}.", uc.lang).format(delta)
 
+    def format_timedelta(self, delta, lang):
+        parts = []
 
-    def formatTimeDiff(self, time):
-        days = time.days
-        seconds = time.seconds
-
-        months = hours = minutes = 0
-        response = ""
-
-        months = int(days / 30)
-        days -= months * 30
+        months = int(delta/3600/24/30)
         if months > 0:
-            monthsStr = "{0} měsíc".format(months)
-            if months > 4:
-                monthsStr += "ů"
-            elif months > 1:
-                monthsStr += "e"
-            response = monthsStr
+            delta -= months*3600*24*30
+            parts.append(self.ngettext("{} month", "{} months", months, lang).format(months))
 
-        if len(response) > 0 or days > 0:
-            if days > 4 or days == 0:
-                daysStr = "{0} dnů".format(days)
-            elif days > 1:
-                daysStr = "{0} dny".format(days)
-            else:
-                daysStr = "{0} den".format(days)
-            if len(response) > 0:
-                return response + " a " + daysStr
-            response = daysStr
+        days = int(delta/3600/24)
+        if days > 0 or len(parts) > 0:
+            delta -= days*3600*24
+            parts.append(self.ngettext("{} day", "{} days", days, lang).format(days))
+        if len(parts) > 1:
+            return self.gettext(" and ", lang).join(parts)
 
-        hours = int(seconds / 3600)
-        seconds -= hours * 3600
-        if len(response) > 0 or hours > 0:
-            hoursStr = "{0} hodin".format(hours)
-            if hours > 1 and hours <= 4:
-                hoursStr += "y"
-            elif hours == 1:
-                hoursStr += "u"
-            if len(response) > 0:
-                return response + " a " + hoursStr
-            response = hoursStr
+        hours = int(delta/3600)
+        if hours > 0 or len(parts) > 0:
+            delta -= hours*3600
+            parts.append(self.ngettext("{} hour", "{} hours", hours, lang).format(hours))
+        if len(parts) > 1:
+            return self.gettext(" and ", lang).join(parts)
 
-        minutes = int(seconds / 60)
-        seconds -= minutes * 60
-        if len(response) > 0 or minutes > 0:
-            minutesStr = "{0} minut".format(minutes)
-            if minutes > 1 and minutes <= 4:
-                minutesStr += "y"
-            elif minutes == 1:
-                minutesStr += "u"
-            if len(response) > 0:
-                return response + " a " + minutesStr
-            response = minutesStr
+        minutes = int(delta/60)
+        if minutes > 0 or len(parts) > 0:
+            delta -= minutes*60
+            parts.append(self.ngettext("{} minute", "{} minutes", minutes, lang).format(minutes))
+        if len(parts) > 1:
+            return self.gettext(" and ", lang).join(parts)
 
-        if len(response) > 0 or seconds > 0:
-            secondsStr = "{0} sekund".format(seconds)
-            if seconds > 1 and seconds <= 4:
-                secondsStr += "y"
-            elif seconds == 1:
-                secondsStr += "u"
-            if len(response) > 0:
-                return response + " a " + secondsStr
-            return secondsStr
+        seconds = int(delta)
+        parts.append(self.ngettext("{} second", "{} seconds", seconds, lang).format(seconds))
+        return self.gettext(" and ", lang).join(parts)
