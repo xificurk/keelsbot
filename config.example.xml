@@ -108,7 +108,7 @@
             </feed>
         </plugin>
         <plugin name="help" />
-        <plugin name="irssilogs">
+        <plugin name="muc_log">
             <log room="room@server.com" file="/path/to/file.log" />
         </plugin>
         <plugin name="muc_stability" />
