@@ -1,297 +1,241 @@
 # -*- coding: utf-8 -*-
 """
-    plugins/vocabulary.py - A plugin for testing knowledge of defined
-    vocabulary.
-    Copyright (C) 2010 Petr Morávek
+vocabulary plugin: Tests knowledge of defined vocabulary.
 
-    This file is part of KeelsBot.
-
-    Keelsbot is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    KeelsBot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
+__author__ = "Petr Morávek (xificurk@gmail.com)"
+__copyright__ = ["Copyright (C) 2009-2011 Petr Morávek"]
+__license__ = "GPL 3.0"
+
+__version__ = "0.5.0"
+
 
 import logging
 import random
 import re
 
+log = logging.getLogger(__name__)
+__ = lambda x: x # Fake gettext function
 
-class vocabulary(object):
+
+class vocabulary:
+    _re_definition = re.compile(" *([^ ]+) +([^ ]+) +(.+?) *\((.*?)\) +(.+?)( *\((.*?)\))? *$")
+    testing = {}
+
     def __init__(self, bot, config):
         self.bot = bot
-        self.log = logging.getLogger("keelsbot.vocabulary")
-        self.store = vocabularyStore(self.bot.store)
-        self.defPCRE = re.compile(" *([^ ]+) +([^ ]+) +(.+?) *\((.*?)\) +(.+?)( *\((.*?)\))? *$")
-        self.testing = {}
-        self.about = "'Vocabulary' slouží pro ukládání slovíček do slovníku a testování jejich znalostí.\nAutor: Petr Morávek"
-        bot.addCommand("createdict", self.createDict, "Vytvořit slovník", "Vytvoří slovník pro ukládání překladů slovíček mezi jazyk1 a jazyk2.", "createdict jazyk1 jazyk2")
-        bot.addCommand("listdict", self.listDict, "Seznam slovníků", "Vypíše seznam vytvořených slovníků.", "listdict")
-        bot.addCommand("add", self.add, "Přidat slovíčko", "Uloží do databáze překlad slovíčka.", "add jazyk1 jazyk2 slovíčko1 ([poznámka1]) slovíčko2 ([poznámka2])")
-        bot.addCommand("del", self.delete, "Smaže slovíčko", "Smaže z databáze překlad slovíčka.", "del jazyk1 jazyk2 slovíčko1 () slovíčko2")
-        bot.addCommand("list", self.listVocabulary, "Seznam slovíček", "Vypíše seznam všech slovíček v zadaném slovníku.", "list jazyk1 jazyk2")
-        bot.addCommand("start", self.start, "Začít test", "Začne test ze znalosti slovíček jazyk1 > jazyk2.", "start jazyk1 jazyk2")
-        bot.addCommand("stop", self.stop, "Ukončit test", "Ukončí probíhající test.", "stop")
-        self.bot.add_event_handler("message", self.message, threaded=True)
+        self.gettext = bot.gettext
+        self.ngettext = bot.ngettext
+        self.store = Storage(bot.store)
 
+        bot.add_command("createdict", self.create_dictionary, __("Create dictionary"), __("Creates dictionary for storing phrase translations between lang1 and lang2"), __("lang1 lang2"))
+        bot.add_command("listdict", self.list_dictionary, __("List of dictionaries"), __("Display the list of dictionaries."))
+        bot.add_command("add", self.add_vocabulary, __("Add phrase"), __("Stores the translation of the phrase."), __("lang1 lang2 phrase1 ([note1]) phrase2 ([note2])"))
+        bot.add_command("del", self.delete_vocabulary, __("Delete phrase"), __("Deletes the translation of the phrase."), __("lang1 lang2 phrase1 () phrase2"))
+        bot.add_command("list", self.list_vocabulary, __("List vocabulary"), __("Display the list of stored translations in the dictionary."), __("lang1 lang2"))
+        bot.add_command("start", self.start, __("Start test"), __("Starts the test of phrase translations lang1 > lang2."), __("lang1 lang2"))
+        bot.add_command("stop", self.stop, __("Stop test"), __("Stops the current test."))
+        bot.add_event_handler("message", self.handle_message, threaded=True)
 
-    def message(self, msg):
+    def shutdown(self, bot):
+        bot.del_event_handler("message", self.handle_message)
+
+    def handle_message(self, msg):
         jid = msg["from"].bare
         if jid not in self.testing:
             return
 
         answer = msg.get("body", "").strip()
-        if answer.startswith(self.bot.cmdPrefix):
+        if answer.startswith(self.bot.cmd_prefix):
             return
 
         data = self.testing[jid]
-        if answer == data["chosen"]["answer"]:
-            data["chosen"]["weight"] = max(min(data["chosen"]["weight"]-1, 9), 0)
+        if answer == data["current"]["answer"]:
+            data["current"]["weight"] = max(min(data["current"]["weight"]-1, 9), 0)
         else:
-            data["chosen"]["weight"] = max(min(data["chosen"]["weight"]+1, 9), 0)
-            self.bot.sendMessage(msg["from"], "CHYBA! Správně: {0}".format(data["chosen"]["answer"]), mtype=msg["type"])
-        self.store.setWeight(data["dict"], jid, data["chosen"])
-        data["chosen"] = self.getRandom(data["choices"], exclude=data["chosen"]["id"])
-        self.bot.sendMessage(msg["from"], data["chosen"]["query"], mtype=msg["type"])
+            data["current"]["weight"] = max(min(data["current"]["weight"]+1, 9), 0)
+            msg.reply(self.gettext("WRONG! Correct answer: {}", data["lang"]).format(data["current"]["answer"])).send()
+        self.store.set_weight(data["dictionary"][1], jid, data["current"])
+        data["current"] = self._get_random(data["choices"], exclude=data["current"]["id"])
+        msg.reply(data["current"]["query"]).send()
 
-
-    def shutdown(self):
-        self.bot.del_event_handler("message", self.message)
-
-
-    def parseDict(self, args):
-        left = ""
-        right = ""
-        if args.count(" ") > 0:
-            [left, right] = args.split(" ", 1)
-            left = left
-            right = right
-        if len(left) == 0 or len(right) == 0:
-            return "Musíš zadat názvy dvou jazyků oddělené mezerou."
-
-        return left, right
-
-
-    def createDict(self, command, args, msg):
-        parsed = self.parseDict(args)
+    def create_dictionary(self, command, args, msg, uc):
+        parsed = self._parse_dictionary(args, uc.lang)
         if isinstance(parsed, str):
             return parsed
         else:
             left, right = parsed
 
-        if self.store.findDict(left, right) is not None:
-            return "Tento slovník již existuje."
+        if self.store.find_dictionary(left, right) is not None:
+            return self.gettext("This dictionary already exists.", uc.lang)
 
-        self.store.createDict(left, right)
-        return "OK, vytvořen slovník {0} - {1}.".format(left, right)
+        self.store.create_dictionary(left, right)
+        return self.gettext("Dictionary {} - {} created.", uc.lang).format(left, right)
 
+    def list_dictionary(self, command, args, msg, uc):
+        dictionaries = []
+        for dictionary in self.store.list_dictionary():
+            dictionaries.append(" - ".join(dictionary))
+        if len(dictionaries) == 0:
+            return self.gettext("No dictionaries found.", uc.lang)
+        return self.gettext("Dictionaries", uc.lang) + ":\n" + "\n".join(dictionaries)
 
-    def listDict(self, command, args, msg):
-        dicts = []
-        for dict in self.store.listDict():
-            dicts.append(" - ".join(dict))
-        if len(dicts) == 0:
-            return "Nemám žádné slovníky."
-        return "Seznam slovníků:\n" + "\n".join(dicts)
+    def add_vocabulary(self, command, args, msg, uc):
+        parsed = self._parse_translation(args, uc.lang)
+        if isinstance(parsed, str):
+            return parsed
 
+        self.store.update_vocabulary(*parsed)
+        return self.gettext("Saved.", uc.lang)
 
-    def parseArgs(self, args):
-        match = self.defPCRE.match(args)
-        if match is None:
-            return "Neplatný formát."
-
-        dict = self.store.findDict(match.group(1), match.group(2))
-        if dict is None:
-            return "Tento slovník neexistuje."
-
-        if dict[1]:
-            leftPhrase = match.group(5)
-            leftNote = match.group(7)
-            rightPhrase = match.group(3)
-            rightNote = match.group(4)
-        else:
-            leftPhrase = match.group(3)
-            leftNote = match.group(4)
-            rightPhrase = match.group(5)
-            rightNote = match.group(7)
-
-        return dict[0], leftPhrase, rightPhrase, leftNote, rightNote
-
-
-    def add(self, command, args, msg):
-        parsed = self.parseArgs(args)
+    def delete_vocabulary(self, command, args, msg, uc):
+        parsed = self._parse_translation(args, uc.lang)
         if isinstance(parsed, str):
             return parsed
         else:
-            dict, leftPhrase, rightPhrase, leftNote, rightNote = parsed
+            dictionary, left_phrase, right_phrase, left_note, right_note = parsed
 
-        self.store.updateVoc(dict, leftPhrase, rightPhrase, leftNote, rightNote)
-        return "Uloženo."
+        self.store.delete_vocabulary(dictionary, left_phrase, right_phrase)
+        return self.gettext("Deleted.", uc.lang)
 
-
-    def delete(self, command, args, msg):
-        parsed = self.parseArgs(args)
-        if isinstance(parsed, str):
-            return parsed
-        else:
-            dict, leftPhrase, rightPhrase, leftNote, rightNote = parsed
-
-        self.store.deleteVoc(dict, leftPhrase, rightPhrase)
-        return "Smazáno."
-
-
-    def listVocabulary(self, command, args, msg):
-        parsed = self.parseDict(args)
+    def list_vocabulary(self, command, args, msg, uc):
+        parsed = self._parse_dictionary(args)
         if isinstance(parsed, str):
             return parsed
         else:
             left, right = parsed
 
-        dict = self.store.findDict(left, right)
-        if dict is None:
-            return "Tento slovník neexistuje."
+        dictionary = self.store.find_dictionary(left, right)
+        if dictionary is None:
+            return self.gettext("This dictionary does not exist.", uc.lang)
 
         vocabulary = []
-        for row in self.store.listVoc(dict):
+        for row in self.store.list_vocabulary(*dictionary):
             if row[2] is not None:
-                leftVoc = "{0} ({1})".format(row[0], row[2])
+                left_voc = "{} ({})".format(row[0], row[2])
             else:
-                leftVoc = row[0]
+                left_voc = row[0]
             if row[3] is not None:
-                rightVoc = "{0} ({1})".format(row[1], row[3])
+                right_voc = "{} ({})".format(row[1], row[3])
             else:
-                rightVoc = row[1]
-            vocabulary.append("{0} = {1}".format(leftVoc, rightVoc))
+                right_voc = row[1]
+            vocabulary.append("{} = {}".format(left_voc, right_voc))
 
         if len(vocabulary) == 0:
-            return "Nemám žádná slovíčka ve slovníku {0} - {1}.".format(left, right)
+            return self.gettext("No phrases in dictionary {} - {}.", uc.lang).format(left, right)
 
-        return "Slovíčka ve slovníku {0} - {1}:\n".format(left, right) + "\n".join(vocabulary)
+        return self.gettext("Vocabulary from dictionary {} - {}", uc.lang).format(left, right) + ":\n" + "\n".join(vocabulary)
 
-
-    def getRandom(self, choices, exclude=None):
-        if len(choices) == 1:
-            return choices[0]
-
-        sum = 0
-        for item in choices:
-            if exclude is not None and exclude == item["id"]:
-                continue
-            sum = sum + 2**item["weight"]
-
-        length = len(choices)
-        if exclude is not None:
-            length = length - 1
-        self.log.debug("Randomly choosing from {0} choices (weight sum {1}).".format(length, sum))
-
-        select = random.randint(1, sum)
-        sum = 0
-        for item in choices:
-            if exclude is not None and exclude == item["id"]:
-                continue
-            sum = sum + 2**item["weight"]
-            if select <= sum:
-                return item
-
-
-    def start(self, command, args, msg):
-        parsed = self.parseDict(args)
+    def start(self, command, args, msg, uc):
+        parsed = self._parse_dictionary(args, uc.lang)
         if isinstance(parsed, str):
             return parsed
         else:
             left, right = parsed
 
-        dict = self.store.findDict(left, right)
-        if dict is None:
-            return "Tento slovník neexistuje."
+        dictionary = self.store.find_dictionary(left, right)
+        if dictionary is None:
+            return self.gettext("This dictionary does not exist.", uc.lang)
 
         jid = msg["from"].bare
-        choices = self.store.getVocabulary(dict, jid)
+        choices = self.store.get_vocabulary(dictionary[0], dictionary[1], jid)
         if len(choices) == 0:
-            return "Slovník je prázdný!"
+            return self.gettext("The dictionary is empty!", uc.lang)
 
-        chosen = self.getRandom(choices)
-        self.testing[jid] = {"dict":dict, "choices":choices, "chosen":chosen}
-        return chosen["query"]
+        current = self._get_random(choices)
+        self.testing[jid] = {"dictionary":dictionary, "choices":choices, "current":current, "lang":uc.lang}
+        return current["query"]
 
-
-    def stop(self, command, args, msg):
+    def stop(self, command, args, msg, uc):
         jid = msg["from"].bare
         if jid in self.testing:
             del self.testing[jid]
-        return "OK"
+        return self.gettext("OK", uc.lang)
 
+    def _parse_dictionary(self, args, lang):
+        left = ""
+        right = ""
+        if args.count(" ") > 0:
+            left, right = args.split(" ", 1)
+        if len(left) == 0 or len(right) == 0:
+            return self.gettext("You must supply names of two languages separated by space.", lang)
+        return left, right
 
-    def define(self, command, args, msg):
-        level = 0
-        if command == "!!":
-            level = self.bot.getAccessLevel(msg)
+    def _parse_translation(self, args, lang):
+        match = self._re_definition.match(args)
+        if match is None:
+            self.gettext("Invalid format.", lang)
 
-        name = None
-        description = None
-        if args.count("=") > 0:
-            [name, description] = args.split("=", 1)
+        dictionary = self.store.find_dictionary(match.group(1), match.group(2))
+        if dictionary is None:
+            return self.gettext("This dictionary does not exist.", lang)
+
+        if dictionary[1]:
+            left_phrase = match.group(5)
+            left_note = match.group(7)
+            right_phrase = match.group(3)
+            right_note = match.group(4)
         else:
-            return "Něco ti tam chybí, šéfiku!"
+            left_phrase = match.group(3)
+            left_note = match.group(4)
+            right_phrase = match.group(5)
+            right_note = match.group(7)
 
-        name = name.strip()
-        description = description.strip()
-        if name is None or name == "":
-            return "Musíš zadat, co chceš definovat!"
+        return dictionary[0], left_phrase, right_phrase, left_note, right_note
 
-        storedLevel = self.store.get(name)[1]
-        self.log.debug("DEFINITION: stored {0}, user {1}".format(storedLevel, level))
-        if storedLevel > level:
-            return "Sorry, ale na tuhle editaci nemáš právo."
+    def _get_random(self, choices, exclude=None):
+        if len(choices) == 1:
+            return choices[0]
 
-        if description is None or description == "":
-            self.store.delete(name)
-            return "Smazáno (pokud to tam teda bylo ;-))"
-        else:
-            self.store.update(name, description, level)
-            return "{0} == {1}".format(name, description)
+        sum_ = 0
+        for item in choices:
+            if exclude == item["id"]:
+                continue
+            sum_ += 2**item["weight"]
+
+        length = len(choices)
+        if exclude is not None:
+            length -= 1
+        log.debug(_("Randomly choosing from {} choices (weight sum {}).").format(length, sum_))
+
+        select = random.randint(1, sum_)
+        sum_ = 0
+        for item in choices:
+            if exclude == item["id"]:
+                continue
+            sum_ += 2**item["weight"]
+            if select <= sum_:
+                return item
 
 
-
-class vocabularyStore(object):
+class Storage:
     def __init__(self, store):
-        self.log = logging.getLogger("keelsbot.vocabulary.store")
         self.store = store
-        self.createTables()
+        self.create_tables()
 
-
-    def createTables(self):
+    def create_tables(self):
         self.store.query("""CREATE TABLE IF NOT EXISTS dictionaries (
-                        left VARCHAR(15) NOT NULL,
-                        right VARCHAR(15) NOT NULL,
-                        PRIMARY KEY (left, right))""")
+                            left VARCHAR(15) NOT NULL,
+                            right VARCHAR(15) NOT NULL,
+                            PRIMARY KEY (left, right))""")
 
         self.store.query("""CREATE TABLE IF NOT EXISTS vocabulary (
-                        dictionary_id INTEGER NOT NULL,
-                        left_phrase VARCHAR(100) NOT NULL,
-                        left_note VARCHAR(255),
-                        right_phrase VARCHAR(100) NOT NULL,
-                        right_note VARCHAR(255),
-                        PRIMARY KEY (dictionary_id, left_phrase, right_phrase))""")
+                            dictionary_id INTEGER NOT NULL,
+                            left_phrase VARCHAR(100) NOT NULL,
+                            left_note VARCHAR(255),
+                            right_phrase VARCHAR(100) NOT NULL,
+                            right_note VARCHAR(255),
+                            PRIMARY KEY (dictionary_id, left_phrase, right_phrase))""")
 
         self.store.query("""CREATE TABLE IF NOT EXISTS vocabulary_weights (
-                        jid VARCHAR(100) NOT NULL,
-                        vocabulary_id INTEGER NOT NULL,
-                        left INT(1) NOT NULL DEFAULT 5,
-                        right INT(1) NOT NULL DEFAULT 5,
-                        PRIMARY KEY (jid, vocabulary_id))""")
+                            jid VARCHAR(100) NOT NULL,
+                            vocabulary_id INTEGER NOT NULL,
+                            left INT(1) NOT NULL DEFAULT 5,
+                            right INT(1) NOT NULL DEFAULT 5,
+                            PRIMARY KEY (jid, vocabulary_id))""")
 
-
-    def findDict(self, left, right):
+    def find_dictionary(self, left, right):
         left = left.strip().lower()
         right = right.strip().lower()
         result = self.store.query("SELECT [rowid], [left]=? AS [reverse] FROM [dictionaries] WHERE ([left]=? AND [right]=?) OR ([right]=? AND [left]=?)", (right, left, right, left, right))
@@ -300,75 +244,63 @@ class vocabularyStore(object):
         else:
             return (int(result[0]["rowid"]), result[0]["reverse"] == 1)
 
-
-    def createDict(self, left, right):
+    def create_dictionary(self, left, right):
         left = left.strip().lower()
         right = right.strip().lower()
         self.store.query("INSERT INTO dictionaries ([left], [right]) VALUES(?,?)", (left, right))
 
-
-    def listDict(self):
-        dicts = []
+    def list_dictionary(self):
+        dictionaries = []
         for row in self.store.query("SELECT [left], [right] FROM [dictionaries]"):
-            dicts.append((row["left"], row["right"]))
-        return dicts
+            dictionaries.append((row["left"], row["right"]))
+        return dictionaries
 
+    def update_vocabulary(self, dictionary, left_phrase, right_phrase, left_note, right_note):
+        if left_note is not None and len(left_note) == 0:
+            left_note = None
+        if right_note is not None and len(right_note) == 0:
+            right_note = None
+        self.store.query("INSERT OR REPLACE INTO [vocabulary] ([dictionary_id], [left_phrase], [right_phrase], [left_note], [right_note]) VALUES(?,?,?,?,?)", (dictionary, left_phrase, right_phrase, left_note, right_note))
 
-    def updateVoc(self, dict, leftPhrase, rightPhrase, leftNote, rightNote):
-        if leftNote is not None and len(leftNote) == 0:
-            leftNote = None
-        if rightNote is not None and len(rightNote) == 0:
-            rightNote = None
-        self.store.query("INSERT OR REPLACE INTO [vocabulary] ([dictionary_id], [left_phrase], [right_phrase], [left_note], [right_note]) VALUES(?,?,?,?,?)", (dict, leftPhrase, rightPhrase, leftNote, rightNote))
+    def delete_vocabulary(self, dictionary, left_phrase, right_phrase):
+        self.store.query("DELETE FROM [vocabulary] WHERE [dictionary_id]=? AND [left_phrase]=? AND [right_phrase]=?", (dictionary, left_phrase, right_phrase))
 
-
-    def deleteVoc(self, dict, leftPhrase, rightPhrase):
-        self.store.query("DELETE FROM [vocabulary] WHERE [dictionary_id]=? AND [left_phrase]=? AND [right_phrase]=?", (dict, leftPhrase, rightPhrase))
-
-
-    def listVoc(self, dict):
+    def list_vocabulary(self, dictionary, reverse):
         vocabulary = []
-        for row in self.store.query("SELECT [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dict[0],)):
-            if dict[1]:
+        for row in self.store.query("SELECT [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dictionary,)):
+            if reverse:
                 vocabulary.append((row["right_phrase"], row["left_phrase"], row["right_note"], row["left_note"]))
             else:
                 vocabulary.append((row["left_phrase"], row["right_phrase"], row["left_note"], row["right_note"]))
         return vocabulary
 
-
-    def getVocabulary(self, dict, jid):
-        db = self.store.getDb()
+    def get_vocabulary(self, dictionary, reverse, jid):
+        if reverse:
+            side_query = "right"
+            side_answer = "left"
+        else:
+            side_query = "left"
+            side_answer = "right"
         vocabulary = []
-        for row in db.cursor().execute("SELECT [rowid], [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dict[0],)).fetchall():
+        db = self.store.get_db()
+        for row in db.cursor().execute("SELECT [rowid], [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dictionary,)).fetchall():
             phrase = {"id":row["rowid"]}
-            if dict[1]:
-                weight = db.cursor().execute("SELECT [right] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?", (jid, row["rowid"])).fetchone()
-                if weight is not None:
-                    weight = int(weight["right"])
-                phrase["answer"] = row["left_phrase"]
-                if row["right_note"] is not None:
-                    phrase["query"] = "{0} ({1})".format(row["right_phrase"], row["right_note"])
-                else:
-                    phrase["query"] = row["right_phrase"]
+            weight = db.cursor().execute("SELECT [{}] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?".format(side_query), (jid, row["rowid"])).fetchone()
+            if weight is not None:
+                phrase["weight"] = int(weight[side])
             else:
-                weight = db.cursor().execute("SELECT [left] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?", (jid, row["rowid"])).fetchone()
-                if weight is not None:
-                    weight = int(weight["left"])
-                phrase["answer"] = row["right_phrase"]
-                if row["left_note"] is not None:
-                    phrase["query"] = "{0} ({1})".format(row["left_phrase"], row["left_note"])
-                else:
-                    phrase["query"] = row["left_phrase"]
-            if weight is None:
-                weight = 5
-            phrase["weight"] = weight
+                phrase["weight"] = 5
+            if row[side_query+"_note"] is not None:
+                phrase["query"] = "{} ({})".format(row[side_query+"_phrase"], row[side_query+"_note"])
+            else:
+                phrase["query"] = row[side_query+"_phrase"]
+            phrase["answer"] = row[side_answer+"_phrase"]
             vocabulary.append(phrase)
         db.close()
         return vocabulary
 
-
-    def setWeight(self, dict, jid, phrase):
-        if dict[1]:
+    def set_weight(self, reverse, jid, phrase):
+        if reverse:
             self.store.query("INSERT OR REPLACE INTO [vocabulary_weights] (jid, vocabulary_id, right) VALUES(?,?,?)", (jid, phrase["id"], phrase["weight"]))
         else:
-            self.store.query("INSERT OR REPLACE INTO [vocabulary_weights] (jid, vocabulary_id, left) VALUES(?, ?, ?)", (jid, phrase["id"], phrase["weight"]))
+            self.store.query("INSERT OR REPLACE INTO [vocabulary_weights] (jid, vocabulary_id, left) VALUES(?,?,?)", (jid, phrase["id"], phrase["weight"]))
