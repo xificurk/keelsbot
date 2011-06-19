@@ -97,7 +97,7 @@
             <muc room="room@server.com" />
             <muc room="room2@server2.com" disabled="disabled" />
             <!-- What dictionaries KeelsBot should use. -->
-            <dict path="/path/to/keelsbot/plugins/conversations/[0-9]--*.xml" />
+            <dict path="/path/to/keelsbot/misc/conversations/*.xml" />
         </plugin>
         <plugin name="definitions" />
         <plugin name="feedreader">
