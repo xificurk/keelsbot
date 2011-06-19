@@ -1,0 +1,878 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: keelsbot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-06-20 12:55+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: keelsbot.py:106
+msgid "Logging in as {!r}."
+msgstr ""
+
+#: keelsbot.py:130
+msgid "Disconnecting the bot."
+msgstr ""
+
+#: keelsbot.py:135
+msgid "EVENT: {}"
+msgstr ""
+
+#: keelsbot.py:186
+msgid "Command {!r} with args {!r}"
+msgstr ""
+
+#: keelsbot.py:201
+msgid "Re-syncing with required MUC rooms."
+msgstr ""
+
+#: keelsbot.py:206
+msgid "Leaving MUC room {!r}."
+msgstr ""
+
+#: keelsbot.py:210
+msgid "Joining MUC room {!r} as {!r}."
+msgstr ""
+
+#: keelsbot.py:237
+msgid "Using {!r} for JID {!r}."
+msgstr ""
+
+#: keelsbot.py:257
+msgid "Registering bot plugin {!r}."
+msgstr ""
+
+#: keelsbot.py:261
+msgid "Bot plugin {!r} is already registered."
+msgstr ""
+
+#: keelsbot.py:282
+msgid "Bot plugin {!r} needs SleekXMPP plugin {!r}."
+msgstr ""
+
+#: keelsbot.py:289
+msgid "Loading of bot plugin {!r} FAILED."
+msgstr ""
+
+#: keelsbot.py:307
+msgid "Deregistering bot plugin {!r}."
+msgstr ""
+
+#: keelsbot.py:310
+msgid "Calling the shutdown method of bot plugin {!r}."
+msgstr ""
+
+#: keelsbot.py:351
+msgid "Usage"
+msgstr ""
+
+#: keelsbot.py:445
+msgid "Cleaning bot configuration before reload."
+msgstr ""
+
+#: keelsbot.py:452
+msgid "Reloading bot configuration."
+msgstr ""
+
+#: keelsbot.py:463
+msgid "Restarting the bot."
+msgstr ""
+
+#: keelsbot.py:479
+msgid "No storage element found in config file - proceeding with no persistent storage, plugin behaviour may be undefined."
+msgstr ""
+
+#: keelsbot.py:513
+msgid "Ignoring MUC with empty room attribute."
+msgstr ""
+
+#: keelsbot.py:533
+msgid "Ignoring unnamed SleekXMPP plugin."
+msgstr ""
+
+#: keelsbot.py:562
+msgid "Ignoring unnamed bot plugin."
+msgstr ""
+
+#: keelsbot.py:564
+msgid "Adding bot plugin {!r}."
+msgstr ""
+
+#: keelsbot.py:593
+msgid "disable usage of colored output"
+msgstr ""
+
+#: keelsbot.py:594
+msgid "set logging to ERROR"
+msgstr ""
+
+#: keelsbot.py:595
+msgid "set logging to INFO"
+msgstr ""
+
+#: keelsbot.py:596
+msgid "set logging to DEBUG"
+msgstr ""
+
+#: keelsbot.py:597
+msgid "set logging to ALL"
+msgstr ""
+
+#: keelsbot.py:598
+msgid "path to config file"
+msgstr ""
+
+#: keelsbot.py:607
+msgid "You need at least Python {} to run this script."
+msgstr ""
+
+#: keelsbot.py:611
+msgid "Config file {!r} not found."
+msgstr ""
+
+#: keelsbot.py:620
+msgid "Unexpected error... killing the bot."
+msgstr ""
+
+#: plugins/admin.py:29
+msgid "Reload"
+msgstr ""
+
+#: plugins/admin.py:29
+msgid "Reload the bot configuration and apply changes without disconnecting."
+msgstr ""
+
+#: plugins/admin.py:30
+msgid "Restart"
+msgstr ""
+
+#: plugins/admin.py:30
+msgid "Completely restart the bot."
+msgstr ""
+
+#: plugins/admin.py:31
+msgid "Die"
+msgstr ""
+
+#: plugins/admin.py:31
+msgid "Kill the bot."
+msgstr ""
+
+#: plugins/admin.py:32
+msgid "Log level"
+msgstr ""
+
+#: plugins/admin.py:32
+msgid "Set the level of logging."
+msgstr ""
+
+#: plugins/admin.py:33
+msgid "User level"
+msgstr ""
+
+#: plugins/admin.py:33
+msgid "Display user's access level."
+msgstr ""
+
+#: plugins/admin.py:37
+msgid "Reloaded, boss."
+msgstr ""
+
+#: plugins/admin.py:41
+msgid "Restarted, boss."
+msgstr ""
+
+#: plugins/admin.py:45
+msgid "Dying..."
+msgstr ""
+
+#: plugins/admin.py:55 plugins/admin.py:58
+msgid "You must input the number in range 0-50, or one of the values {}."
+msgstr ""
+
+#: plugins/admin.py:61
+msgid "Log level changed..."
+msgstr ""
+
+#: plugins/admin.py:64
+msgid "You're on level {}."
+msgstr ""
+
+#: plugins/antispam.py:38
+msgid "Configuration error - type attribute of limit required."
+msgstr ""
+
+#: plugins/antispam.py:45
+msgid "Configuration error - {} attribute of limit required and must be digit."
+msgstr ""
+
+#: plugins/antispam.py:50
+msgid "Configuration error - no limits given."
+msgstr ""
+
+#: plugins/antispam.py:54 plugins/chatbot.py:45 plugins/twitter.py:31
+msgid "Configuration error - room attribute of muc required."
+msgstr ""
+
+#: plugins/antispam.py:62
+msgid "Enabling spam protection in room {}."
+msgstr ""
+
+#: plugins/antispam.py:151
+msgid "Got {} users in history and {} in spammers."
+msgstr ""
+
+#: plugins/antispam.py:155
+msgid "Warning {!r} in room {}."
+msgstr ""
+
+#: plugins/antispam.py:157
+msgid "Stop spamming!"
+msgstr ""
+
+#: plugins/antispam.py:162
+msgid "Kicking {!r} from room {}."
+msgstr ""
+
+#: plugins/antispam.py:167
+msgid "Banning {!r} from room {}."
+msgstr ""
+
+#: plugins/definitions.py:26
+msgid "Definition"
+msgstr ""
+
+#: plugins/definitions.py:26
+msgid "Stores (or deletes) the definition in database."
+msgstr ""
+
+#: plugins/definitions.py:26 plugins/definitions.py:27
+msgid "multiword expression = [definition]"
+msgstr ""
+
+#: plugins/definitions.py:27
+msgid "Definition with lock"
+msgstr ""
+
+#: plugins/definitions.py:27
+msgid "Stores (or deletes) the definition in database and locks the definition against change by users with lower privileges than the author."
+msgstr ""
+
+#: plugins/definitions.py:28
+msgid "Display definition"
+msgstr ""
+
+#: plugins/definitions.py:28
+msgid "Display the definition stored in database"
+msgstr ""
+
+#: plugins/definitions.py:28
+msgid "multiword expression"
+msgstr ""
+
+#: plugins/definitions.py:34
+msgid "Didn't you forget something?"
+msgstr ""
+
+#: plugins/definitions.py:39
+msgid "You must specify what term you want to define!"
+msgstr ""
+
+#: plugins/definitions.py:43
+msgid "Sorry, you don't have permission to edit this definition."
+msgstr ""
+
+#: plugins/definitions.py:47
+msgid "Deleted (if there even was something ;-))"
+msgstr ""
+
+#: plugins/definitions.py:60
+msgid "I have no idea, who or what is {}."
+msgstr ""
+
+#: plugins/definitions.py:83
+msgid "Updating definiton of {!r} with level {}."
+msgstr ""
+
+#: plugins/definitions.py:87
+msgid "Deleting definition of {!r}."
+msgstr ""
+
+#: plugins/feedreader.py:42
+msgid "Configuration error - jid attribute of subscriber required."
+msgstr ""
+
+#: plugins/feedreader.py:48
+msgid "Configuration error - no subscribers given."
+msgstr ""
+
+#: plugins/feedreader.py:52
+msgid "Configuration error - url attribute of feed required."
+msgstr ""
+
+#: plugins/feedreader.py:57
+msgid "Scheduling {!r} feed check every {} minutes."
+msgstr ""
+
+#: plugins/feedreader.py:101
+msgid "Entering feed loop."
+msgstr ""
+
+#: plugins/feedreader.py:114
+msgid "Checking feed {}."
+msgstr ""
+
+#: plugins/feedreader.py:128
+msgid "Found new item {!r} in feed {}."
+msgstr ""
+
+#: plugins/feedreader.py:133
+msgid "Exiting feed loop."
+msgstr ""
+
+#: plugins/feedreader.py:137
+msgid "Entering message loop."
+msgstr ""
+
+#: plugins/feedreader.py:153
+msgid "Cannot send feed alert, the bot is not in room {!r}."
+msgstr ""
+
+#: plugins/feedreader.py:165
+msgid "Exiting message loop."
+msgstr ""
+
+#: plugins/feedreader.py:181
+msgid "Storing new item {} in feed {}."
+msgstr ""
+
+#: plugins/feedreader.py:210
+msgid "Error occured while checking feed {}."
+msgstr ""
+
+#: plugins/feedreader.py:217
+msgid "Could not fetch URL {}."
+msgstr ""
+
+#: plugins/help.py:26
+msgid "Help"
+msgstr ""
+
+#: plugins/help.py:26
+msgid "If no topic was given, display the list of available commands and other help topics. Otherwise display the help for a given topic."
+msgstr ""
+
+#: plugins/help.py:26
+msgid "[command/topic]"
+msgstr ""
+
+#: plugins/help.py:27
+msgid "Commands"
+msgstr ""
+
+#: plugins/help.py:27
+msgid "Display list of available commands."
+msgstr ""
+
+#: plugins/help.py:30
+msgid "Available commands"
+msgstr ""
+
+#: plugins/help.py:50
+msgid "Other available help topics"
+msgstr ""
+
+#: plugins/help.py:63
+msgid "Don't know..."
+msgstr ""
+
+#: plugins/chatbot.py:53
+msgid "Starting to chat in room {}"
+msgstr ""
+
+#: plugins/chatbot.py:56
+msgid "NOT starting to chat in room {}"
+msgstr ""
+
+#: plugins/chatbot.py:61
+msgid "Configuration error - path attribute of dictionary required."
+msgstr ""
+
+#: plugins/chatbot.py:70
+msgid "Disable chatbot in MUC"
+msgstr ""
+
+#: plugins/chatbot.py:70
+msgid "Bot stops replying in public chat of given (or current) MUC."
+msgstr ""
+
+#: plugins/chatbot.py:70 plugins/chatbot.py:71
+msgid "[room@server]"
+msgstr ""
+
+#: plugins/chatbot.py:71
+msgid "Enable chatbot in MUC"
+msgstr ""
+
+#: plugins/chatbot.py:71
+msgid "Bot starts replying in public chat of given (or current) MUC."
+msgstr ""
+
+#: plugins/chatbot.py:72
+msgid "Reload conversation files"
+msgstr ""
+
+#: plugins/chatbot.py:72
+msgid "Reloads conversation files without dropping out of MUC or forgetting current state."
+msgstr ""
+
+#: plugins/chatbot.py:84
+msgid "OK, I'll start chatting in room {}."
+msgstr ""
+
+#: plugins/chatbot.py:86
+msgid "Sorry, I can't chat in room {} at all."
+msgstr ""
+
+#: plugins/chatbot.py:94
+msgid "OK, I'll stop chatting in room {}."
+msgstr ""
+
+#: plugins/chatbot.py:96
+msgid "Sorry, I don't chat in room {} at all."
+msgstr ""
+
+#: plugins/chatbot.py:100
+msgid "Conversation files reloaded."
+msgstr ""
+
+#: plugins/chatbot.py:101
+msgid "OK, I've reloaded conversation files ;-)"
+msgstr ""
+
+#: plugins/chatbot.py:301
+msgid "Filter error: {}."
+msgstr ""
+
+#: plugins/chatbot.py:347
+msgid "Loading conversation file {}."
+msgstr ""
+
+#: plugins/chatbot.py:368
+msgid "Regular expression error: {!r}."
+msgstr ""
+
+#: plugins/chatbot.py:394
+msgid "Could not find matching element with id {!r}."
+msgstr ""
+
+#: plugins/chatbot.py:397
+msgid "Getting response for {!r}."
+msgstr ""
+
+#: plugins/chatbot.py:402
+msgid "Got {} queries left from {}, {}, {}."
+msgstr ""
+
+#: plugins/chatbot.py:432 plugins/vocabulary.py:200
+msgid "Randomly choosing from {} choices (weight sum {})."
+msgstr ""
+
+#: plugins/muc_log.py:31
+msgid "Configuration error - room attribute of log required."
+msgstr ""
+
+#: plugins/muc_log.py:38
+msgid "Configuration error - file attribute of log required."
+msgstr ""
+
+#: plugins/muc_log.py:41
+msgid "Starting logging of room {!r} to file {}."
+msgstr ""
+
+#: plugins/muc_log.py:113
+msgid "has been kicked"
+msgstr ""
+
+#: plugins/muc_log.py:113
+msgid "has been banned"
+msgstr ""
+
+#: plugins/muc_log.py:117
+msgid "Openning log file {!r}."
+msgstr ""
+
+#: plugins/muc_log.py:119
+msgid "Logging started"
+msgstr ""
+
+#: plugins/muc_log.py:147
+msgid "Subject has been set to"
+msgstr ""
+
+#: plugins/muc_log.py:149
+msgid "has set the subject to"
+msgstr ""
+
+#: plugins/muc_log.py:155
+msgid "has joined the room as"
+msgstr ""
+
+#: plugins/muc_log.py:161
+msgid "has left the room"
+msgstr ""
+
+#: plugins/muc_presence.py:33
+msgid "Current number of users in room"
+msgstr ""
+
+#: plugins/muc_presence.py:33
+msgid "Display current number of users in MUC room."
+msgstr ""
+
+#: plugins/muc_presence.py:34
+msgid "Highest number of users in room"
+msgstr ""
+
+#: plugins/muc_presence.py:34
+msgid "Display historically highest number of users in MUC room."
+msgstr ""
+
+#: plugins/muc_presence.py:52
+msgid "There is historically highest number of users in the room ({})."
+msgstr ""
+
+#: plugins/muc_presence.py:60
+msgid "There is currently {} user present in the room."
+msgid_plural "There are currently {} users present in the room."
+msgstr[0] ""
+msgstr[1] ""
+
+#: plugins/muc_presence.py:71
+msgid "Historically highest number of users was recorded {:%m/%d/%y (%H:%M)}, {} user was present."
+msgid_plural "Historically highest number of users was recorded at {:%m/%d/%y (%H:%M)}, {} users were present."
+msgstr[0] ""
+msgstr[1] ""
+
+#: plugins/muc_presence.py:86
+msgid "Updating muc_presence record for {}."
+msgstr ""
+
+#: plugins/muc_stability.py:76 plugins/muc_stability.py:94
+msgid "Rejoining the room {} as {!r}."
+msgstr ""
+
+#: plugins/muc_stability.py:81
+msgid "Entering the loop."
+msgstr ""
+
+#: plugins/muc_stability.py:100
+msgid "Exiting the loop."
+msgstr ""
+
+#: plugins/parrot.py:27
+msgid "Send message into MUC"
+msgstr ""
+
+#: plugins/parrot.py:27
+msgid "Bot sends the groupchat message into the specified MUC."
+msgstr ""
+
+#: plugins/parrot.py:27
+msgid "room@server text"
+msgstr ""
+
+#: plugins/parrot.py:28
+msgid "Send message to JID"
+msgstr ""
+
+#: plugins/parrot.py:28
+msgid "Bot sends the message to the specified JID."
+msgstr ""
+
+#: plugins/parrot.py:28
+msgid "user@server text"
+msgstr ""
+
+#: plugins/parrot.py:34
+msgid "You've forgot to specify the MUC."
+msgstr ""
+
+#: plugins/parrot.py:36
+msgid "I'm not in the room {}."
+msgstr ""
+
+#: plugins/parrot.py:38 plugins/parrot.py:46
+msgid "Sent"
+msgstr ""
+
+#: plugins/parrot.py:44
+msgid "You've forgot to specify the JID."
+msgstr ""
+
+#: plugins/pastebin.py:31
+msgid ""
+"Sends code snippet to pastebin.com\n"
+"At first line are optional arguments separated by space in an arbitrary order - expiration (10M = 10 minutes, 1H = 1 hour, 1D = 1 day, 1M = 1 month, N = never), langauge format (see http://pastebin.com/api) and whether to send the link directly to MUC (1, defaults to 0 = send the link back to user). Default expiration is "
+msgstr ""
+
+#: plugins/pastebin.py:31
+msgid " and language "
+msgstr ""
+
+#: plugins/pastebin.py:31
+msgid "All other lines are treated as code content."
+msgstr ""
+
+#: plugins/pastebin.py:31
+msgid "code"
+msgstr ""
+
+#: plugins/pastebin.py:36
+msgid "Invalid input, see help."
+msgstr ""
+
+#: plugins/pastebin.py:69 plugins/pastebin.py:73
+msgid "ERROR"
+msgstr ""
+
+#: plugins/pastebin.py:76
+msgid "{} sent code snippet {}"
+msgstr ""
+
+#: plugins/seen.py:31
+msgid "Last seen user"
+msgstr ""
+
+#: plugins/seen.py:31
+msgid "Displays the last sighting of the user."
+msgstr ""
+
+#: plugins/seen.py:31
+msgid "nick"
+msgstr ""
+
+#: plugins/seen.py:63
+msgid "You have to tell me about whom you want information!"
+msgstr ""
+
+#: plugins/seen.py:67
+msgid "{}? I have no idea about whom you're talking..."
+msgstr ""
+
+#: plugins/seen.py:73
+msgid " writing \"{}\""
+msgstr ""
+
+#: plugins/seen.py:78
+msgid " leaving room"
+msgstr ""
+
+#: plugins/seen.py:80
+msgid " in room"
+msgstr ""
+
+#: plugins/seen.py:82
+msgid "{} was last seen{} {} before {}{}"
+msgstr ""
+
+#: plugins/seen.py:90 plugins/uptime.py:41
+msgid "{} month"
+msgid_plural "{} months"
+msgstr[0] ""
+msgstr[1] ""
+
+#: plugins/seen.py:95 plugins/uptime.py:46
+msgid "{} day"
+msgid_plural "{} days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: plugins/seen.py:97 plugins/seen.py:104 plugins/seen.py:111
+#: plugins/seen.py:115 plugins/uptime.py:48 plugins/uptime.py:55
+#: plugins/uptime.py:62 plugins/uptime.py:66
+msgid " and "
+msgstr ""
+
+#: plugins/seen.py:102 plugins/uptime.py:53
+msgid "{} hour"
+msgid_plural "{} hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: plugins/seen.py:109 plugins/uptime.py:60
+msgid "{} minute"
+msgid_plural "{} minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: plugins/seen.py:114 plugins/uptime.py:65
+msgid "{} second"
+msgid_plural "{} seconds"
+msgstr[0] ""
+msgstr[1] ""
+
+#: plugins/seen.py:138
+msgid "Updating seen record for {!r}."
+msgstr ""
+
+#: plugins/texy.py:25
+msgid "Return the message processed by Texy! If not message is given, return Texy! version."
+msgstr ""
+
+#: plugins/texy.py:25
+msgid "[message]"
+msgstr ""
+
+#: plugins/twitter.py:49
+msgid "Got error while getting twitter status {}."
+msgstr ""
+
+#: plugins/uptime.py:27
+msgid "Bot's uptime"
+msgstr ""
+
+#: plugins/uptime.py:27
+msgid "Time since the last bot reload."
+msgstr ""
+
+#: plugins/uptime.py:33
+msgid "I'm up {}."
+msgstr ""
+
+#: plugins/vocabulary.py:32
+msgid "Create dictionary"
+msgstr ""
+
+#: plugins/vocabulary.py:32
+msgid "Creates dictionary for storing phrase translations between lang1 and lang2"
+msgstr ""
+
+#: plugins/vocabulary.py:32 plugins/vocabulary.py:36 plugins/vocabulary.py:37
+msgid "lang1 lang2"
+msgstr ""
+
+#: plugins/vocabulary.py:33
+msgid "List of dictionaries"
+msgstr ""
+
+#: plugins/vocabulary.py:33
+msgid "Display the list of dictionaries."
+msgstr ""
+
+#: plugins/vocabulary.py:34
+msgid "Add phrase"
+msgstr ""
+
+#: plugins/vocabulary.py:34
+msgid "Stores the translation of the phrase."
+msgstr ""
+
+#: plugins/vocabulary.py:34
+msgid "lang1 lang2 phrase1 ([note1]) phrase2 ([note2])"
+msgstr ""
+
+#: plugins/vocabulary.py:35
+msgid "Delete phrase"
+msgstr ""
+
+#: plugins/vocabulary.py:35
+msgid "Deletes the translation of the phrase."
+msgstr ""
+
+#: plugins/vocabulary.py:35
+msgid "lang1 lang2 phrase1 () phrase2"
+msgstr ""
+
+#: plugins/vocabulary.py:36
+msgid "List vocabulary"
+msgstr ""
+
+#: plugins/vocabulary.py:36
+msgid "Display the list of stored translations in the dictionary."
+msgstr ""
+
+#: plugins/vocabulary.py:37
+msgid "Start test"
+msgstr ""
+
+#: plugins/vocabulary.py:37
+msgid "Starts the test of phrase translations lang1 > lang2."
+msgstr ""
+
+#: plugins/vocabulary.py:38
+msgid "Stop test"
+msgstr ""
+
+#: plugins/vocabulary.py:38
+msgid "Stops the current test."
+msgstr ""
+
+#: plugins/vocabulary.py:58
+msgid "WRONG! Correct answer: {}"
+msgstr ""
+
+#: plugins/vocabulary.py:71
+msgid "This dictionary already exists."
+msgstr ""
+
+#: plugins/vocabulary.py:74
+msgid "Dictionary {} - {} created."
+msgstr ""
+
+#: plugins/vocabulary.py:81
+msgid "No dictionaries found."
+msgstr ""
+
+#: plugins/vocabulary.py:82
+msgid "Dictionaries"
+msgstr ""
+
+#: plugins/vocabulary.py:90
+msgid "Saved."
+msgstr ""
+
+#: plugins/vocabulary.py:100
+msgid "Deleted."
+msgstr ""
+
+#: plugins/vocabulary.py:111 plugins/vocabulary.py:139
+#: plugins/vocabulary.py:172
+msgid "This dictionary does not exist."
+msgstr ""
+
+#: plugins/vocabulary.py:126
+msgid "No phrases in dictionary {} - {}."
+msgstr ""
+
+#: plugins/vocabulary.py:128
+msgid "Vocabulary from dictionary {} - {}"
+msgstr ""
+
+#: plugins/vocabulary.py:144
+msgid "The dictionary is empty!"
+msgstr ""
+
+#: plugins/vocabulary.py:154
+msgid "OK"
+msgstr ""
+
+#: plugins/vocabulary.py:162
+msgid "You must supply names of two languages separated by space."
+msgstr ""
+
+#: plugins/vocabulary.py:168
+msgid "Invalid format."
+msgstr ""

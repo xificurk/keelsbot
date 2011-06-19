@@ -1,0 +1,911 @@
+# KeelsBot Czech translation
+# Copyright (C) 2011 Petr Morávek
+# This file is distributed under the same license as the keelsbot package.
+# Petr Morávek <xificurk@gmail.com>, 2011.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: keelsbot-0.5.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-06-20 12:55+0200\n"
+"PO-Revision-Date: 2011-06-20 12:56+0100\n"
+"Last-Translator: Petr Morávek <xificurk@gmail.com>\n"
+"Language-Team: Czech\n"
+"Language: Czech\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : ((n>=2 && n<=4) ? 1 : 2);\n"
+"X-Poedit-Language: Czech\n"
+"X-Poedit-Country: CZECH REPUBLIC\n"
+
+#: keelsbot.py:106
+msgid "Logging in as {!r}."
+msgstr "Přihlašuji se jako {!r}."
+
+#: keelsbot.py:130
+msgid "Disconnecting the bot."
+msgstr "Odpojuji bota."
+
+#: keelsbot.py:135
+msgid "EVENT: {}"
+msgstr "UDÁLOST: {}"
+
+#: keelsbot.py:186
+msgid "Command {!r} with args {!r}"
+msgstr "Příkaz {!r} s argumenty {!r}"
+
+#: keelsbot.py:201
+msgid "Re-syncing with required MUC rooms."
+msgstr "Synchronizuji přítomnost v MUC místnostech."
+
+#: keelsbot.py:206
+msgid "Leaving MUC room {!r}."
+msgstr "Opouštím MUC místnost {!r}."
+
+#: keelsbot.py:210
+msgid "Joining MUC room {!r} as {!r}."
+msgstr "Vstupuji do místnosti {!r} jako {!r}."
+
+#: keelsbot.py:237
+msgid "Using {!r} for JID {!r}."
+msgstr "Používám {!r} pro JID {!r}."
+
+#: keelsbot.py:257
+msgid "Registering bot plugin {!r}."
+msgstr "Registruji {!r} plugin bota."
+
+#: keelsbot.py:261
+msgid "Bot plugin {!r} is already registered."
+msgstr "{!r} plugin bota je již registrován."
+
+#: keelsbot.py:282
+msgid "Bot plugin {!r} needs SleekXMPP plugin {!r}."
+msgstr "{!r} plugin bota potřebuje SleekXMPP plugin {!r}."
+
+#: keelsbot.py:289
+msgid "Loading of bot plugin {!r} FAILED."
+msgstr "Načtení {!r} pluginu bota SELHALO."
+
+#: keelsbot.py:307
+msgid "Deregistering bot plugin {!r}."
+msgstr "Ruším {!r} plugin bota."
+
+#: keelsbot.py:310
+msgid "Calling the shutdown method of bot plugin {!r}."
+msgstr "Volám shutdown metodu {!r} pluginu bota."
+
+#: keelsbot.py:351
+msgid "Usage"
+msgstr "Použití"
+
+#: keelsbot.py:445
+msgid "Cleaning bot configuration before reload."
+msgstr "Resetuji konfiguraci bota před znovunačtením."
+
+#: keelsbot.py:452
+msgid "Reloading bot configuration."
+msgstr "Znovu načítám konfiguraci bota."
+
+#: keelsbot.py:463
+msgid "Restarting the bot."
+msgstr "Restartuji bota."
+
+#: keelsbot.py:479
+msgid "No storage element found in config file - proceeding with no persistent storage, plugin behaviour may be undefined."
+msgstr "V konfiguraci nebyl nalezen storage element - pokračuji bez trvalého uložiště, některé pluginy mohou selhat."
+
+#: keelsbot.py:513
+msgid "Ignoring MUC with empty room attribute."
+msgstr "Ignoruji MUC s prázdným atributem room."
+
+#: keelsbot.py:533
+msgid "Ignoring unnamed SleekXMPP plugin."
+msgstr "Ignoruji nepojmenovaný SleekXMPP plugin."
+
+#: keelsbot.py:562
+msgid "Ignoring unnamed bot plugin."
+msgstr "Ignoruji nepojmenovaný plugin bota."
+
+#: keelsbot.py:564
+msgid "Adding bot plugin {!r}."
+msgstr "Přidávám {!r} plugin bota."
+
+#: keelsbot.py:593
+msgid "disable usage of colored output"
+msgstr "vypnout používání barevného výstupu"
+
+#: keelsbot.py:594
+msgid "set logging to ERROR"
+msgstr "nastavit úroveň logování na ERROR"
+
+#: keelsbot.py:595
+msgid "set logging to INFO"
+msgstr "nastavit úroveň logování na INFO"
+
+#: keelsbot.py:596
+msgid "set logging to DEBUG"
+msgstr "nastavit úroveň logování na DEBUG"
+
+#: keelsbot.py:597
+msgid "set logging to ALL"
+msgstr "nastavit úroveň logování na ALL"
+
+#: keelsbot.py:598
+msgid "path to config file"
+msgstr "umístění konfiguračního souboru"
+
+#: keelsbot.py:607
+msgid "You need at least Python {} to run this script."
+msgstr "Tento skript vyžaduje Python verze {}, nebo vyšší."
+
+#: keelsbot.py:611
+msgid "Config file {!r} not found."
+msgstr "Konfigurační soubor {!r} nenalezen."
+
+#: keelsbot.py:620
+msgid "Unexpected error... killing the bot."
+msgstr "Neočekávaná chyba... zabíjím bota."
+
+#: plugins/admin.py:29
+msgid "Reload"
+msgstr "Znovunačtení konfigurace"
+
+#: plugins/admin.py:29
+msgid "Reload the bot configuration and apply changes without disconnecting."
+msgstr "Znovu načíst konfiguraci a pluginy bota aniž by se odpojil z jabberu."
+
+#: plugins/admin.py:30
+msgid "Restart"
+msgstr "Restart"
+
+#: plugins/admin.py:30
+msgid "Completely restart the bot."
+msgstr "Restartovat bota a znovu připojit."
+
+#: plugins/admin.py:31
+msgid "Die"
+msgstr "Umřít"
+
+#: plugins/admin.py:31
+msgid "Kill the bot."
+msgstr "Killnout bota."
+
+#: plugins/admin.py:32
+msgid "Log level"
+msgstr "Úroveň logování"
+
+#: plugins/admin.py:32
+msgid "Set the level of logging."
+msgstr "Nastavit úroveň logování."
+
+#: plugins/admin.py:33
+msgid "User level"
+msgstr "Level uživatele"
+
+#: plugins/admin.py:33
+msgid "Display user's access level."
+msgstr "Vypíe úrove pístupu odesilatele."
+
+#: plugins/admin.py:37
+msgid "Reloaded, boss."
+msgstr "Znovu načteno, šéfiku."
+
+#: plugins/admin.py:41
+msgid "Restarted, boss."
+msgstr "Restartováno, šéfiku."
+
+#: plugins/admin.py:45
+msgid "Dying..."
+msgstr "Umírám..."
+
+#: plugins/admin.py:55
+#: plugins/admin.py:58
+msgid "You must input the number in range 0-50, or one of the values {}."
+msgstr "Musíš zadat číslo v rozmezí 0-50, nebo jednu z hodnot {}."
+
+#: plugins/admin.py:61
+msgid "Log level changed..."
+msgstr "Úroveň logování změněna..."
+
+#: plugins/admin.py:64
+msgid "You're on level {}."
+msgstr "Jsi na levelu {}."
+
+#: plugins/antispam.py:38
+msgid "Configuration error - type attribute of limit required."
+msgstr "Chybná konfigurace - type atribut je vyžadován pro limit."
+
+#: plugins/antispam.py:45
+msgid "Configuration error - {} attribute of limit required and must be digit."
+msgstr "Chybná konfigurace - číselný {} atribut je vyžadován pro limit."
+
+#: plugins/antispam.py:50
+msgid "Configuration error - no limits given."
+msgstr "Chybná konfigurace - nebyly nastaveny žádné limity."
+
+#: plugins/antispam.py:54
+#: plugins/chatbot.py:45
+#: plugins/twitter.py:31
+msgid "Configuration error - room attribute of muc required."
+msgstr "Chybná konfigurace - room atribut je vyžadován pro muc."
+
+#: plugins/antispam.py:62
+msgid "Enabling spam protection in room {}."
+msgstr "Zapínám protekci proti spamu v místnosti {}."
+
+#: plugins/antispam.py:151
+msgid "Got {} users in history and {} in spammers."
+msgstr "Zůstalo {} uživatelů v historii a {} ve spammerech."
+
+#: plugins/antispam.py:155
+msgid "Warning {!r} in room {}."
+msgstr "Varuji {!r} v místnosti {}."
+
+#: plugins/antispam.py:157
+msgid "Stop spamming!"
+msgstr "Nespamuj!"
+
+#: plugins/antispam.py:162
+msgid "Kicking {!r} from room {}."
+msgstr "Kickuju {!r} z místnosti {}."
+
+#: plugins/antispam.py:167
+msgid "Banning {!r} from room {}."
+msgstr "Banuju {!r} v místnosti {}."
+
+#: plugins/definitions.py:26
+msgid "Definition"
+msgstr "Definice"
+
+#: plugins/definitions.py:26
+msgid "Stores (or deletes) the definition in database."
+msgstr "Uloží (příp. smaže) definici do databáze."
+
+#: plugins/definitions.py:26
+#: plugins/definitions.py:27
+msgid "multiword expression = [definition]"
+msgstr "víceslovný název = [definice]"
+
+#: plugins/definitions.py:27
+msgid "Definition with lock"
+msgstr "Definice se zámkem"
+
+#: plugins/definitions.py:27
+msgid "Stores (or deletes) the definition in database and locks the definition against change by users with lower privileges than the author."
+msgstr "Uloží (příp. smaže) definici do databáze a uzamkne ji proti editaci uživateli s nižšími právy než autor."
+
+#: plugins/definitions.py:28
+msgid "Display definition"
+msgstr "Zobrazí definici"
+
+#: plugins/definitions.py:28
+msgid "Display the definition stored in database"
+msgstr "Vrátí uloženou definici z databáze."
+
+#: plugins/definitions.py:28
+msgid "multiword expression"
+msgstr "víceslovný název"
+
+#: plugins/definitions.py:34
+msgid "Didn't you forget something?"
+msgstr "Něco ti tam chybí, šéfiku!"
+
+#: plugins/definitions.py:39
+msgid "You must specify what term you want to define!"
+msgstr "Musíš zadat, co chceš definovat!"
+
+#: plugins/definitions.py:43
+msgid "Sorry, you don't have permission to edit this definition."
+msgstr "Sorry, ale na tuhle editaci nemáš právo."
+
+#: plugins/definitions.py:47
+msgid "Deleted (if there even was something ;-))"
+msgstr "Smazáno (pokud to tam teda bylo ;-))"
+
+#: plugins/definitions.py:60
+msgid "I have no idea, who or what is {}."
+msgstr "Vůbec netuším, kdo nebo co je {}."
+
+#: plugins/definitions.py:83
+msgid "Updating definiton of {!r} with level {}."
+msgstr "Aktualizuji definici {!r} s levelem {}."
+
+#: plugins/definitions.py:87
+msgid "Deleting definition of {!r}."
+msgstr "Mažu definici {!r}."
+
+#: plugins/feedreader.py:42
+msgid "Configuration error - jid attribute of subscriber required."
+msgstr "Chybná konfigurace - jid atribut vyžadován pro subscriber."
+
+#: plugins/feedreader.py:48
+msgid "Configuration error - no subscribers given."
+msgstr "Chybná konfigurace - nebyli nastaveni žádní adresáti."
+
+#: plugins/feedreader.py:52
+msgid "Configuration error - url attribute of feed required."
+msgstr "Chybná konfigurace - url atribut vyžadován pro feed."
+
+#: plugins/feedreader.py:57
+msgid "Scheduling {!r} feed check every {} minutes."
+msgstr "Plánuji kontrolu feedu {!r} každých {} minut."
+
+#: plugins/feedreader.py:101
+msgid "Entering feed loop."
+msgstr "Startuji smyčku feedu."
+
+#: plugins/feedreader.py:114
+msgid "Checking feed {}."
+msgstr "Kontroluji feed {}."
+
+#: plugins/feedreader.py:128
+msgid "Found new item {!r} in feed {}."
+msgstr "Nalezl jsem novou položku {!r} ve feedu {}."
+
+#: plugins/feedreader.py:133
+msgid "Exiting feed loop."
+msgstr "Končím smyčku feedu."
+
+#: plugins/feedreader.py:137
+msgid "Entering message loop."
+msgstr "Startuji smyčku zpráv."
+
+#: plugins/feedreader.py:153
+msgid "Cannot send feed alert, the bot is not in room {!r}."
+msgstr "Nemůžu poslat upozornění o feedu, bot nesedí v místnosti {!r}."
+
+#: plugins/feedreader.py:165
+msgid "Exiting message loop."
+msgstr "Končím smyčku zpráv."
+
+#: plugins/feedreader.py:181
+msgid "Storing new item {} in feed {}."
+msgstr "Ukládám novou položku {} z feedu {}."
+
+#: plugins/feedreader.py:210
+msgid "Error occured while checking feed {}."
+msgstr "Nastala chyba během kontrolování feedu {}."
+
+#: plugins/feedreader.py:217
+msgid "Could not fetch URL {}."
+msgstr "Nepodařilo se načíst URL {}."
+
+#: plugins/help.py:26
+msgid "Help"
+msgstr "Nápověda"
+
+#: plugins/help.py:26
+msgid "If no topic was given, display the list of available commands and other help topics. Otherwise display the help for a given topic."
+msgstr "Pokud nebylo určeno téma, vypíše seznam dostupných příkazů a dalších možných témat nápovědy. V opačném případě vypíše nápovědu na dané téma."
+
+#: plugins/help.py:26
+msgid "[command/topic]"
+msgstr "[příkaz/téma]"
+
+#: plugins/help.py:27
+msgid "Commands"
+msgstr "Příkazy"
+
+#: plugins/help.py:27
+msgid "Display list of available commands."
+msgstr "Vypíše seznam dostupných příkazů."
+
+#: plugins/help.py:30
+msgid "Available commands"
+msgstr "Dostupné příkazy"
+
+#: plugins/help.py:50
+msgid "Other available help topics"
+msgstr "Další témata nápovědy"
+
+#: plugins/help.py:63
+msgid "Don't know..."
+msgstr "Neznám, neumím..."
+
+#: plugins/chatbot.py:53
+msgid "Starting to chat in room {}"
+msgstr "Začínám se vykecávat v místnosti {}"
+
+#: plugins/chatbot.py:56
+msgid "NOT starting to chat in room {}"
+msgstr "NEzačínám se vykecávat v místnosti {}"
+
+#: plugins/chatbot.py:61
+msgid "Configuration error - path attribute of dictionary required."
+msgstr "Chybná konfigurace - path atribut vyžadován pro dictionary."
+
+#: plugins/chatbot.py:70
+msgid "Disable chatbot in MUC"
+msgstr "Vypnout chatbota v MUC"
+
+#: plugins/chatbot.py:70
+msgid "Bot stops replying in public chat of given (or current) MUC."
+msgstr "Bot se přestane vykecávat v zadaném (příp. v tomto) MUC."
+
+#: plugins/chatbot.py:70
+#: plugins/chatbot.py:71
+msgid "[room@server]"
+msgstr "[místnost@server]"
+
+#: plugins/chatbot.py:71
+msgid "Enable chatbot in MUC"
+msgstr "Zapnout chatbota v MUC"
+
+#: plugins/chatbot.py:71
+msgid "Bot starts replying in public chat of given (or current) MUC."
+msgstr "Bot se začne vykecávat v zadaném (příp. v tomto) MUC."
+
+#: plugins/chatbot.py:72
+msgid "Reload conversation files"
+msgstr "Znovunačíst soubory s konverzacemi"
+
+#: plugins/chatbot.py:72
+msgid "Reloads conversation files without dropping out of MUC or forgetting current state."
+msgstr "Znovu načte soubory s konverzacemi aniž by opustil MUC nebo zapomněl současný stav konverzací."
+
+#: plugins/chatbot.py:84
+msgid "OK, I'll start chatting in room {}."
+msgstr "OK, začnu se vykecávat v místnosti {}."
+
+#: plugins/chatbot.py:86
+msgid "Sorry, I can't chat in room {} at all."
+msgstr "V místnosti {} se vůbec nemůžu vykecávat."
+
+#: plugins/chatbot.py:94
+msgid "OK, I'll stop chatting in room {}."
+msgstr "OK, přestanu se vykecávat v místnosti {}."
+
+#: plugins/chatbot.py:96
+msgid "Sorry, I don't chat in room {} at all."
+msgstr "V místnosti {} já ale vůbec nekecám."
+
+#: plugins/chatbot.py:100
+msgid "Conversation files reloaded."
+msgstr "Soubory s konverzacemi znovu načteny."
+
+#: plugins/chatbot.py:101
+msgid "OK, I've reloaded conversation files ;-)"
+msgstr "OK, soubory s konverzacemi znovu načteny ;-)"
+
+#: plugins/chatbot.py:301
+msgid "Filter error: {}."
+msgstr "Chyba filtru: {}."
+
+#: plugins/chatbot.py:347
+msgid "Loading conversation file {}."
+msgstr "Načítám soubor s konverzacemi {}."
+
+#: plugins/chatbot.py:368
+msgid "Regular expression error: {!r}."
+msgstr "Chyba regulárního výrazu: {!r}."
+
+#: plugins/chatbot.py:394
+msgid "Could not find matching element with id {!r}."
+msgstr "Nepodařilo se nalézt element s id {!r}."
+
+#: plugins/chatbot.py:397
+msgid "Getting response for {!r}."
+msgstr "Hledám odpověď pro {!r}."
+
+#: plugins/chatbot.py:402
+msgid "Got {} queries left from {}, {}, {}."
+msgstr "Zůstalo {} dotazů z {}, {}, {}."
+
+#: plugins/chatbot.py:432
+#: plugins/vocabulary.py:200
+msgid "Randomly choosing from {} choices (weight sum {})."
+msgstr "Náhodně vybírám z {} možností (suma váh {})."
+
+#: plugins/muc_log.py:31
+msgid "Configuration error - room attribute of log required."
+msgstr "Chybná konfigurace - room atribut vyžadován pro log."
+
+#: plugins/muc_log.py:38
+msgid "Configuration error - file attribute of log required."
+msgstr "Chybná konfigurace - file atribut vyžadován pro log."
+
+#: plugins/muc_log.py:41
+msgid "Starting logging of room {!r} to file {}."
+msgstr "Začínám logovat místnost {!r} do souboru {}."
+
+#: plugins/muc_log.py:113
+msgid "has been kicked"
+msgstr "byl vykpnut"
+
+#: plugins/muc_log.py:113
+msgid "has been banned"
+msgstr "byl zabanován"
+
+#: plugins/muc_log.py:117
+msgid "Openning log file {!r}."
+msgstr "Otvírám soubor s logem {!r}."
+
+#: plugins/muc_log.py:119
+msgid "Logging started"
+msgstr "Začátek logování"
+
+#: plugins/muc_log.py:147
+msgid "Subject has been set to"
+msgstr "Téma bylo nastaveno na"
+
+#: plugins/muc_log.py:149
+msgid "has set the subject to"
+msgstr "nastavil téma na"
+
+#: plugins/muc_log.py:155
+msgid "has joined the room as"
+msgstr "vstoupil do místnosti jako"
+
+#: plugins/muc_log.py:161
+msgid "has left the room"
+msgstr "opustil místnost"
+
+#: plugins/muc_presence.py:33
+msgid "Current number of users in room"
+msgstr "Počet uživatelů v místnosti"
+
+#: plugins/muc_presence.py:33
+msgid "Display current number of users in MUC room."
+msgstr "Zobrazí současný počet uživatelů v MUC místnosti."
+
+#: plugins/muc_presence.py:34
+msgid "Highest number of users in room"
+msgstr "Nejvyšší počet uživatelů v místnosti"
+
+#: plugins/muc_presence.py:34
+msgid "Display historically highest number of users in MUC room."
+msgstr "Zobrazí historicky nejvyšší počet uživatelů v místnosti a datum, kdy k tomu došlo."
+
+#: plugins/muc_presence.py:52
+msgid "There is historically highest number of users in the room ({})."
+msgstr "V místnosti je historicky nejvyšší počet uživatelů ({})."
+
+#: plugins/muc_presence.py:60
+msgid "There is currently {} user present in the room."
+msgid_plural "There are currently {} users present in the room."
+msgstr[0] "Momentálně tu vidím {} uživatele."
+msgstr[1] "Momentálně tu vidím {} uživatele."
+msgstr[2] "Momentálně tu vidím {} uživatelů."
+
+#: plugins/muc_presence.py:71
+msgid "Historically highest number of users was recorded {:%m/%d/%y (%H:%M)}, {} user was present."
+msgid_plural "Historically highest number of users was recorded at {:%m/%d/%y (%H:%M)}, {} users were present."
+msgstr[0] "Nejvíc narváno tu bylo v {:%H:%M %d.%m.%Y}, to jsem tu viděl {} uživatele."
+msgstr[1] "Nejvíc narváno tu bylo v {:%H:%M %d.%m.%Y}, to jsem tu viděl {} uživatele."
+msgstr[2] "Nejvíc narváno tu bylo v {:%H:%M %d.%m.%Y}, to jsem tu viděl {} uživatelů."
+
+#: plugins/muc_presence.py:86
+msgid "Updating muc_presence record for {}."
+msgstr "Aktualizuji muc_presence záznam pro {}."
+
+#: plugins/muc_stability.py:76
+#: plugins/muc_stability.py:94
+msgid "Rejoining the room {} as {!r}."
+msgstr "Znovu se připojuji do {} jako {!r}."
+
+#: plugins/muc_stability.py:81
+msgid "Entering the loop."
+msgstr "Startuji smyčku."
+
+#: plugins/muc_stability.py:100
+msgid "Exiting the loop."
+msgstr "Končím smyčku."
+
+#: plugins/parrot.py:27
+msgid "Send message into MUC"
+msgstr "Zaslat zprávu do MUCu"
+
+#: plugins/parrot.py:27
+msgid "Bot sends the groupchat message into the specified MUC."
+msgstr "Bot odešle zprávu do veřejného chatu zadaného MUC."
+
+#: plugins/parrot.py:27
+msgid "room@server text"
+msgstr "místnost@server text"
+
+#: plugins/parrot.py:28
+msgid "Send message to JID"
+msgstr "Zaslat zprávu do JID"
+
+#: plugins/parrot.py:28
+msgid "Bot sends the message to the specified JID."
+msgstr "Bot odešle zprávu zadanému JID."
+
+#: plugins/parrot.py:28
+msgid "user@server text"
+msgstr "uzivatel@server text"
+
+#: plugins/parrot.py:34
+msgid "You've forgot to specify the MUC."
+msgstr "Zapomněl jsi napsat adresu MUCu."
+
+#: plugins/parrot.py:36
+msgid "I'm not in the room {}."
+msgstr "V místnosti {} já vůbec nejsem."
+
+#: plugins/parrot.py:38
+#: plugins/parrot.py:46
+msgid "Sent"
+msgstr "Odesláno"
+
+#: plugins/parrot.py:44
+msgid "You've forgot to specify the JID."
+msgstr "Zapomněl jsi napsat jabber adresu."
+
+#: plugins/pastebin.py:31
+msgid ""
+"Sends code snippet to pastebin.com\n"
+"At first line are optional arguments separated by space in an arbitrary order - expiration (10M = 10 minutes, 1H = 1 hour, 1D = 1 day, 1M = 1 month, N = never), langauge format (see http://pastebin.com/api) and whether to send the link directly to MUC (1, defaults to 0 = send the link back to user). Default expiration is "
+msgstr ""
+"Odešle kód na pastebin.com.\n"
+"Na prvním řádku bere v libovolném pořadí volitelné parametry oddělené mezerou - platnost (10M = 10 minut, 1H = 1 hodina, 1D = 1 den, 1M = 1 měsíc, N = navždy), název jazyku (podle http://pastebin.com/api.php), a zda odeslat vygenerovaný odkaz přímo do veřejného chatu (1, výchozí hodnota je 0, tzn. poslat odkaz zpátky odkud přišel požadavek). Výchozí hodnota platnosti je "
+
+#: plugins/pastebin.py:31
+msgid " and language "
+msgstr " a jazyku "
+
+#: plugins/pastebin.py:31
+msgid "All other lines are treated as code content."
+msgstr "Na všech dalších řádcích je samotný kód."
+
+#: plugins/pastebin.py:31
+msgid "code"
+msgstr "kód"
+
+#: plugins/pastebin.py:36
+msgid "Invalid input, see help."
+msgstr "Neplatné zadání, mrkni na !help paste."
+
+#: plugins/pastebin.py:69
+#: plugins/pastebin.py:73
+msgid "ERROR"
+msgstr "CHYBA"
+
+#: plugins/pastebin.py:76
+msgid "{} sent code snippet {}"
+msgstr "{} vložil {}"
+
+#: plugins/seen.py:31
+msgid "Last seen user"
+msgstr "Naposledy viděn"
+
+#: plugins/seen.py:31
+msgid "Displays the last sighting of the user."
+msgstr "Kdy byl zadaný uživatel naposledy spatřen?"
+
+#: plugins/seen.py:31
+msgid "nick"
+msgstr "přezdívka"
+
+#: plugins/seen.py:63
+msgid "You have to tell me about whom you want information!"
+msgstr "Lamo! Musíš napsat, o kom chceš informace! ;-)"
+
+#: plugins/seen.py:67
+msgid "{}? I have no idea about whom you're talking..."
+msgstr "{}? Vůbec netuším, o kom je řeč..."
+
+#: plugins/seen.py:73
+msgid " writing \"{}\""
+msgstr ", jak píše \"{}\""
+
+#: plugins/seen.py:78
+msgid " leaving room"
+msgstr ", jak opouští místnost"
+
+#: plugins/seen.py:80
+msgid " in room"
+msgstr " v místnosti"
+
+#: plugins/seen.py:82
+msgid "{} was last seen{} {} before {}{}"
+msgstr "{} byl naposledy spatřen{} {} před {}{}."
+
+#: plugins/seen.py:90
+#: plugins/uptime.py:41
+msgid "{} month"
+msgid_plural "{} months"
+msgstr[0] "{} měsíc"
+msgstr[1] "{} měsíce"
+msgstr[2] "{} měsíců"
+
+#: plugins/seen.py:95
+#: plugins/uptime.py:46
+msgid "{} day"
+msgid_plural "{} days"
+msgstr[0] "{} den"
+msgstr[1] "{} dny"
+msgstr[2] "{} dnů"
+
+#: plugins/seen.py:97
+#: plugins/seen.py:104
+#: plugins/seen.py:111
+#: plugins/seen.py:115
+#: plugins/uptime.py:48
+#: plugins/uptime.py:55
+#: plugins/uptime.py:62
+#: plugins/uptime.py:66
+msgid " and "
+msgstr " a "
+
+#: plugins/seen.py:102
+#: plugins/uptime.py:53
+msgid "{} hour"
+msgid_plural "{} hours"
+msgstr[0] "{} hodina"
+msgstr[1] "{} hodiny"
+msgstr[2] "{} hodin"
+
+#: plugins/seen.py:109
+#: plugins/uptime.py:60
+msgid "{} minute"
+msgid_plural "{} minutes"
+msgstr[0] "{} minuta"
+msgstr[1] "{} minuty"
+msgstr[2] "{} minut"
+
+#: plugins/seen.py:114
+#: plugins/uptime.py:65
+msgid "{} second"
+msgid_plural "{} seconds"
+msgstr[0] "{} sekunda"
+msgstr[1] "{} sekundy"
+msgstr[2] "{} sekund"
+
+#: plugins/seen.py:138
+msgid "Updating seen record for {!r}."
+msgstr "Aktualizuji seen záznam pro {!r}."
+
+#: plugins/texy.py:25
+msgid "Return the message processed by Texy! If not message is given, return Texy! version."
+msgstr "Zpracuje zprávu pomocí Texy! Pokud není předána žádná zpráva, vypíše verzi Texy!"
+
+#: plugins/texy.py:25
+msgid "[message]"
+msgstr "[zpráva]"
+
+#: plugins/twitter.py:49
+msgid "Got error while getting twitter status {}."
+msgstr "Chyba při získávání twitter statusu {}."
+
+#: plugins/uptime.py:27
+msgid "Bot's uptime"
+msgstr "Uptime bota"
+
+#: plugins/uptime.py:27
+msgid "Time since the last bot reload."
+msgstr "Čas od posledního reloadu bota."
+
+#: plugins/uptime.py:33
+msgid "I'm up {}."
+msgstr "Jsem vzhůru už {}."
+
+#: plugins/vocabulary.py:32
+msgid "Create dictionary"
+msgstr "Vytvořit slovník"
+
+#: plugins/vocabulary.py:32
+msgid "Creates dictionary for storing phrase translations between lang1 and lang2"
+msgstr "Vytvoří slovník pro ukládání překladů slovíček mezi jazyk1 a jazyk2."
+
+#: plugins/vocabulary.py:32
+#: plugins/vocabulary.py:36
+#: plugins/vocabulary.py:37
+msgid "lang1 lang2"
+msgstr "jazyk1 jazyk2"
+
+#: plugins/vocabulary.py:33
+msgid "List of dictionaries"
+msgstr "Seznam slovníků"
+
+#: plugins/vocabulary.py:33
+msgid "Display the list of dictionaries."
+msgstr "Zobrazí seznam slovníků."
+
+#: plugins/vocabulary.py:34
+msgid "Add phrase"
+msgstr "Přidat slovíčko"
+
+#: plugins/vocabulary.py:34
+msgid "Stores the translation of the phrase."
+msgstr "Uloží překlad slovíčka."
+
+#: plugins/vocabulary.py:34
+msgid "lang1 lang2 phrase1 ([note1]) phrase2 ([note2])"
+msgstr "jazyk1 jazyk2 slovíčko1 ([poznámka1]) slovíčko2 ([poznámka2])"
+
+#: plugins/vocabulary.py:35
+msgid "Delete phrase"
+msgstr "Smazat slovíčko"
+
+#: plugins/vocabulary.py:35
+msgid "Deletes the translation of the phrase."
+msgstr "Smaže překlad slovíčka."
+
+#: plugins/vocabulary.py:35
+msgid "lang1 lang2 phrase1 () phrase2"
+msgstr "jazyk1 jazyk2 slovíčko1 () slovíčko2"
+
+#: plugins/vocabulary.py:36
+msgid "List vocabulary"
+msgstr "Seznam slovíček"
+
+#: plugins/vocabulary.py:36
+msgid "Display the list of stored translations in the dictionary."
+msgstr "Zobrazí seznam uložených frází v daném slovníku."
+
+#: plugins/vocabulary.py:37
+msgid "Start test"
+msgstr "Začít test"
+
+#: plugins/vocabulary.py:37
+msgid "Starts the test of phrase translations lang1 > lang2."
+msgstr "Začne test ze znalosti slovíček jazyk1 > jazyk2."
+
+#: plugins/vocabulary.py:38
+msgid "Stop test"
+msgstr "Ukončit test"
+
+#: plugins/vocabulary.py:38
+msgid "Stops the current test."
+msgstr "Zastaví právě probíhající test."
+
+#: plugins/vocabulary.py:58
+msgid "WRONG! Correct answer: {}"
+msgstr "CHYBA! Správně: {}"
+
+#: plugins/vocabulary.py:71
+msgid "This dictionary already exists."
+msgstr "Tento slovník už existuje."
+
+#: plugins/vocabulary.py:74
+msgid "Dictionary {} - {} created."
+msgstr "Slovník {} - {} vytvořen."
+
+#: plugins/vocabulary.py:81
+msgid "No dictionaries found."
+msgstr "Nenalezeny žádné slovníky."
+
+#: plugins/vocabulary.py:82
+msgid "Dictionaries"
+msgstr "Slovníky"
+
+#: plugins/vocabulary.py:90
+msgid "Saved."
+msgstr "Uloženo."
+
+#: plugins/vocabulary.py:100
+msgid "Deleted."
+msgstr "Smazáno."
+
+#: plugins/vocabulary.py:111
+#: plugins/vocabulary.py:139
+#: plugins/vocabulary.py:172
+msgid "This dictionary does not exist."
+msgstr "Tento slovník neexistuje."
+
+#: plugins/vocabulary.py:126
+msgid "No phrases in dictionary {} - {}."
+msgstr "Žádná slovíčka ve slovníku {} - {}."
+
+#: plugins/vocabulary.py:128
+msgid "Vocabulary from dictionary {} - {}"
+msgstr "Slovíčka ze slovníku {} - {}"
+
+#: plugins/vocabulary.py:144
+msgid "The dictionary is empty!"
+msgstr "Slovník je prázdný!"
+
+#: plugins/vocabulary.py:154
+msgid "OK"
+msgstr "OK"
+
+#: plugins/vocabulary.py:162
+msgid "You must supply names of two languages separated by space."
+msgstr "Musíš zadat dva jazyky oddělené mezerou."
+
+#: plugins/vocabulary.py:168
+msgid "Invalid format."
+msgstr "Neplatný formát."
+
