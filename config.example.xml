@@ -120,6 +120,10 @@
         </plugin>
         <plugin name="seen" />
         <plugin name="texy" />
+        <plugin name="twitter">
+            <!-- List of rooms where the bot should expand twitter statuses. -->
+            <muc room="room@server.com" />
+        </plugin>
         <plugin name="uptime" />
         <plugin name="vocabulary" />
     </keels>
