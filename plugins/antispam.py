@@ -137,14 +137,14 @@ class antispam:
 
         # Cleanup
         age = now - max_interval
-        for jid in history:
+        for jid in list(history.keys()):
             if history[jid][-1][0] < age:
                 del history[jid]
             else:
                 while len(history[jid]) > 0 and history[jid][0][0] < age:
                     del history[jid][0]
         age = now - max_expiration
-        for jid in spammers:
+        for jid in list(spammers.keys()):
             if spammers[jid][0] < age:
                 del spammers[jid]
 
