@@ -220,15 +220,15 @@ class BaseBot(sleekxmpp.ClientXMPP):
         """
         if isinstance(jid, str):
             jid = JID(jid)
-        user = JID("")
+        user = None
 
         plugin = self.plugin.get("xep_0045")
-        if plugin is not None and jid.bare in plugin.rooms:
+        if plugin is not None and jid.bare in plugin.getJoinedRooms():
             real_jid = plugin.getJidProperty(jid.bare, jid.resource, "jid")
             if real_jid is not None and real_jid.full not in ("", jid.full):
                 user = self._match_jid(real_jid)
 
-        if user.full == "":
+        if user is None:
             user = self._match_jid(jid)
 
         conf = self.users.get(user)
@@ -242,7 +242,7 @@ class BaseBot(sleekxmpp.ClientXMPP):
         for mask in self.users:
             if mask is not None and mask.domain == jid.domain and mask.user in ("", jid.user) and mask.resource in ("", jid.resource):
                 return mask
-        return JID("")
+        return None
 
     def register_bot_plugin(self, name, config, module=None):
         """
