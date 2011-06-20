@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: keelsbot-0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-20 12:55+0200\n"
-"PO-Revision-Date: 2011-06-20 12:56+0100\n"
+"POT-Creation-Date: 2011-06-20 17:05+0200\n"
+"PO-Revision-Date: 2011-06-20 17:14+0100\n"
 "Last-Translator: Petr Morávek <xificurk@gmail.com>\n"
 "Language-Team: Czech\n"
 "Language: Czech\n"
@@ -103,47 +103,47 @@ msgstr "Ignoruji MUC s prázdným atributem room."
 msgid "Ignoring unnamed SleekXMPP plugin."
 msgstr "Ignoruji nepojmenovaný SleekXMPP plugin."
 
-#: keelsbot.py:562
+#: keelsbot.py:559
 msgid "Ignoring unnamed bot plugin."
 msgstr "Ignoruji nepojmenovaný plugin bota."
 
-#: keelsbot.py:564
+#: keelsbot.py:561
 msgid "Adding bot plugin {!r}."
 msgstr "Přidávám {!r} plugin bota."
 
-#: keelsbot.py:593
+#: keelsbot.py:590
 msgid "disable usage of colored output"
 msgstr "vypnout používání barevného výstupu"
 
-#: keelsbot.py:594
+#: keelsbot.py:591
 msgid "set logging to ERROR"
 msgstr "nastavit úroveň logování na ERROR"
 
-#: keelsbot.py:595
+#: keelsbot.py:592
 msgid "set logging to INFO"
 msgstr "nastavit úroveň logování na INFO"
 
-#: keelsbot.py:596
+#: keelsbot.py:593
 msgid "set logging to DEBUG"
 msgstr "nastavit úroveň logování na DEBUG"
 
-#: keelsbot.py:597
+#: keelsbot.py:594
 msgid "set logging to ALL"
 msgstr "nastavit úroveň logování na ALL"
 
-#: keelsbot.py:598
+#: keelsbot.py:595
 msgid "path to config file"
 msgstr "umístění konfiguračního souboru"
 
-#: keelsbot.py:607
+#: keelsbot.py:604
 msgid "You need at least Python {} to run this script."
 msgstr "Tento skript vyžaduje Python verze {}, nebo vyšší."
 
-#: keelsbot.py:611
+#: keelsbot.py:608
 msgid "Config file {!r} not found."
 msgstr "Konfigurační soubor {!r} nenalezen."
 
-#: keelsbot.py:620
+#: keelsbot.py:617
 msgid "Unexpected error... killing the bot."
 msgstr "Neočekávaná chyba... zabíjím bota."
 
@@ -339,37 +339,33 @@ msgstr "Startuji smyčku feedu."
 msgid "Checking feed {}."
 msgstr "Kontroluji feed {}."
 
-#: plugins/feedreader.py:128
+#: plugins/feedreader.py:129
 msgid "Found new item {!r} in feed {}."
 msgstr "Nalezl jsem novou položku {!r} ve feedu {}."
 
-#: plugins/feedreader.py:133
+#: plugins/feedreader.py:135
 msgid "Exiting feed loop."
 msgstr "Končím smyčku feedu."
 
-#: plugins/feedreader.py:137
+#: plugins/feedreader.py:139
 msgid "Entering message loop."
 msgstr "Startuji smyčku zpráv."
 
-#: plugins/feedreader.py:153
+#: plugins/feedreader.py:155
 msgid "Cannot send feed alert, the bot is not in room {!r}."
 msgstr "Nemůžu poslat upozornění o feedu, bot nesedí v místnosti {!r}."
 
-#: plugins/feedreader.py:165
+#: plugins/feedreader.py:167
 msgid "Exiting message loop."
 msgstr "Končím smyčku zpráv."
 
-#: plugins/feedreader.py:181
+#: plugins/feedreader.py:183
 msgid "Storing new item {} in feed {}."
 msgstr "Ukládám novou položku {} z feedu {}."
 
-#: plugins/feedreader.py:210
+#: plugins/feedreader.py:219
 msgid "Error occured while checking feed {}."
 msgstr "Nastala chyba během kontrolování feedu {}."
-
-#: plugins/feedreader.py:217
-msgid "Could not fetch URL {}."
-msgstr "Nepodařilo se načíst URL {}."
 
 #: plugins/help.py:26
 msgid "Help"
@@ -404,12 +400,12 @@ msgid "Don't know..."
 msgstr "Neznám, neumím..."
 
 #: plugins/chatbot.py:53
-msgid "Starting to chat in room {}"
-msgstr "Začínám se vykecávat v místnosti {}"
-
-#: plugins/chatbot.py:56
 msgid "NOT starting to chat in room {}"
 msgstr "NEzačínám se vykecávat v místnosti {}"
+
+#: plugins/chatbot.py:56
+msgid "Starting to chat in room {}"
+msgstr "Začínám se vykecávat v místnosti {}"
 
 #: plugins/chatbot.py:61
 msgid "Configuration error - path attribute of dictionary required."
@@ -682,27 +678,31 @@ msgstr "přezdívka"
 msgid "You have to tell me about whom you want information!"
 msgstr "Lamo! Musíš napsat, o kom chceš informace! ;-)"
 
-#: plugins/seen.py:67
+#: plugins/seen.py:66
+msgid "I'm right HERE, you moron! ;-)"
+msgstr "Jsem TADY, ty pako! ;-)"
+
+#: plugins/seen.py:70
 msgid "{}? I have no idea about whom you're talking..."
 msgstr "{}? Vůbec netuším, o kom je řeč..."
 
-#: plugins/seen.py:73
+#: plugins/seen.py:76
 msgid " writing \"{}\""
 msgstr ", jak píše \"{}\""
 
-#: plugins/seen.py:78
+#: plugins/seen.py:81
 msgid " leaving room"
 msgstr ", jak opouští místnost"
 
-#: plugins/seen.py:80
+#: plugins/seen.py:83
 msgid " in room"
 msgstr " v místnosti"
 
-#: plugins/seen.py:82
-msgid "{} was last seen{} {} before {}{}"
-msgstr "{} byl naposledy spatřen{} {} před {}{}."
+#: plugins/seen.py:85
+msgid "It's {} since {} was seen{} {}{}."
+msgstr "Už je to {}, co jsem viděl {}{} {}{}."
 
-#: plugins/seen.py:90
+#: plugins/seen.py:93
 #: plugins/uptime.py:41
 msgid "{} month"
 msgid_plural "{} months"
@@ -710,7 +710,7 @@ msgstr[0] "{} měsíc"
 msgstr[1] "{} měsíce"
 msgstr[2] "{} měsíců"
 
-#: plugins/seen.py:95
+#: plugins/seen.py:98
 #: plugins/uptime.py:46
 msgid "{} day"
 msgid_plural "{} days"
@@ -718,10 +718,10 @@ msgstr[0] "{} den"
 msgstr[1] "{} dny"
 msgstr[2] "{} dnů"
 
-#: plugins/seen.py:97
-#: plugins/seen.py:104
-#: plugins/seen.py:111
-#: plugins/seen.py:115
+#: plugins/seen.py:100
+#: plugins/seen.py:107
+#: plugins/seen.py:114
+#: plugins/seen.py:118
 #: plugins/uptime.py:48
 #: plugins/uptime.py:55
 #: plugins/uptime.py:62
@@ -729,7 +729,7 @@ msgstr[2] "{} dnů"
 msgid " and "
 msgstr " a "
 
-#: plugins/seen.py:102
+#: plugins/seen.py:105
 #: plugins/uptime.py:53
 msgid "{} hour"
 msgid_plural "{} hours"
@@ -737,7 +737,7 @@ msgstr[0] "{} hodina"
 msgstr[1] "{} hodiny"
 msgstr[2] "{} hodin"
 
-#: plugins/seen.py:109
+#: plugins/seen.py:112
 #: plugins/uptime.py:60
 msgid "{} minute"
 msgid_plural "{} minutes"
@@ -745,7 +745,7 @@ msgstr[0] "{} minuta"
 msgstr[1] "{} minuty"
 msgstr[2] "{} minut"
 
-#: plugins/seen.py:114
+#: plugins/seen.py:117
 #: plugins/uptime.py:65
 msgid "{} second"
 msgid_plural "{} seconds"
@@ -753,7 +753,7 @@ msgstr[0] "{} sekunda"
 msgstr[1] "{} sekundy"
 msgstr[2] "{} sekund"
 
-#: plugins/seen.py:138
+#: plugins/seen.py:141
 msgid "Updating seen record for {!r}."
 msgstr "Aktualizuji seen záznam pro {!r}."
 
@@ -765,7 +765,7 @@ msgstr "Zpracuje zprávu pomocí Texy! Pokud není předána žádná zpráva, v
 msgid "[message]"
 msgstr "[zpráva]"
 
-#: plugins/twitter.py:49
+#: plugins/twitter.py:52
 msgid "Got error while getting twitter status {}."
 msgstr "Chyba při získávání twitter statusu {}."
 

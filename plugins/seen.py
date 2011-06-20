@@ -41,7 +41,7 @@ class seen:
         if pr["type"] in ("error", "probe"):
             return
         room = pr["muc"]["room"]
-        if room not in self.bot.muc_nicks or pr["muc"]["nick"] in ("", self.bot.muc_nicks[room]):
+        if pr["muc"]["nick"] in ("", self.bot.muc_nicks.get(room)):
             return
         if pr["type"] == "unavailable":
             event = "leave"
@@ -54,13 +54,16 @@ class seen:
         if msg["type"] in ("error", "headline"):
             return
         room = msg["mucroom"]
-        if room not in self.bot.muc_nicks or msg["mucnick"] in ("", self.bot.muc_nicks[room]):
+        if msg["mucnick"] in ("", self.bot.muc_nicks.get(room)):
             return
         self.store.update(msg["mucnick"], room, "message", msg.get("body", ""))
 
     def seen(self, command, args, msg, uc):
         if args == "":
             return self.gettext("You have to tell me about whom you want information!", uc.lang)
+
+        if args == self.bot.muc_nicks.get(msg["from"].bare):
+            return self.gettext("I'm right HERE, you moron! ;-)", uc.lang)
 
         seen = self.store.get(args)
         if seen == None:
@@ -79,7 +82,7 @@ class seen:
         else:
             state = self.gettext(" in room", uc.lang)
 
-        return self.gettext("{} was last seen{} {} before {}{}", uc.lang).format(args, state, seen[1], delta, status)
+        return self.gettext("It's {} since {} was seen{} {}{}.", uc.lang).format(delta, args, state, seen[1], status)
 
     def format_timedelta(self, delta, lang):
         parts = []
