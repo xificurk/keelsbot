@@ -222,8 +222,8 @@ class BaseBot(sleekxmpp.ClientXMPP):
             jid = JID(jid)
         user = JID("")
 
-        plugin = self.plugin["xep_0045"]
-        if jid.bare in plugin.rooms:
+        plugin = self.plugin.get("xep_0045")
+        if plugin is not None and jid.bare in plugin.rooms:
             real_jid = plugin.getJidProperty(jid.bare, jid.resource, "jid")
             if real_jid is not None and real_jid.full not in ("", jid.full):
                 user = self._match_jid(real_jid)
