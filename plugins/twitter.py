@@ -37,6 +37,9 @@ class twitter:
             bot.del_event_handler("muc::{}::message".format(room), self.handle_message)
 
     def handle_message(self, msg):
+        room = msg["mucroom"]
+        if msg["mucnick"] == self.bot.muc_nicks.get("room"):
+            return
         match = re.search("https?://twitter\.com/#!/.*?/status/([0-9]+)", msg.get("body"))
         if match is None:
             return
@@ -48,4 +51,4 @@ class twitter:
         except:
             log.debug(_("Got error while getting twitter status {}.").format(status_id))
             return
-        self.bot.send_message(msg["mucroom"], "@{}: {}".format(name, status), mtype="groupchat")
+        self.bot.send_message(room, "@{}: {}".format(name, status), mtype="groupchat")
