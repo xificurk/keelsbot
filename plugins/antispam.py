@@ -13,7 +13,6 @@ __version__ = "0.5.0"
 
 import logging
 import time
-from xml.etree import cElementTree as ET
 
 log = logging.getLogger(__name__)
 __ = lambda x: x # Fake gettext function
@@ -25,9 +24,9 @@ class antispam:
     rooms = {}
 
     def __init__(self, bot, config):
-        self.bot = bot
-        self.gettext = self.bot.gettext
-        self.ngettext = self.bot.ngettext
+        self.get_user_config = bot.get_user_config
+        self.gettext = bot.gettext
+        self.ngettext = bot.ngettext
 
         self.limit_types["message"] = self.limit_message
         self.limit_types["character"] = self.limit_character
@@ -35,7 +34,7 @@ class antispam:
         for muc in config.get("muc", []):
             for limit in muc.get("limit", []):
                 if limit.get("type") not in self.limit_types:
-                    log.error(_("Configuration error - type attribute of limit required."))
+                    log.error(_("Configuration error - type attribute of limit required and must be one of {}.").format(", ".join(self.limit_types.keys())))
                     muc["limit"].remove(limit)
                     continue
                 try:
@@ -123,16 +122,17 @@ class antispam:
                 age = now - limit["expiration"]
                 if jid not in spammers or spammers[jid][0] < age:
                     action = "warn"
-                    self.warn(room, nick)
-                elif spammers[jid][1] == "warn":
+                    log.info(_("Warning {!r} in room {}.").format(nick, room))
+                    uc = self.get_user_config(msg["from"])
+                    msg.reply(nick + ": " + self.gettext("Stop spamming!", uc.lang)).send()
+                elif spammers[jid][1] == "warn" or noban or bot_affiliation not in ("admin", "owner"):
                     action = "kick"
-                    self.kick(room, jid)
+                    log.info(_("Kicking {!r} from room {}.").format(jid, room))
+                    self.xep_0045.setRole(room, jid=jid, role="none", reason="spam")
                 else:
                     action = "ban"
-                    if noban or bot_affiliation not in ("admin", "owner"):
-                        self.kick(room, jid)
-                    else:
-                        self.ban(room, jid)
+                    log.warn(_("Banning {!r} from room {}.").format(jid, room))
+                    return self.xep_0045.setAffiliation(room, jid=jid, affiliation="outcast", reason="spam")
                 spammers[jid] = (now, action)
 
         # Cleanup
@@ -149,20 +149,3 @@ class antispam:
                 del spammers[jid]
 
         log.debug(_("Got {} users in history and {} in spammers.").format(len(history), len(spammers)))
-
-    def warn(self, room, nick):
-        """ Warn the nick not to spam. """
-        log.info(_("Warning {!r} in room {}.").format(nick, room))
-        uc = self.bot.get_user_config(room + "/" + nick)
-        self.bot.send_message(room, nick + ": " + self.gettext("Stop spamming!", uc.lang), mtype="groupchat")
-        return True
-
-    def kick(self, room, jid):
-        """ Kick the user from the room. """
-        log.info(_("Kicking {!r} from room {}.").format(jid, room))
-        return self.xep_0045.setRole(room, jid=jid, role="none", reason="spam")
-
-    def ban(self, room, jid):
-        """ Ban the user from the room. """
-        log.warn(_("Banning {!r} from room {}.").format(jid, room))
-        return self.xep_0045.setAffiliation(room, jid=jid, affiliation="outcast", reason="spam")
