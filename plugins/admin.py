@@ -22,27 +22,27 @@ class admin:
     loglevels = {"ALL":0, "DEBUG":10, "INFO":20, "WARNING":30, "ERROR":40, "CRITICAL":50}
 
     def __init__(self, bot, config):
-        self.bot = bot
-        self.gettext = self.bot.gettext
-        self.ngettext = self.bot.ngettext
+        self.bot_reload = bot.reload
+        self.bot_restart = bot.restart
+        self.bot_die = bot.die
+        self.gettext = bot.gettext
+        self.ngettext = bot.ngettext
 
         bot.add_command("reload", self.reload, __("Reload"), __("Reload the bot configuration and apply changes without disconnecting."))
         bot.add_command("restart", self.restart, __("Restart"), __("Completely restart the bot."))
-        bot.add_command("die", self.die, __("Die"), __("Kill the bot."), "die")
+        bot.add_command("die", self.die, __("Die"), __("Kill the bot."))
         bot.add_command("loglevel", self.loglevel, __("Log level"), __("Set the level of logging."), "<0-50|{}>".format("|".join(sorted(self.loglevels.keys()))))
         bot.add_command("level", self.level, __("User level"), __("Display user's access level."))
 
     def reload(self, command, args, msg, uc):
-        self.bot.reload()
+        self.bot_reload()
         return self.gettext("Reloaded, boss.", uc.lang)
 
     def restart(self, command, args, msg, uc):
-        self.bot.restart()
-        return self.gettext("Restarted, boss.", uc.lang)
+        self.bot_restart()
 
     def die(self, command, args, msg, uc):
-        self.bot.die()
-        return self.gettext("Dying...", uc.lang)
+        self.bot_die()
 
     def loglevel(self, command, args, msg, uc):
         if args.isdigit():
