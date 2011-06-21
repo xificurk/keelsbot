@@ -23,13 +23,15 @@ class twitter:
     rooms = []
 
     def __init__(self, bot, config):
-        self.bot = bot
+        self.get_our_nick = bot.get_our_nick
         self.twython = Twython()
-        for muc in config["muc"]:
+
+        for muc in config.get("muc", []):
             room = muc.get("room")
             if room is None:
                 log.error(_("Configuration error - room attribute of muc required."))
                 continue
+            self.rooms.append(room)
             bot.add_event_handler("muc::{}::message".format(room), self.handle_message, threaded=True)
 
     def shutdown(self, bot):
@@ -37,18 +39,21 @@ class twitter:
             bot.del_event_handler("muc::{}::message".format(room), self.handle_message)
 
     def handle_message(self, msg):
-        room = msg["mucroom"]
-        if msg["mucnick"] == self.bot.muc_nicks.get("room"):
+        if msg["mucnick"] in ("", self.get_our_nick(msg["mucroom"])):
+            # Ignore system and own message in MUC
             return
+
         match = re.search("https?://twitter\.com/#!/.*?/status/([0-9]+)", msg.get("body"))
         if match is None:
+            # No twitter status
             return
+
         status_id = match.group(1)
         try:
             status = self.twython.showStatus(id=status_id)
             name = status["user"]["screen_name"]
             status = status["text"]
         except:
-            log.debug(_("Got error while getting twitter status {}.").format(status_id))
+            log.exception(_("Unexpected error while getting twitter status {}.").format(status_id))
             return
-        self.bot.send_message(room, "@{}: {}".format(name, status), mtype="groupchat")
+        msg.reply("@{}: {}".format(name, status)).send()
