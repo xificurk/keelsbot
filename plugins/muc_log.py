@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-muc_logger plugin: Logs traffic in MUC.
+muc_log plugin: Logs traffic in MUC.
 
 """
 
@@ -27,18 +27,18 @@ class muc_log:
 
     def __init__(self, bot, config):
         for muc_log in config.get("log", []):
-            if "room" not in muc_log:
+            room = muc_log.get("room")
+            if room is None:
                 log.error(_("Configuration error - room attribute of log required."))
                 continue
-            room = muc_log["room"]
 
             if "file" in muc_log:
+                log.info(_("Starting logging of room {!r} to file {}.").format(room, muc_log["file"]))
                 logger = self.loggers[room] = FileLogger(muc_log["file"])
             else:
                 log.error(_("Configuration error - file attribute of log required."))
                 continue
 
-            log.debug(_("Starting logging of room {!r} to file {}.").format(room, muc_log["file"]))
             bot.add_event_handler("muc::{}::message".format(room), logger.process_message, threaded=False)
             bot.add_event_handler("muc::{}::subject".format(room), logger.process_subject, threaded=False)
             bot.add_event_handler("muc::{}::got_online".format(room), logger.process_got_online, threaded=False)
@@ -60,18 +60,16 @@ class DummyLogger:
         pass
 
     def process_message(self, msg):
-        nick = msg["mucnick"]
-        body = msg.get("body")
         subject = msg.get("subject", "")
         if msg.get("subject", "") != "":
             return
-        self.log_message(nick, body)
+        self.log_message(msg["mucnick"], msg.get("body", ""))
 
     def process_subject(self, msg):
-        nick = msg["mucnick"]
         subject = msg.get("subject", "")
         if subject == "":
             return
+        nick = msg["mucnick"]
         body = msg.get("body", "")
         if nick == "" and body != "":
             match = re.match("^(.*?) has set the subject to:", body)
