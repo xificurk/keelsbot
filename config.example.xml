@@ -18,6 +18,8 @@
         </plugin>
         <!-- Ad-Hoc Commands -->
         <plugin name="xep_0050" />
+        <!-- Result Set Management -->
+        <plugin name="xep_0059" />
         <!-- Publish Subscribe -->
         <plugin name="xep_0060" />
         <!-- Chat State Notifications -->
@@ -34,6 +36,8 @@
         </plugin>
         <!-- Entity Time -->
         <plugin name="xep_0202" />
+        <!-- Direct MUC Invitations -->
+        <plugin name="xep_0249" />
     </sleek>
 
     <!-- Location of the sqlite3 database used for persistent storage. -->

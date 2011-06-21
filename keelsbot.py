@@ -26,7 +26,9 @@ import logging
 from optparse import IndentedHelpFormatter, OptionGroup, OptionParser
 import os.path
 import sys
+import threading
 from time import sleep
+from types import ModuleType
 from xml.etree import cElementTree as ET
 
 sys.path.insert(0, os.path.join(sys.path[0], "libs"))
@@ -53,28 +55,71 @@ Help = namedtuple("Help", "title body")
 UserConfig = namedtuple("UserConfig", "level lang")
 
 
+class User:
+    """
+    Wrapper for user configurations.
+
+    Attributes:
+        config              --- UserConfig tuple.
+
+    Methods:
+        match               --- Test if JID matches the user's mask.
+
+    """
+
+    def __init__(self, mask, config):
+        """
+        Arguments:
+            mask            --- JID mask.
+            config          --- UserConfig.
+
+        """
+        mask = JID(mask)
+        self._domain = mask.domain
+        self._user = mask.user
+        self._resource = mask.resource
+        self.config = config
+
+    def match(self, jid):
+        """
+        Test if JID matches the user mask.
+
+        Arguments:
+            jid             --- JID to match against user's mask.
+
+        """
+        if isinstance(jid, str):
+            jid = JID(jid)
+
+        return self._domain == jid.domain and self._user in ("", jid.user) and self._resource in ("", jid.resource)
+
+
 class BaseBot(sleekxmpp.ClientXMPP):
     """
     Base class for the XMPP bot.
 
     Attributes:
-        auth            --- Authentication data.
-        cmd_prefix      --- Prefix used for commands.
-        bot_plugins     --- Bot's plugins.
-        store           --- Persistent Storage object.
-        permissions     --- Command access levels.
-        commands        --- Registered commands.
-        help_topics     --- Registered help topics.
-        translations    --- Dictionary with gettext translations.
-        muc_nicks       --- Dictionary with Nicks in MUCs.
-        users           --- Users config dictionary (None key corresponds to default values).
+        bot_plugins_stop    --- Event signaling bot plugins to stop before calling their shutdown method.
+        auth                --- Authentication data.
+        cmd_prefix          --- Prefix used for commands.
+        bot_plugins         --- Bot's plugins.
+        store               --- Persistent Storage object.
+        permissions         --- Command access levels.
+        commands            --- Registered commands.
+        help_topics         --- Registered help topics.
+        translations        --- Dictionary with gettext translations.
+        users               --- List of User instances.
+        default_user        --- Default UserConfig.
 
     Methods:
         run                     --- Run the bot (connect and start processing events).
         die                     --- Shutdown the bot.
         handle_session_start    --- Handler for session_start event.
+        handle_session_end      --- Handler for session_end event.
+        handle_killed           --- Handler for killed event.
         handle_message          --- Handler for message event.
-        sync_rooms              --- Join/leave MUC rooms.
+        get_our_nick            --- Get our nick in MUC room.
+        get_command_level       --- Get required access level for the command.
         get_user_config         --- Get UserConfig corresponding to the given JID.
         register_bot_plugin     --- Register and configure a bot plugin.
         deregister_bot_plugins  --- Deregister all registered bot plugins.
@@ -90,11 +135,12 @@ class BaseBot(sleekxmpp.ClientXMPP):
     cmd_prefix = "!"
     bot_plugins = {}
     store = None
+    permissions = {}
     commands = {}
     help_topics = {}
     translations = {}
-    muc_nicks = {}
-    users = {}
+    users = []
+    default_user = UserConfig(0, "en")
 
     def __init__(self, auth):
         """
@@ -103,10 +149,14 @@ class BaseBot(sleekxmpp.ClientXMPP):
 
         """
         self.auth = auth
-        log.info(_("Logging in as {!r}.").format(auth["jid"]))
+        log.info(_("Using JID {}.").format(auth["jid"]))
         sleekxmpp.ClientXMPP.__init__(self, auth["jid"], auth["password"])
+        self.use_signals()
+        self.bot_plugins_stop = threading.Event()
 
         self.add_event_handler("session_start", self.handle_session_start, threaded=True)
+        self.add_event_handler("session_end", self.handle_session_end, threaded=True)
+        self.add_event_handler("killed", self.handle_killed, threaded=True)
         self.add_event_handler("message", self.handle_message, threaded=True)
 
     def run(self):
@@ -114,6 +164,7 @@ class BaseBot(sleekxmpp.ClientXMPP):
         Run the bot (connect and start processing events).
 
         """
+        self.bot_plugins_stop.clear()
         if "server" in self.auth and "port" in self.auth:
             self.connect(tuple(self.auth["server"], self.auth["port"]))
         else:
@@ -125,9 +176,8 @@ class BaseBot(sleekxmpp.ClientXMPP):
         Shutdown the bot.
 
         """
-        self.deregister_bot_plugins()
-        self.muc_nicks = {}
         log.warn(_("Disconnecting the bot."))
+        self.deregister_bot_plugins()
         self.disconnect()
 
     def event(self, name, data={}, direct=False):
@@ -145,7 +195,28 @@ class BaseBot(sleekxmpp.ClientXMPP):
         """
         self.get_roster()
         self.send_presence(ppriority=self.auth.get("priority", "1"))
-        self.sync_rooms()
+
+    def handle_session_end(self, data):
+        """
+        Handler for session_end event.
+
+        Arguments:
+            data        --- Event data.
+
+        """
+        if "xep_0045" in self.plugin:
+            self.plugin["xep_0045"].rooms = {}
+            self.plugin["xep_0045"].ourNicks = {}
+
+    def handle_killed(self, data):
+        """
+        Handler for killed event.
+
+        Arguments:
+            data        --- Event data.
+
+        """
+        self.deregister_bot_plugins()
 
     def handle_message(self, msg):
         """
@@ -155,60 +226,71 @@ class BaseBot(sleekxmpp.ClientXMPP):
             msg         --- Message stanza.
 
         """
-        # Ignore errors and headlines
-        if msg["type"] in ("", "error", "headline"):
+        if msg["type"] in ("error", "headline", ""):
+            # Ignore error, headline, invalid
             return
-        # Ignore MUC system, error and own messages
-        if msg["type"] == "groupchat" and (msg["from"].full == msg["mucroom"] or msg["mucroom"] not in self.muc_nicks or self.muc_nicks[msg["mucroom"]] == msg["mucnick"]):
+        if msg["type"] == "groupchat" and msg["mucnick"] in ("", self.get_our_nick(msg["mucroom"])):
+            # Ignore system and own message in MUC
+            return
+        if not msg.get("body", "").startswith(self.cmd_prefix):
+            # Ignore non-command message
             return
 
         user_config = self.get_user_config(msg["from"])
         if user_config.level < 0:
-            # Ignore the message
+            # Ignore banned users
             return
 
-        message = msg["body"]
-        if message.startswith(self.cmd_prefix):
-            # Remove cmd_prefix from message
-            message = message[len(self.cmd_prefix):]
-
-            # Get command name
-            command = message.split("\n", 1)[0].split(" ", 1)[0]
-            if len(command) == 0:
-                # No command name, ignore
-                return
-
-            if command in self.commands and self.permissions["command:"+command] <= user_config.level:
-                # Parse arguments
-                args = message[len(command):]
-                if args.startswith(" "):
-                    args = args[1:]
-                log.debug(_("Command {!r} with args {!r}").format(command, args))
-
-                response = self.commands[command](command, args, msg, user_config)
-                if response is not None and response != "":
-                    if msg["type"] == "groupchat":
-                        response = "{}: {}".format(msg["mucnick"], response)
-                    msg.reply(response).send()
-
-    def sync_rooms(self):
-        """
-            Join/leave MUC rooms.
-
-        """
-        if "xep_0045" not in self.plugin:
+        message = msg.get("body", "")[len(self.cmd_prefix):]
+        command = message.split("\n", 1)[0].split(" ", 1)[0]
+        if len(command) == 0 or command not in self.commands:
+            # Not a command
             return
-        log.info(_("Re-syncing with required MUC rooms."))
-        plugin = self.plugin["xep_0045"]
-        for room in plugin.rooms:
-            nick = plugin.ourNicks.get(room)
-            if room not in self.muc_nicks or nick != self.muc_nicks[room]:
-                log.info(_("Leaving MUC room {!r}.").format(room))
-                plugin.leaveMUC(room, nick)
-        for room, nick in self.muc_nicks.items():
-            if room not in plugin.rooms:
-                log.info(_("Joining MUC room {!r} as {!r}.").format(room, nick))
-                plugin.joinMUC(room, nick)
+        if self.get_command_level(command) > user_config.level:
+            # Access denied
+            return
+
+        args = message[len(command):]
+        if args.startswith(" "):
+            args = args[1:]
+        log.debug(_("Command {!r} with args {!r}").format(command, args))
+        response = self.commands[command](command, args, msg, user_config)
+        if response in (None, ""):
+            # No response
+            return
+
+        if msg["type"] == "groupchat":
+            response = "{}: {}".format(msg["mucnick"], response)
+        msg.reply(response).send()
+
+    def get_our_nick(self, room):
+        """
+        Get our nick in MUC room.
+
+        Arguments:
+            room        --- MUC room.
+
+        """
+        if "xep_0045" in self.plugin:
+            return self.plugin["xep_0045"].ourNicks.get(room)
+        return None
+
+    def get_command_level(self, command):
+        """
+        Get required access level for the command.
+
+        Arguments:
+            command     --- Name of the command.
+
+        """
+        if "command:"+command in self.permissions:
+            return self.permissions["command:"+command]
+        elif "command" in self.permissions:
+            return self.permissions["command"]
+        elif None in self.permissions:
+            return self.permissions[None]
+        else:
+            return 0
 
     def get_user_config(self, jid):
         """
@@ -220,29 +302,27 @@ class BaseBot(sleekxmpp.ClientXMPP):
         """
         if isinstance(jid, str):
             jid = JID(jid)
-        user = None
+        config = None
 
-        plugin = self.plugin.get("xep_0045")
-        if plugin is not None and jid.bare in plugin.getJoinedRooms():
-            real_jid = plugin.getJidProperty(jid.bare, jid.resource, "jid")
+        if "xep_0045" in self.plugin:
+            real_jid = self.plugin["xep_0045"].getJidProperty(jid.bare, jid.resource, "jid")
             if real_jid is not None and real_jid.full not in ("", jid.full):
-                user = self._match_jid(real_jid)
+                for user in self.users:
+                    if user.match(real_jid):
+                        config = user.config
+                        break
 
-        if user is None:
-            user = self._match_jid(jid)
+        if config is None:
+            for user in self.users:
+                if user.match(jid):
+                    config = user.config
+                    break
 
-        conf = self.users.get(user)
-        if conf is None:
-            conf = UserConfig(0, "en")
-        log.debug(_("Using {!r} for JID {!r}.").format(conf, jid.full))
-        return conf
+        if config is None:
+            config = self.default_user
 
-    def _match_jid(self, jid):
-        """ Find user mask corresponding to the given JID. """
-        for mask in self.users:
-            if mask is not None and mask.domain == jid.domain and mask.user in ("", jid.user) and mask.resource in ("", jid.resource):
-                return mask
-        return None
+        log.debug(_("Using {!r} for JID {}.").format(config, jid))
+        return config
 
     def register_bot_plugin(self, name, config, module=None):
         """
@@ -258,19 +338,19 @@ class BaseBot(sleekxmpp.ClientXMPP):
         try:
             # Prevent re-registration
             if name in self.bot_plugins:
-                log.warn(_("Bot plugin {!r} is already registered.").format(name))
-                raise ValueError
+                raise ValueError(_("Bot plugin {!r} is already registered.").format(name))
 
             # Import the given module that contains the plugin.
             if module is None:
                 module = "plugins.{}".format(name)
-            elif not isinstance(module, str):
-                raise TypeError
-            if module in sys.modules:
-                reload(sys.modules[module])
-                module = sys.modules[module]
-            else:
-                module = __import__(module, fromlist=[name])
+            if isinstance(module, str):
+                if module in sys.modules:
+                    reload(sys.modules[module])
+                    module = sys.modules[module]
+                else:
+                    module = __import__(module, fromlist=[name])
+            elif not isinstance(module, ModuleType):
+                raise ValueError(_("Expected module, string, or None for module argument, {} given.").format(type(module)))
             plugin = getattr(module, name)
 
             # Inject SleekXMPP plugins
@@ -279,8 +359,7 @@ class BaseBot(sleekxmpp.ClientXMPP):
                     if dep in self.plugin:
                         setattr(plugin, dep, self.plugin[dep])
                     else:
-                        log.warn(_("Bot plugin {!r} needs SleekXMPP plugin {!r}.".format(name, dep)))
-                        raise RuntimeError
+                        raise RuntimeError(_("Bot plugin {!r} needs SleekXMPP plugin {!r}.".format(name, dep)))
 
             # Initialize the plugin
             self.bot_plugins[name] = plugin(self, config)
@@ -293,6 +372,7 @@ class BaseBot(sleekxmpp.ClientXMPP):
         Deregister all registered bot plugins.
 
         """
+        self.bot_plugins_stop.set()
         for plugin in list(self.bot_plugins.keys()):
             self.deregister_bot_plugin(plugin)
 
@@ -357,9 +437,7 @@ class BaseBot(sleekxmpp.ClientXMPP):
                 husage = [husage]
             for part in husage:
                 hbody.append(part)
-        self.add_help_topic(name, htitle, hbody)
-        if level is None and "command:"+name not in self.permissions:
-            self.permissions["command:"+name] = self.permissions.get("command", 0)
+        self.add_help_topic(name, htitle, tuple(hbody))
         self.commands[name] = callback
 
     def get_translations(self, lang):
@@ -409,10 +487,13 @@ class KeelsBot(BaseBot):
     Attributes:
         auto_restart    --- Flag to determine if the bot should be automatically restarted.
         config_file     --- Path to the configuration file.
+        config          --- Parsed configuration file.
 
     Methods:
         reload                  --- Reloads the config file and makes appropriate runtime changes.
         restart                 --- Completely restart the bot.
+        handle_session_start    --- Handler for session_start event.
+        sync_rooms              --- Join/leave MUC rooms.
         load_config             --- Load config file.
         config_sleek_plugins    --- Load configuration and register SleekXMPP plugins.
         config_bot_plugins      --- Load configuration and register bot plugins.
@@ -428,13 +509,11 @@ class KeelsBot(BaseBot):
 
         """
         self.config_file = config_file
-        bot_config = self.load_config()
-
-        auth = bot_config.find("/auth").attrib
+        self.load_config()
+        auth = dict(self.config.find("/auth").attrib)
         BaseBot.__init__(self, auth)
-
-        self.config_sleek_plugins(bot_config)
-        self.config_bot_plugins(bot_config)
+        self.config_sleek_plugins()
+        self.config_bot_plugins()
 
     def reload(self):
         """
@@ -444,15 +523,15 @@ class KeelsBot(BaseBot):
         """
         log.warn(_("Cleaning bot configuration before reload."))
         self.deregister_bot_plugins()
-        self.permissions = {}
         self.commands = {}
         self.help_topics = {}
         self.translations = {}
 
         log.info(_("Reloading bot configuration."))
-        bot_config = self.load_config()
-        self.config_bot_plugins(bot_config)
+        self.bot_plugins_stop.clear()
+        self.load_config()
         self.sync_rooms()
+        self.config_bot_plugins()
 
     def restart(self):
         """
@@ -463,12 +542,55 @@ class KeelsBot(BaseBot):
         log.warn(_("Restarting the bot."))
         self.die()
 
+    def handle_session_start(self, data):
+        """
+        Handler for session_start event.
+
+        Arguments:
+            data        --- Event data.
+
+        """
+        BaseBot.handle_session_start(self, data)
+        self.sync_rooms()
+
+    def sync_rooms(self):
+        """
+            Join/leave MUC rooms.
+
+        """
+        plugin = self.plugin.get("xep_0045")
+        if plugin is None:
+            return
+
+        rooms = {}
+        for xplugin in self.config.findall("/sleek/plugin"):
+            if xplugin.get("name") == "xep_0045":
+                for muc in xplugin.findall("muc"):
+                    room = muc.get("room")
+                    if room is None:
+                        log.error(_("Ignoring MUC with empty room attribute."))
+                        continue
+                    rooms[room] = muc.get("nick", "KeelsBot")
+                break
+
+        log.info(_("Re-syncing with required MUC rooms."))
+        for room in plugin.rooms:
+            nick = plugin.ourNicks.get(room)
+            if room not in rooms or nick != rooms.get(room):
+                log.info(_("Leaving MUC room {!r}.").format(room))
+                plugin.leaveMUC(room, nick)
+        for room, nick in rooms.items():
+            if room not in plugin.rooms:
+                log.info(_("Joining MUC room {!r} as {!r}.").format(room, nick))
+                plugin.joinMUC(room, nick)
+
     def load_config(self):
         """
         Load config file.
 
         """
-        config = ET.parse(self.config_file)
+        log.debug(_("Loading configuration."))
+        self.config = config = ET.parse(self.config_file)
 
         # Configure persistent storage.
         storage = config.find("/storage")
@@ -484,13 +606,15 @@ class KeelsBot(BaseBot):
         default_permission = config.find("/permissions")
         if default_permission is not None:
             default_level = int(default_permission.get("level", default_level))
-            for command in default_permission.findall("command"):
-                level = int(command.get("level", default_level))
-                self.permissions["command:"+command.text] = level
-        self.permissions["command"] = default_level
+            for element in default_permission:
+                item = element.tag
+                if element.text is not None:
+                    item += ":" + element.text
+                self.permissions[item] = int(element.get("level", default_level))
+        self.permissions[None] = default_level
 
         # Configure users
-        self.users = {}
+        self.users = []
         default_level = 0
         default_lang = "en"
         default_user = config.find("/users")
@@ -500,34 +624,18 @@ class KeelsBot(BaseBot):
             for user in default_user.findall("jid"):
                 level = int(user.get("level", default_level))
                 lang = user.get("lang", default_lang)
-                self.users[JID(user.text)] = UserConfig(level, lang)
-        self.users[None] = UserConfig(default_level, default_lang) # Default user config
+                self.users.append(User(user.text, UserConfig(level, lang)))
+        self.default_user = UserConfig(default_level, default_lang)
 
-        # Configure MUCs
-        self.muc_nicks = {}
-        for plugin in config.findall("/sleek/plugin"):
-            if plugin.get("name") == "xep_0045":
-                for muc in plugin.findall("muc"):
-                    room = muc.get("room")
-                    if room is None:
-                        log.error(_("Ignoring MUC with empty room attribute."))
-                        continue
-                    self.muc_nicks[room] = muc.get("nick", "KeelsBot")
-                break
-
-        return config
-
-    def config_sleek_plugins(self, config):
+    def config_sleek_plugins(self):
         """
         Load configuration and register SleekXMPP plugins.
 
-        Arguments:
-            config          --- Bot configuration.
-
         """
+        log.debug(_("Configuring SleekXMPP plugins."))
         self.plugin_whitelist = []
         self.plugin_config = {}
-        for plugin in config.findall("/sleek/plugin"):
+        for plugin in self.config.findall("/sleek/plugin"):
             name = plugin.get("name")
             if "name" is None:
                 log.error(_("Ignoring unnamed SleekXMPP plugin."))
@@ -545,15 +653,13 @@ class KeelsBot(BaseBot):
 
         self.register_plugins()
 
-    def config_bot_plugins(self, config):
+    def config_bot_plugins(self):
         """
         Load configuration and register bot plugins.
 
-        Arguments:
-            config          --- Bot configuration.
-
         """
-        for plugin in config.findall("/keels/plugin"):
+        log.debug(_("Configuring bot plugins."))
+        for plugin in self.config.findall("/keels/plugin"):
             name = plugin.get("name")
             if "name" is None:
                 log.error(_("Ignoring unnamed bot plugin."))
@@ -607,14 +713,8 @@ if __name__ == "__main__":
     if not os.path.isfile(config_file):
         log.critical(_("Config file {!r} not found.").format(config_file))
 
-    try:
-        auto_restart = True
-        while auto_restart:
-            bot = KeelsBot(config_file)
-            bot.run()
-            auto_restart = bot.auto_restart
-    except Exception:
-        log.exception(_("Unexpected error... killing the bot."))
-        bot.die()
-        sleep(2)
-        raise SystemExit
+    auto_restart = True
+    while auto_restart:
+        bot = KeelsBot(config_file)
+        bot.run()
+        auto_restart = bot.auto_restart
