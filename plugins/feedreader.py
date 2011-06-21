@@ -31,7 +31,9 @@ class feedreader:
     threads = []
 
     def __init__(self, bot, config):
-        self.bot = bot
+        self.get_our_nick = bot.get_our_nick
+        self.send_message = bot.send_message
+        self.stop = bot.bot_plugins_stop
         self.store = Storage(bot.store)
         self.lock = threading.RLock()
         self.queue = queue.Queue()
@@ -48,17 +50,17 @@ class feedreader:
                 log.error(_("Configuration error - no subscribers given."))
                 continue
 
-            if "url" not in feed:
+            url = feed.get("url")
+            if url is None:
                 log.error(_("Configuration error - url attribute of feed required."))
                 continue
 
-            url = feed["url"]
             interval = float(feed.get("interval", 60))
             log.info(_("Scheduling {!r} feed check every {} minutes.").format(url, interval))
             self.feeds[url] = {"interval":interval*60, "subscribers":list(feed["subscriber"])}
 
         bot.add_event_handler("session_start", self.handle_session_start, threaded=True)
-        bot.add_event_handler("disconnected", self.handle_disconnected, threaded=True)
+        bot.add_event_handler("session_end", self.handle_session_end, threaded=True)
         with self.lock:
              if bot.state.ensure("connected") and bot.session_started_event.isSet():
                  # In case we're already connected, start right away
@@ -79,7 +81,7 @@ class feedreader:
             feed_thread.start()
             message_thread.start()
 
-    def handle_disconnected(self, data=None):
+    def handle_session_end(self, data=None):
         with self.lock:
             self.run = False
             # Join threads
@@ -93,8 +95,8 @@ class feedreader:
     def shutdown(self, bot):
         with self.lock:
             bot.del_event_handler("session_start", self.handle_session_start)
-            bot.del_event_handler("disconnected", self.handle_disconnected)
-            self.handle_disconnected()
+            bot.del_event_handler("session_end", self.handle_session_end)
+            self.handle_session_end()
 
     def feed_loop(self):
         """ The loop that periodically checks feeds """
@@ -106,7 +108,7 @@ class feedreader:
             feed["parser"] = Parser(url)
             feed["items"] = self.store.get(url)
 
-        while self.run:
+        while self.run and not self.stop.isSet():
             now = time.time()
             for url, feed in self.feeds.items():
                 if feed["next_check"] > now:
@@ -140,7 +142,7 @@ class feedreader:
 
         msg_times = {}
 
-        while self.run:
+        while self.run and not self.stop.isSet():
             try:
                 url, item = self.queue.get(block=False)
                 feed = self.feeds[url]
@@ -148,15 +150,16 @@ class feedreader:
                 title = item.get("title", "")
                 text = "{}: {}\n{}".format(feed["parser"].channel["title"], title, link)
                 subscribers = sorted(feed["subscribers"], key=lambda x: msg_times.get(x["jid"], 0), reverse=True)
-                while self.run and len(subscribers) > 0:
+                while self.run and not self.stop.isSet() and len(subscribers) > 0:
                     subscriber = subscribers.pop()
                     jid = subscriber["jid"]
-                    if subscriber["type"] == "groupchat" and ("xep_0045" not in self.bot.plugin or jid not in self.bot.plugin["xep_0045"].getJoinedRooms()):
+                    if subscriber["type"] == "groupchat" and self.get_our_nick(jid) is None:
                         log.error(_("Cannot send feed alert, the bot is not in room {!r}.").format(jid))
                         continue
                     time.sleep(max(0, msg_times.get(jid, 0) - time.time()))
                     msg_times[jid] = time.time() + self._msg_interval
-                    self.bot.send_message(jid, text, mtype=subscriber["type"])
+                    self.send_message(jid, text, mtype=subscriber["type"])
+                self.queue.task_done()
                 if len(subscribers) == 0:
                     # All alerts were sent out
                     feed["items"].append(link)
