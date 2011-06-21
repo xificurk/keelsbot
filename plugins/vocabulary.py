@@ -24,7 +24,7 @@ class vocabulary:
     testing = {}
 
     def __init__(self, bot, config):
-        self.bot = bot
+        self.cmd_prefix = bot.cmd_prefix
         self.gettext = bot.gettext
         self.ngettext = bot.ngettext
         self.store = Storage(bot.store)
@@ -47,18 +47,21 @@ class vocabulary:
             return
 
         answer = msg.get("body", "").strip()
-        if answer.startswith(self.bot.cmd_prefix):
+        if answer.startswith(self.cmd_prefix):
             return
 
+        reply = msg.reply()
         data = self.testing[jid]
         if answer == data["current"]["answer"]:
             data["current"]["weight"] = max(min(data["current"]["weight"]-1, 9), 0)
         else:
             data["current"]["weight"] = max(min(data["current"]["weight"]+1, 9), 0)
-            msg.reply(self.gettext("WRONG! Correct answer: {}", data["lang"]).format(data["current"]["answer"])).send()
+            reply["body"] = self.gettext("WRONG! Correct answer: {}", data["lang"]).format(data["current"]["answer"])
+            reply.send()
         self.store.set_weight(data["dictionary"][1], jid, data["current"])
         data["current"] = self._get_random(data["choices"], exclude=data["current"]["id"])
-        msg.reply(data["current"]["query"]).send()
+        reply["body"] = data["current"]["query"]
+        reply.send()
 
     def create_dictionary(self, command, args, msg, uc):
         parsed = self._parse_dictionary(args, uc.lang)
