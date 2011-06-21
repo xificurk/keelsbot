@@ -22,13 +22,22 @@ __ = lambda x: x # Fake gettext function
 
 class muc_presence:
     sleek_plugins = ("xep_0045",)
+    rooms = []
 
     def __init__(self, bot, config):
-        self.bot = bot
+        self.send_message = bot.send_message
+        self.get_user_config = bot.get_user_config
         self.gettext = bot.gettext
         self.ngettext = bot.ngettext
         self.store = Storage(bot.store)
         self.lock = threading.Lock()
+
+        for muc in config.get("muc", []):
+            room = muc.get("room")
+            if room is None:
+                log.error(_("Configuration error - room attribute of muc required."))
+                continue
+            self.rooms.append(room)
 
         bot.add_command("cu", self.current, __("Current number of users in room"), __("Display current number of users in MUC room."))
         bot.add_command("mu", self.maximum, __("Highest number of users in room"), __("Display historically highest number of users in MUC room."))
@@ -49,7 +58,9 @@ class muc_presence:
             stored = self.store.get(room)
             if stored is None or current > stored[1]:
                 self.store.update(room, current)
-                self.bot.send_message(room, self.gettext("There is historically highest number of users in the room ({}).", self.bot.users[None].lang).format(current), mtype="groupchat")
+                if room in self.rooms:
+                    uc = self.get_user_config(room)
+                    self.send_message(room, self.gettext("There is historically highest number of users in the room ({}).", uc.lang).format(current), mtype="groupchat")
 
     def current(self, command, args, msg, uc):
         room = msg["from"].bare

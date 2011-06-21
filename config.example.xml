@@ -115,7 +115,10 @@
         <plugin name="muc_log">
             <log room="room@server.com" file="/path/to/file.log" />
         </plugin>
-        <plugin name="muc_presence" />
+        <plugin name="muc_presence">
+            <!-- List of rooms, where the new record should be announced in public chat -->
+            <muc room="room@server.com" />
+        </plugin>
         <plugin name="muc_stability" />
         <plugin name="parrot" />
         <plugin name="pastebin">
