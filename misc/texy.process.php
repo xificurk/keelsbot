@@ -8,5 +8,5 @@ if ($_SERVER["argc"] == 2) {
 	$texy->imageModule->linkedRoot = '';
 	echo trim($texy->process($_SERVER["argv"][1]));
 } else {
-	echo Texy::VERSION;
+	echo "Texy! " . Texy::VERSION;
 }
