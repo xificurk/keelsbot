@@ -38,7 +38,7 @@ class definitions:
         if name == "":
             return self.gettext("You must specify what term you want to define!", uc.lang)
 
-        stored_description, stored_level = self.store.get(name)
+        stored_level = self.store.get(name)[1]
         if stored_level > uc.level:
             return self.gettext("Sorry, you don't have permission to edit this definition.", uc.lang)
 
@@ -55,7 +55,7 @@ class definitions:
 
     def query(self, command, args, msg, uc):
         name = args.strip()
-        description, level = self.store.get(name)
+        description = self.store.get(name)[0]
         if description is None:
             return self.gettext("I have no idea, who or what is {}.", uc.lang).format(name)
         else:
