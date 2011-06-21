@@ -11,7 +11,7 @@ import logging
 from xml.etree import cElementTree as ET
 import time
 
-class xep_0050(base.base_plugin):
+class old_0050(base.base_plugin):
 	"""
 	XEP-0050 Ad-Hoc Commands
 	"""
@@ -110,7 +110,7 @@ class xep_0050(base.base_plugin):
 		if not id:
 			id = self.xmpp.getNewId()
 		iq = self.xmpp.makeIqResult(id)
-		iq.attrib['from'] = self.xmpp.fulljid
+		iq.attrib['from'] = self.xmpp.boundjid.full
 		iq.attrib['to'] = to
 		command = ET.Element('{http://jabber.org/protocol/commands}command')
 		command.attrib['node'] = node

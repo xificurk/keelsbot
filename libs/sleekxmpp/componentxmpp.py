@@ -129,7 +129,7 @@ class ComponentXMPP(BaseXMPP):
 
         handshake = ET.Element('{jabber:component:accept}handshake')
         handshake.text = hashlib.sha1(pre_hash).hexdigest().lower()
-        self.send_xml(handshake)
+        self.send_xml(handshake, now=True)
 
     def _handle_handshake(self, xml):
         """
@@ -138,4 +138,5 @@ class ComponentXMPP(BaseXMPP):
         Arguments:
             xml -- The reply handshake stanza.
         """
+        self.session_started_event.set()
         self.event("session_start")

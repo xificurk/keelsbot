@@ -43,8 +43,8 @@ class RootStanza(StanzaBase):
         Arguments:
             e -- Exception object
         """
-        self.reply()
         if isinstance(e, XMPPError):
+            self.reply(clear=e.clear)
             # We raised this deliberately
             self['error']['condition'] = e.condition
             self['error']['text'] = e.text
@@ -54,16 +54,18 @@ class RootStanza(StanzaBase):
                                     e.extension_args)
                 self['error'].append(extxml)
                 self['error']['type'] = e.etype
+            self.send()
         else:
-            # We probably didn't raise this on purpose, so send a traceback
+            self.reply()
+            # We probably didn't raise this on purpose, so send an error stanza
             self['error']['condition'] = 'undefined-condition'
-            if sys.version_info < (3, 0):
-                self['error']['text'] = "SleekXMPP got into trouble."
-            else:
-                self['error']['text'] = traceback.format_tb(e.__traceback__)
-                log.exception('Error handling {%s}%s stanza' %
-                                  (self.namespace, self.name))
-        self.send()
-
+            self['error']['text'] = "SleekXMPP got into trouble."
+            self.send()
+            # log the error
+            log.exception('Error handling {%s}%s stanza' %
+                          (self.namespace, self.name))
+            # Finally raise the exception, so it can be handled (or not)
+            # at a higher level by using sys.excepthook.
+            raise e
 
 register_stanza_plugin(RootStanza, Error)

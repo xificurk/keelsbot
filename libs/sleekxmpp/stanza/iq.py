@@ -8,8 +8,8 @@
 
 from sleekxmpp.stanza import Error
 from sleekxmpp.stanza.rootstanza import RootStanza
-from sleekxmpp.xmlstream import RESPONSE_TIMEOUT, StanzaBase, ET
-from sleekxmpp.xmlstream.handler import Waiter
+from sleekxmpp.xmlstream import StanzaBase, ET
+from sleekxmpp.xmlstream.handler import Waiter, Callback
 from sleekxmpp.xmlstream.matcher import MatcherId
 
 
@@ -75,16 +75,9 @@ class Iq(RootStanza):
         Overrides StanzaBase.__init__.
         """
         StanzaBase.__init__(self, *args, **kwargs)
-        # To comply with PEP8, method names now use underscores.
-        # Deprecated method names are re-mapped for backwards compatibility.
-        self.setPayload = self.set_payload
-        self.getQuery = self.get_query
-        self.setQuery = self.set_query
-        self.delQuery = self.del_query
-
         if self['id'] == '':
             if self.stream is not None:
-                self['id'] = self.stream.getNewId()
+                self['id'] = self.stream.new_id()
             else:
                 self['id'] = '0'
 
@@ -144,7 +137,7 @@ class Iq(RootStanza):
                 self.xml.remove(child)
         return self
 
-    def reply(self):
+    def reply(self, clear=True):
         """
         Send a reply <iq> stanza.
 
@@ -152,32 +145,91 @@ class Iq(RootStanza):
 
         Sets the 'type' to 'result' in addition to the default
         StanzaBase.reply behavior.
+
+        Arguments:
+            clear -- Indicates if existing content should be
+                     removed before replying. Defaults to True.
         """
         self['type'] = 'result'
-        StanzaBase.reply(self)
+        StanzaBase.reply(self, clear)
         return self
 
-    def send(self, block=True, timeout=RESPONSE_TIMEOUT):
+    def send(self, block=True, timeout=None, callback=None, now=False):
         """
         Send an <iq> stanza over the XML stream.
 
         The send call can optionally block until a response is received or
         a timeout occurs. Be aware that using blocking in non-threaded event
-        handlers can drastically impact performance.
+        handlers can drastically impact performance. Otherwise, a callback
+        handler can be provided that will be executed when the Iq stanza's
+        result reply is received. Be aware though that that the callback
+        handler will not be executed in its own thread.
+
+        Using both block and callback is not recommended, and only the
+        callback argument will be used in that case.
 
         Overrides StanzaBase.send
 
         Arguments:
-            block   -- Specify if the send call will block until a response
-                       is received, or a timeout occurs. Defaults to True.
-            timeout -- The length of time (in seconds) to wait for a response
-                       before exiting the send call if blocking is used.
-                       Defaults to sleekxmpp.xmlstream.RESPONSE_TIMEOUT
+            block    -- Specify if the send call will block until a response
+                        is received, or a timeout occurs. Defaults to True.
+            timeout  -- The length of time (in seconds) to wait for a response
+                        before exiting the send call if blocking is used.
+                        Defaults to sleekxmpp.xmlstream.RESPONSE_TIMEOUT
+            callback -- Optional reference to a stream handler function. Will
+                        be executed when a reply stanza is received.
+            now      -- Indicates if the send queue should be skipped and send
+                        the stanza immediately. Used during stream
+                        initialization. Defaults to False.
         """
-        if block and self['type'] in ('get', 'set'):
+        if timeout is None:
+            timeout = self.stream.response_timeout
+        if callback is not None and self['type'] in ('get', 'set'):
+            handler_name = 'IqCallback_%s' % self['id']
+            handler = Callback(handler_name,
+                               MatcherId(self['id']),
+                               callback,
+                               once=True)
+            self.stream.register_handler(handler)
+            StanzaBase.send(self, now=now)
+            return handler_name
+        elif block and self['type'] in ('get', 'set'):
             waitfor = Waiter('IqWait_%s' % self['id'], MatcherId(self['id']))
-            self.stream.registerHandler(waitfor)
-            StanzaBase.send(self)
+            self.stream.register_handler(waitfor)
+            StanzaBase.send(self, now=now)
             return waitfor.wait(timeout)
         else:
-            return StanzaBase.send(self)
+            return StanzaBase.send(self, now=now)
+
+    def _set_stanza_values(self, values):
+        """
+        Set multiple stanza interface values using a dictionary.
+
+        Stanza plugin values may be set usind nested dictionaries.
+
+        If the interface 'query' is given, then it will be set
+        last to avoid duplication of the <query /> element.
+
+        Overrides ElementBase._set_stanza_values.
+
+        Arguments:
+            values -- A dictionary mapping stanza interface with values.
+                      Plugin interfaces may accept a nested dictionary that
+                      will be used recursively.
+        """
+        query = values.get('query', '')
+        if query:
+            del values['query']
+            StanzaBase._set_stanza_values(self, values)
+            self['query'] = query
+        else:
+            StanzaBase._set_stanza_values(self, values)
+        return self
+
+
+# To comply with PEP8, method names now use underscores.
+# Deprecated method names are re-mapped for backwards compatibility.
+Iq.setPayload = Iq.set_payload
+Iq.getQuery = Iq.get_query
+Iq.setQuery = Iq.set_query
+Iq.delQuery = Iq.del_query
