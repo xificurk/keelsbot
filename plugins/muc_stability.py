@@ -29,7 +29,8 @@ class muc_stability:
     run = False
 
     def __init__(self, bot, config):
-        self.bot = bot
+        self.send_message = bot.send_message
+        self.stop = bot.bot_plugins_stop
         self.lock = threading.RLock()
 
         bot.register_handler(Callback(
@@ -37,7 +38,7 @@ class muc_stability:
             StanzaPath("{{{}}}message@type=error/error@type=modify@code=406@condition=not-acceptable".format(bot.default_ns)),
             self.handle_error))
         bot.add_event_handler("session_start", self.handle_session_start, threaded=True)
-        bot.add_event_handler("disconnected", self.handle_disconnected, threaded=True)
+        bot.add_event_handler("session_end", self.handle_session_end, threaded=True)
         with self.lock:
              if bot.state.ensure("connected") and bot.session_started_event.isSet():
                  # In case we're already connected, start right away
@@ -54,7 +55,7 @@ class muc_stability:
             self.thread = thread
             thread.start()
 
-    def handle_disconnected(self, data=None):
+    def handle_session_end(self, data=None):
         with self.lock:
             self.run = False
             # Join thread
@@ -64,15 +65,15 @@ class muc_stability:
         with self.lock:
             bot.remove_handler("keelsbot.muc_stability.handle_error")
             bot.del_event_handler("session_start", self.handle_session_start)
-            bot.del_event_handler("disconnected", self.handle_disconnected)
-            self.handle_disconnected()
+            bot.del_event_handler("session_end", self.handle_session_end)
+            self.handle_session_end()
 
     def handle_error(self, msg):
         """ Check if error message comes from MUC and rejoin. """
         room = msg["from"].bare
-        if room not in self.bot.muc_nicks:
+        nick = self.xep_0045.ourNicks.get(room)
+        if nick is not None:
             return
-        nick = self.bot.muc_nicks[room]
         log.info(_("Rejoining the room {} as {!r}.").format(room, nick))
         self.xep_0045.joinMUC(room, nick)
 
@@ -80,21 +81,19 @@ class muc_stability:
         """ The loop that periodically checks joined MUCs. """
         log.debug(_("Entering the loop."))
 
-        while self.run:
+        wait = 0
+        while self.run and not self.stop.isSet() and wait < self._check_interval:
+            wait += self._loop_interval
+            time.sleep(self._loop_interval)
+
+        while self.run and not self.stop.isSet():
+            for room, nick in self.xep_0045.ourNicks.items():
+                jid = "{}/{}".format(room, nick)
+                self.send_message(jid, None, mtype="chat")
+
             wait = 0
-            while self.run and wait < self._check_interval:
+            while self.run and not self.stop.isSet() and wait < self._check_interval:
                 wait += self._loop_interval
                 time.sleep(self._loop_interval)
-
-            if not self.run:
-                break
-
-            for room, nick in self.bot.muc_nicks.items():
-                if room not in self.xep_0045.getJoinedRooms():
-                    log.info(_("Rejoining the room {} as {!r}.").format(room, nick))
-                    self.xep_0045.joinMUC(room, nick)
-                else:
-                    jid = "{}/{}".format(room, nick)
-                    self.bot.send_message(jid, None, mtype="chat")
 
         log.debug(_("Exiting the loop."))
