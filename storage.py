@@ -34,12 +34,15 @@ class Storage:
         self._filename = filename
 
 
-    def get_db(self):
+    def get_db(self, timeout=30):
         """
         Get database connection instance.
 
+        Keyworded arguments:
+            timeout         --- Number of seconds to wait for database to release lock.
+
         """
-        con = sqlite3.connect(self._filename)
+        con = sqlite3.connect(self._filename, timeout)
         con.row_factory = sqlite3.Row
         return con
 
