@@ -20,7 +20,7 @@ __ = lambda x: x # Fake gettext function
 class help:
     def __init__(self, bot, config):
         self.cmd_prefix = bot.cmd_prefix
-        self.commands = bot.commands
+        self.bot_commands = bot.commands
         self.get_command_level = bot.get_command_level
         self.help_topics = bot.help_topics
         self.gettext = bot.gettext
@@ -31,7 +31,7 @@ class help:
 
     def commands(self, command, args, msg, uc):
         response = self.gettext("Available commands", uc.lang) + ":\n"
-        for cmd in sorted(self.commands.keys()):
+        for cmd in sorted(self.bot_commands.keys()):
             if self.get_command_level(cmd) > uc.level:
                 continue
             response += self.cmd_prefix + cmd
@@ -47,7 +47,7 @@ class help:
             response += self.commands(command, args, msg, uc) + "\n"
             start = True
             for topic in sorted(self.help_topics.keys()):
-                if topic in self.commands:
+                if topic in self.bot_commands:
                     continue
                 if start:
                     response += "\n" + self.gettext("Other available help topics", uc.lang) + ":\n"
@@ -62,7 +62,7 @@ class help:
         if args.startswith(self.cmd_prefix) and len(args) > len(self.cmd_prefix):
             args = args[len(self.cmd_prefix):]
 
-        if args not in self.help_topics or (args in self.commands and uc.level < self.get_command_level(args)):
+        if args not in self.help_topics or (args in self.bot_commands and uc.level < self.get_command_level(args)):
             return self.gettext("Don't know...", uc.lang)
 
         help_topic = self.help_topics[args]
