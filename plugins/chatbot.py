@@ -34,19 +34,21 @@ class chatbot:
     logger = None
 
     def __init__(self, bot, config):
-        self.bot = bot
+        self.cmd_prefix = bot.cmd_prefix
+        self.commands = bot.commands
+        self.get_command_level = bot.get_command_level
+        self.get_our_nick = bot.get_our_nick
+        self.get_user_config = bot.get_user_config
+        self.schedule = bot.schedule
+        self.send_message = bot.send_message
         self.gettext = bot.gettext
         self.ngettext = bot.ngettext
-
         self.filters = Filters(bot)
 
         for muc in config.get("muc", []):
-            if "room" not in muc:
+            room = muc.get("room")
+            if room is None:
                 log.error(_("Configuration error - room attribute of muc required."))
-                continue
-            room = muc["room"]
-            if room not in self.bot.muc_nicks:
-                log.error(("Bot is not configured to sit in room {}.").format(room))
                 continue
             self.states_muc[room] = {}
             if "disabled" in muc:
@@ -67,10 +69,10 @@ class chatbot:
         if log_path is not None:
             self.logger = Logger(log_path)
 
-        self.bot.add_command("shut", self.shut, __("Disable chatbot in MUC"), __("Bot stops replying in public chat of given (or current) MUC."), __("[room@server]"))
-        self.bot.add_command("chat", self.chat, __("Enable chatbot in MUC"), __("Bot starts replying in public chat of given (or current) MUC."), __("[room@server]"))
-        self.bot.add_command("convreload", self.reload, __("Reload conversation files"), __("Reloads conversation files without dropping out of MUC or forgetting current state."))
-        self.bot.add_event_handler("message", self.handle_message, threaded=False)
+        bot.add_command("shut", self.shut, __("Disable chatbot in MUC"), __("Bot stops replying in public chat of given (or current) MUC."), __("[room@server]"))
+        bot.add_command("chat", self.chat, __("Enable chatbot in MUC"), __("Bot starts replying in public chat of given (or current) MUC."), __("[room@server]"))
+        bot.add_command("convreload", self.reload, __("Reload conversation files"), __("Reloads conversation files without dropping out of MUC or forgetting current state."))
+        bot.add_event_handler("message", self.handle_message, threaded=False)
 
     def shutdown(self, bot):
         bot.del_event_handler("message", self.handle_message)
@@ -157,7 +159,7 @@ class chatbot:
         for prefix, response in self._parse_multiline(prefix, response):
             wait = random.uniform(min(8, max(1, len(response)/9)), min(25, max(5, len(response)/6))) + max(0, self.msg_times.get(mto, 0) - now)
             self.msg_times[mto] = now + wait
-            self.bot.schedule("chatbot_message", wait, self.bot.send_message, (mto, prefix+response, None, mtype))
+            self.schedule("chatbot_message", wait, self.send_message, (mto, prefix+response, None, mtype))
 
     def _parse_multiline(self, prefix, response):
         """ Parses | out into multiple strings and actions. """
@@ -181,27 +183,27 @@ class chatbot:
                 self.rooms[room]["msg_counter"] += 1
                 msg_counter = self.rooms[room]["msg_counter"]
 
-            if self.bot.muc_nicks[room] == msg["mucnick"]:
+            if msg["mucnick"] == self.get_our_nick(room):
                 # our message
                 return False
             if self.rooms[room]["chatty"] == False:
                 # shouldn't chat
                 return False
 
-        uc = self.bot.get_user_config(msg["from"])
+        uc = self.get_user_config(msg["from"])
         if uc.level < 0:
             # ignore user
             return False
 
         message = msg.get("body", "")
-        if message.startswith(self.bot.cmd_prefix):
+        if message.startswith(self.cmd_prefix):
             respond = False
             # Remove cmd_prefix from message
-            message = message[len(self.bot.cmd_prefix):]
+            message = message[len(self.cmd_prefix):]
 
             # Get command name
             command = message.split("\n", 1)[0].split(" ", 1)[0]
-            if len(command) == 0 or command not in self.bot.commands or self.bot.permissions["command:"+command] > uc.level:
+            if len(command) == 0 or command not in self.commands or self.get_command_level(command) > uc.level:
                 respond = True
 
             if not respond:
@@ -214,7 +216,7 @@ class chatbot:
         message = msg.get("body", "")
         room = msg["mucroom"]
         nick = msg["mucnick"]
-        message = message.replace(self.bot.muc_nicks[room], "//BOTNICK//")
+        message = message.replace(self.get_our_nick(room), "//BOTNICK//")
 
         match = re.match("^//BOTNICK//[:,>] ?(.*)$", message)
         if match is not None:
@@ -305,13 +307,13 @@ class chatbot:
 
 class Filters:
     def __init__(self, bot):
-        self.bot = bot
+        self.get_our_nick = bot.get_our_nick
 
     def common(self, msg, prefix, response):
         response = response.replace("////", "\n")
 
-        if msg["from"].bare in self.bot.muc_nicks:
-            response = response.replace("//BOTNICK//", self.bot.muc_nicks[msg["from"].bare])
+        if self.get_our_nick(msg["from"].bare) is not None:
+            response = response.replace("//BOTNICK//", self.get_our_nick(msg["from"].bare))
             response = response.replace("//NICK//", msg["from"].resource)
 
         return prefix, response
