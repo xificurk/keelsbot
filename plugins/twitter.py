@@ -43,12 +43,12 @@ class twitter:
             # Ignore system and own message in MUC
             return
 
-        match = re.search("https?://twitter\.com/#!/.*?/status/([0-9]+)", msg.get("body"))
+        match = re.search("https?://(mobile\.)?twitter\.com/.*?/status/([0-9]+)", msg.get("body"))
         if match is None:
             # No twitter status
             return
 
-        status_id = match.group(1)
+        status_id = match.group(2)
         try:
             status = self.twython.showStatus(id=status_id)
             name = status["user"]["screen_name"]
