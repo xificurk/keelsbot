@@ -33,7 +33,7 @@ class parrot:
             room, text = args.split(" ", 1)
         else:
             return self.gettext("You've forgot to specify the MUC.", uc.lang)
-        if self.get_our_nick(room):
+        if self.get_our_nick(room) is None:
             return self.gettext("I'm not in the room {}.", uc.lang).format(room)
         self.send_message(room, text, mtype="groupchat")
         return self.gettext("Sent", uc.lang)
