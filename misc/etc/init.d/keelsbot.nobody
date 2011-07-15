@@ -22,7 +22,7 @@ start() {
 	ebegin "Starting $NAME KeelsBot"
 
 	# Start the process as a daemon under user keelsbot and record the pid number
-	start-stop-daemon --start -c keelsbot -b --pidfile "/var/run/keelsbot.$NAME.pid" --make-pidfile --exec /opt/keelsbot/keelsbot.sh -- $NAME
+	start-stop-daemon --start -u keelsbot -b --pidfile "/var/run/keelsbot.$NAME.pid" --make-pidfile --exec /opt/keelsbot/keelsbot.sh -- $NAME
 
 	# Output success or failure
 	eend $?
