@@ -11,6 +11,7 @@ __license__ = "GPL 3.0"
 __version__ = "0.5.0"
 
 
+from html.parser import HTMLParser
 import logging
 import re
 from twython3k import Twython
@@ -20,6 +21,7 @@ __ = lambda x: x # Fake gettext function
 
 
 class twitter:
+    _unescape = HTMLParser().unescape
     rooms = []
 
     def __init__(self, bot, config):
@@ -51,8 +53,8 @@ class twitter:
         status_id = match.group(2)
         try:
             status = self.twython.showStatus(id=status_id)
-            name = status["user"]["screen_name"]
-            status = status["text"]
+            name = self._unescape(status["user"]["screen_name"])
+            status = self._unescape(status["text"])
         except:
             log.exception(_("Unexpected error while getting twitter status {}.").format(status_id))
             return
