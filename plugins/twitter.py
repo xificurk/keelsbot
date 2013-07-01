@@ -14,7 +14,7 @@ __version__ = "0.5.0"
 from html.parser import HTMLParser
 import logging
 import re
-from twython3k import Twython
+from twython import Twython
 
 log = logging.getLogger(__name__)
 __ = lambda x: x # Fake gettext function
@@ -26,7 +26,10 @@ class twitter:
 
     def __init__(self, bot, config):
         self.get_our_nick = bot.get_our_nick
-        self.twython = Twython()
+
+        auth = config.get("auth", {})
+
+        self.twython = Twython(auth.get("app_key"), access_token=auth.get("access_token"))
 
         for muc in config.get("muc", []):
             room = muc.get("room")

@@ -128,6 +128,8 @@
         <plugin name="seen" />
         <plugin name="texy" />
         <plugin name="twitter">
+            <!-- authorization for this app instance -->
+            <auth app_key="bflmpsvz" access_token="DamnYouTwitterWithAllThisBullshit" />
             <!-- List of rooms where the bot should expand twitter statuses. -->
             <muc room="room@server.com" />
         </plugin>
