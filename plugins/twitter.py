@@ -27,8 +27,7 @@ class twitter:
     def __init__(self, bot, config):
         self.get_our_nick = bot.get_our_nick
 
-        auth = config.get("auth", {})
-
+        auth = config.get("auth", [{}])[0]
         self.twython = Twython(auth.get("app_key"), access_token=auth.get("access_token"))
 
         for muc in config.get("muc", []):
@@ -55,7 +54,7 @@ class twitter:
 
         status_id = match.group(2)
         try:
-            status = self.twython.showStatus(id=status_id)
+            status = self.twython.show_status(id=status_id)
             name = self._unescape(status["user"]["screen_name"])
             status = self._unescape(status["text"])
         except:
