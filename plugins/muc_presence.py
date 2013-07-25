@@ -88,17 +88,20 @@ class Storage:
         self.create_tables()
 
     def create_tables(self):
-        self.store.query("""CREATE TABLE IF NOT EXISTS muc_presence (
+        with self.store.lock:
+            self.store.query("""CREATE TABLE IF NOT EXISTS muc_presence (
                             room VARCHAR(256) NOT NULL PRIMARY KEY,
                             users INTEGER(3) NOT NULL,
                             timestamp INT NOT NULL)""")
 
     def update(self, room, users):
         log.debug(_("Updating muc_presence record for {}.").format(room))
-        self.store.query("INSERT OR REPLACE INTO muc_presence (room, users, timestamp) VALUES(?,?,?)", (room, users, int(time.time())))
+        with self.store.lock:
+            self.store.query("INSERT OR REPLACE INTO muc_presence (room, users, timestamp) VALUES(?,?,?)", (room, users, int(time.time())))
 
     def get(self, room):
-        result = self.store.query("SELECT * FROM muc_presence WHERE room=? LIMIT 1", (room,))
+        with self.store.lock:
+            result = self.store.query("SELECT * FROM muc_presence WHERE room=? LIMIT 1", (room,))
         if len(result) == 0:
             return None
         result = result[0]

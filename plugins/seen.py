@@ -115,7 +115,8 @@ class Storage:
         self.create_tables()
 
     def create_tables(self):
-        self.store.query("""CREATE TABLE IF NOT EXISTS seen (
+        with self.store.lock:
+            self.store.query("""CREATE TABLE IF NOT EXISTS seen (
                             room VARCHAR(256) NOT NULL,
                             nick VARCHAR(256) NOT NULL,
                             event INTEGER(1) NOT NULL,
@@ -126,17 +127,20 @@ class Storage:
     def update(self, room, nick, event, text=None):
         event = self.events.index(event)
         log.debug(_("Updating seen record for {!r} in {}.").format(nick, room))
-        self.store.query("INSERT OR REPLACE INTO seen (room, nick, event, timestamp, text) VALUES(?,?,?,?,?)", (room, nick, event, int(time.time()), text))
+        with self.store.lock:
+            self.store.query("INSERT OR REPLACE INTO seen (room, nick, event, timestamp, text) VALUES(?,?,?,?,?)", (room, nick, event, int(time.time()), text))
 
     def get(self, room, nick):
-        result = self.store.query("SELECT event, timestamp, text FROM seen WHERE room=? AND nick=? ORDER BY timestamp DESC LIMIT 1", (room, nick))
+        with self.store.lock:
+            result = self.store.query("SELECT event, timestamp, text FROM seen WHERE room=? AND nick=? ORDER BY timestamp DESC LIMIT 1", (room, nick))
         if len(result) == 0:
             return None
         result = result[0]
         return (int(result["timestamp"]), result["text"], self.events[int(result["event"])])
 
     def getActivity(self, room, nick):
-        result = self.store.query("SELECT event, timestamp, text FROM seen WHERE room=? AND nick=? AND (event=? OR event=?) ORDER BY timestamp DESC LIMIT 1", (room, nick, self.events.index("message"), self.events.index("got_online")))
+        with self.store.lock:
+            result = self.store.query("SELECT event, timestamp, text FROM seen WHERE room=? AND nick=? AND (event=? OR event=?) ORDER BY timestamp DESC LIMIT 1", (room, nick, self.events.index("message"), self.events.index("got_online")))
         if len(result) == 0:
             return None
         result = result[0]

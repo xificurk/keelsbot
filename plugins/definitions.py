@@ -68,21 +68,25 @@ class Storage:
         self.create_tables()
 
     def create_tables(self):
-        self.store.query("""CREATE TABLE IF NOT EXISTS definitions (
+        with self.store.lock:
+            self.store.query("""CREATE TABLE IF NOT EXISTS definitions (
                             name VARCHAR(256) NOT NULL PRIMARY KEY,
                             description VARCHAR(256) NOT NULL,
                             level INT(4) NOT NULL)""")
 
     def get(self, name):
-        result = self.store.query("SELECT description, level FROM definitions WHERE name=?", (name.lower(),))
+        with self.store.lock:
+            result = self.store.query("SELECT description, level FROM definitions WHERE name=?", (name.lower(),))
         if len(result) == 0:
             return None, 0
         return result[0]["description"], result[0]["level"]
 
     def update(self, name, description, level=0):
         log.debug(_("Updating definiton of {!r} with level {}.").format(name, level))
-        self.store.query("INSERT OR REPLACE INTO definitions (name, description, level) VALUES(?,?,?)", (name.lower(), description, level))
+        with self.store.lock:
+            self.store.query("INSERT OR REPLACE INTO definitions (name, description, level) VALUES(?,?,?)", (name.lower(), description, level))
 
     def delete(self, name):
         log.debug(_("Deleting definition of {!r}.").format(name))
-        self.store.query("DELETE FROM definitions WHERE name=?", (name.lower(),))
+        with self.store.lock:
+            self.store.query("DELETE FROM definitions WHERE name=?", (name.lower(),))

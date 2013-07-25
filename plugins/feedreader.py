@@ -176,7 +176,8 @@ class Storage:
         self.create_tables()
 
     def create_tables(self):
-        self.store.query("""CREATE TABLE IF NOT EXISTS feeds (
+        with self.store.lock:
+            self.store.query("""CREATE TABLE IF NOT EXISTS feeds (
                             feed VARCHAR(256) NOT NULL,
                             item VARCHAR(256) NOT NULL,
                             timestamp INT NOT NULL,
@@ -184,14 +185,16 @@ class Storage:
 
     def add(self, feed, item):
         log.debug(_("Storing new item {} in feed {}.").format(item, feed))
-        self.store.query("INSERT OR REPLACE INTO feeds (feed, item, timestamp) VALUES(?,?,?)", (feed, item, int(time.time())))
+        with self.store.lock:
+            self.store.query("INSERT OR REPLACE INTO feeds (feed, item, timestamp) VALUES(?,?,?)", (feed, item, int(time.time())))
 
     def get(self, feed):
-        for row in self.store.query("SELECT item FROM feeds WHERE feed=? ORDER BY timestamp DESC LIMIT 500, 10000", (feed,)):
-            self.store.query("DELETE FROM feeds WHERE feed=? AND item=?", (feed, row["item"]))
-        items = []
-        for row in self.store.query("SELECT item FROM feeds WHERE feed=?", (feed,)):
-            items.append(row["item"])
+        with self.store.lock:
+            for row in self.store.query("SELECT item FROM feeds WHERE feed=? ORDER BY timestamp DESC LIMIT 500, 10000", (feed,)):
+                self.store.query("DELETE FROM feeds WHERE feed=? AND item=?", (feed, row["item"]))
+            items = []
+            for row in self.store.query("SELECT item FROM feeds WHERE feed=?", (feed,)):
+                items.append(row["item"])
         return items
 
 

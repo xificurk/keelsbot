@@ -218,12 +218,13 @@ class Storage:
         self.create_tables()
 
     def create_tables(self):
-        self.store.query("""CREATE TABLE IF NOT EXISTS dictionaries (
+        with self.store.lock:
+            self.store.query("""CREATE TABLE IF NOT EXISTS dictionaries (
                             left VARCHAR(15) NOT NULL,
                             right VARCHAR(15) NOT NULL,
                             PRIMARY KEY (left, right))""")
 
-        self.store.query("""CREATE TABLE IF NOT EXISTS vocabulary (
+            self.store.query("""CREATE TABLE IF NOT EXISTS vocabulary (
                             dictionary_id INTEGER NOT NULL,
                             left_phrase VARCHAR(100) NOT NULL,
                             left_note VARCHAR(255),
@@ -231,7 +232,7 @@ class Storage:
                             right_note VARCHAR(255),
                             PRIMARY KEY (dictionary_id, left_phrase, right_phrase))""")
 
-        self.store.query("""CREATE TABLE IF NOT EXISTS vocabulary_weights (
+            self.store.query("""CREATE TABLE IF NOT EXISTS vocabulary_weights (
                             jid VARCHAR(100) NOT NULL,
                             vocabulary_id INTEGER NOT NULL,
                             left INT(1) NOT NULL DEFAULT 5,
@@ -241,7 +242,8 @@ class Storage:
     def find_dictionary(self, left, right):
         left = left.strip().lower()
         right = right.strip().lower()
-        result = self.store.query("SELECT [rowid], [left]=? AS [reverse] FROM [dictionaries] WHERE ([left]=? AND [right]=?) OR ([right]=? AND [left]=?)", (right, left, right, left, right))
+        with self.store.lock:
+            result = self.store.query("SELECT [rowid], [left]=? AS [reverse] FROM [dictionaries] WHERE ([left]=? AND [right]=?) OR ([right]=? AND [left]=?)", (right, left, right, left, right))
         if (len(result) == 0):
             return None
         else:
@@ -250,12 +252,14 @@ class Storage:
     def create_dictionary(self, left, right):
         left = left.strip().lower()
         right = right.strip().lower()
-        self.store.query("INSERT INTO dictionaries ([left], [right]) VALUES(?,?)", (left, right))
+        with self.store.lock:
+            self.store.query("INSERT INTO dictionaries ([left], [right]) VALUES(?,?)", (left, right))
 
     def list_dictionary(self):
         dictionaries = []
-        for row in self.store.query("SELECT [left], [right] FROM [dictionaries]"):
-            dictionaries.append((row["left"], row["right"]))
+        with self.store.lock:
+            for row in self.store.query("SELECT [left], [right] FROM [dictionaries]"):
+                dictionaries.append((row["left"], row["right"]))
         return dictionaries
 
     def update_vocabulary(self, dictionary, left_phrase, right_phrase, left_note, right_note):
@@ -263,18 +267,21 @@ class Storage:
             left_note = None
         if right_note is not None and len(right_note) == 0:
             right_note = None
-        self.store.query("INSERT OR REPLACE INTO [vocabulary] ([dictionary_id], [left_phrase], [right_phrase], [left_note], [right_note]) VALUES(?,?,?,?,?)", (dictionary, left_phrase, right_phrase, left_note, right_note))
+        with self.store.lock:
+            self.store.query("INSERT OR REPLACE INTO [vocabulary] ([dictionary_id], [left_phrase], [right_phrase], [left_note], [right_note]) VALUES(?,?,?,?,?)", (dictionary, left_phrase, right_phrase, left_note, right_note))
 
     def delete_vocabulary(self, dictionary, left_phrase, right_phrase):
-        self.store.query("DELETE FROM [vocabulary] WHERE [dictionary_id]=? AND [left_phrase]=? AND [right_phrase]=?", (dictionary, left_phrase, right_phrase))
+        with self.store.lock:
+            self.store.query("DELETE FROM [vocabulary] WHERE [dictionary_id]=? AND [left_phrase]=? AND [right_phrase]=?", (dictionary, left_phrase, right_phrase))
 
     def list_vocabulary(self, dictionary, reverse):
         vocabulary = []
-        for row in self.store.query("SELECT [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dictionary,)):
-            if reverse:
-                vocabulary.append((row["right_phrase"], row["left_phrase"], row["right_note"], row["left_note"]))
-            else:
-                vocabulary.append((row["left_phrase"], row["right_phrase"], row["left_note"], row["right_note"]))
+        with self.store.lock:
+            for row in self.store.query("SELECT [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dictionary,)):
+                if reverse:
+                    vocabulary.append((row["right_phrase"], row["left_phrase"], row["right_note"], row["left_note"]))
+                else:
+                    vocabulary.append((row["left_phrase"], row["right_phrase"], row["left_note"], row["right_note"]))
         return vocabulary
 
     def get_vocabulary(self, dictionary, reverse, jid):
@@ -285,25 +292,27 @@ class Storage:
             side_query = "left"
             side_answer = "right"
         vocabulary = []
-        db = self.store.get_db()
-        for row in db.cursor().execute("SELECT [rowid], [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dictionary,)).fetchall():
-            phrase = {"id":row["rowid"]}
-            weight = db.cursor().execute("SELECT [{}] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?".format(side_query), (jid, row["rowid"])).fetchone()
-            if weight is not None:
-                phrase["weight"] = int(weight[side])
-            else:
-                phrase["weight"] = 5
-            if row[side_query+"_note"] is not None:
-                phrase["query"] = "{} ({})".format(row[side_query+"_phrase"], row[side_query+"_note"])
-            else:
-                phrase["query"] = row[side_query+"_phrase"]
-            phrase["answer"] = row[side_answer+"_phrase"]
-            vocabulary.append(phrase)
-        db.close()
+        with self.store.lock:
+            db = self.store.get_db()
+            for row in db.cursor().execute("SELECT [rowid], [left_phrase], [right_phrase], [left_note], [right_note] FROM [vocabulary] WHERE [dictionary_id]=?", (dictionary,)).fetchall():
+                phrase = {"id":row["rowid"]}
+                weight = db.cursor().execute("SELECT [{}] FROM [vocabulary_weights] WHERE jid=? AND vocabulary_id=?".format(side_query), (jid, row["rowid"])).fetchone()
+                if weight is not None:
+                    phrase["weight"] = int(weight[side])
+                else:
+                    phrase["weight"] = 5
+                if row[side_query+"_note"] is not None:
+                    phrase["query"] = "{} ({})".format(row[side_query+"_phrase"], row[side_query+"_note"])
+                else:
+                    phrase["query"] = row[side_query+"_phrase"]
+                phrase["answer"] = row[side_answer+"_phrase"]
+                vocabulary.append(phrase)
+            db.close()
         return vocabulary
 
     def set_weight(self, reverse, jid, phrase):
-        if reverse:
-            self.store.query("INSERT OR REPLACE INTO [vocabulary_weights] (jid, vocabulary_id, right) VALUES(?,?,?)", (jid, phrase["id"], phrase["weight"]))
-        else:
-            self.store.query("INSERT OR REPLACE INTO [vocabulary_weights] (jid, vocabulary_id, left) VALUES(?,?,?)", (jid, phrase["id"], phrase["weight"]))
+        with self.store.lock:
+            if reverse:
+                self.store.query("INSERT OR REPLACE INTO [vocabulary_weights] (jid, vocabulary_id, right) VALUES(?,?,?)", (jid, phrase["id"], phrase["weight"]))
+            else:
+                self.store.query("INSERT OR REPLACE INTO [vocabulary_weights] (jid, vocabulary_id, left) VALUES(?,?,?)", (jid, phrase["id"], phrase["weight"]))

@@ -14,6 +14,7 @@ __license__ = "GPL 3.0"
 __version__ = "0.5.0"
 
 import sqlite3
+import threading
 
 
 class Storage:
@@ -25,6 +26,9 @@ class Storage:
         query   --- Return ANSI code for changing terminal title.
 
     """
+
+    lock = threading.RLock()
+
     def __init__(self, filename):
         """
         Arguments:
