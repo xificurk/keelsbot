@@ -14,6 +14,7 @@ __version__ = "0.5.0"
 from html.parser import HTMLParser
 import logging
 import queue
+import re
 import threading
 import time
 import urllib.request
@@ -210,20 +211,34 @@ class Parser:
     def check(self):
         try:
             response = urllib.request.urlopen(self.url, timeout=10)
-            xml = ET.parse(response).find("/channel")
+            response = re.sub("<content type=\"html\">.*?</content>", "", response.read().decode("utf-8"), 0, re.S)
+            xml = ET.fromstring(response)
+            if xml.tag == "rss":
+                xml = xml.find("./channel")
             self.items = []
             for element in xml:
-                if element.tag == "item":
+                tag, value = self.parse_element(element)
+                if (xml.tag == "channel" and tag == "item") or (xml.tag == "{http://www.w3.org/2005/Atom}feed" and tag == "entry"):
                     item = {}
                     for item_element in element:
-                        item[item_element.tag] = self._unescape(item_element.text).strip()
+                        tag, value = self.parse_element(item_element)
+                        item[tag] = value
                     self.items.append(item)
                 else:
-                    self.channel[element.tag] = self._unescape(element.text).strip()
+                    self.channel[tag] = value
             return True
         except Exception:
             log.exception(_("Error occured while checking feed {}.").format(self.url))
             return False
+
+    def parse_element(self, element):
+        tag = element.tag.replace("{http://www.w3.org/2005/Atom}", "")
+        value = self._unescape(element.text).strip()
+        if tag == "link":
+            value = value or element.get("href", "")
+            if value.startswith("/"):
+                value = "/".join(self.url.split("/")[:3]) + value
+        return (tag, value)
 
     def _unescape(self, text):
         if text is None:
