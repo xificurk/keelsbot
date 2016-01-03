@@ -1,3 +1,6 @@
+This package is no longer maintained!
+============================================================================
+
 About
 ============================================================================
 KeelsBot is an easily extensible bot for XMPP written in Python using
@@ -5,8 +8,8 @@ the elegant SleekXMPP library.
 
 Author:
     Petr Morávek [Xificurk]
-    Jabber ID: xificurk@jabber.cz
-    Email: xificurk@gmail.com
+    Jabber ID: petr@pada.cz
+    Email: petr@pada.cz
 
 KeelsBot uses a lot of code from SleekBot written by Nathan Fritz
 and Kevin Smith.
